@@ -51,5 +51,11 @@ assert.strictEqual(order.join(), '1,2,3,4,5,6,7')
 assert.strictEqual(['Vice President, Sales', 'Executive Vice President', 'President', 'Chief of Staff'].map(titleRank).join(), '3,2,1,1', 'a vice president ranks below the chief level')
 assert.strictEqual(['Sr. Vice President', 'CIO', 'Process Owner'].map(titleRank).join(), '2,1,6', 'Sr VP, CIO and a process owner rank sensibly')
 
+
+// Two revenue edits from one render both survive: each patch reads the stored record when it saves.
+state.background.revenue = { 2026: { projected: '1', closed: '' } }
+const first = revenuePatch('2026', { projected: '2' }); state.background = { ...state.background, ...first }
+state.background = { ...state.background, ...revenuePatch('2026', { closed: '3' }) }
+assert.deepStrictEqual(JSON.parse(JSON.stringify(state.background.revenue['2026'])), { projected: '2', closed: '3' })
 `
 vm.runInNewContext(src, sandbox)

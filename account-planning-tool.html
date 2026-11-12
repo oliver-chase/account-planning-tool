@@ -1924,6 +1924,13 @@ let overviewCadenceOpen = null
 // panel's open/closed state doesn't carry over from whatever account was open before.
 function resetOverviewCadenceUI() { overviewCadenceOpen = null }
 
+// Writes one year's revenue fields into the stored record at save time, so an edit made from an
+// older render never writes back a value that another edit has since replaced.
+function revenuePatch(year, fields) {
+  const rev = state.background.revenue || {}
+  return { revenue: { ...rev, [year]: { ...(rev[year] || {}), ...fields } } }
+}
+
 function saveBg(patch) {
   state.background = { ...state.background, ...patch, last_updated: today() }
   persist()
@@ -2062,7 +2069,7 @@ function renderOverviewBody() {
     const s = el('div', 'overview-stat', null)
     s.title = title
     s.appendChild(el('div', 'overview-stat-label', label))
-    s.appendChild(editable('div', 'overview-stat-val', (b.revenue[year] || {})[field] || '', placeholder, v => saveBg({ revenue: { ...b.revenue, [year]: { ...(b.revenue[year] || {}), [field]: v } } }), { ariaLabel }))
+    s.appendChild(editable('div', 'overview-stat-val', (b.revenue[year] || {})[field] || '', placeholder, v => saveBg(revenuePatch(year, { [field]: v })), { ariaLabel }))
     stats.appendChild(s)
   }
   revenueStat('Expected revenue from this account in the current year.', 'Current year projected revenue', curYear, 'projected', 'e.g. $450K', 'Projected revenue this year')
@@ -2090,7 +2097,7 @@ function renderOverviewBody() {
     histSlot.innerHTML = ''
     if (!histOpen) return
     histSlot.appendChild(historicalYearForm(b, (year, proj, closed) => {
-      saveBg({ revenue: { ...b.revenue, [year]: { ...(b.revenue[year] || {}), projected: proj, closed } } })
+      saveBg(revenuePatch(year, { projected: proj, closed }))
       histOpen = false; renderHistForm(); histBtn.focus()
     }, () => { histOpen = false; renderHistForm(); histBtn.focus() }))
   }
@@ -2259,8 +2266,7 @@ function openBarEdit(year, type, bg, container, svgX, svgY, onSave) {
     if (done) return
     done = true
     const v = inp.value.trim()
-    const updated = { revenue: { ...bg.revenue, [year]: { ...(bg.revenue[year] || {}), [type]: v } } }
-    inp.remove(); onSave(updated)
+    inp.remove(); onSave(revenuePatch(year, { [type]: v }))
   }
   inp.addEventListener('blur', commit)
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); commit() } if (e.key === 'Escape') { done = true; inp.remove() } })
