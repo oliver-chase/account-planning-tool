@@ -100,7 +100,22 @@ const src = ['js/state.js', 'js/excel.js'].map(f => fs.readFileSync(path.join(ro
   fileHandle = { createWritable: async () => ({ write: async () => {}, close: async () => {} }) }
   await updateExcel()
   assert.ok(ranFirst, 'a waiting save runs before the workbook is built')
+  // A save still waiting from the previous account lands before a new file replaces the state,
+  // so it is asked about and never written into the account that opens next.
+  markSynced()
+  pendingEditSaves.add(function run() { pendingEditSaves.delete(run); state.account.account_name = 'Typed late'; persist() })
+  setModal('cancel')
+  assert.strictEqual(await loadWorkbookFromFile(fileOf('next.xlsx', workbookBuffer('Next')), null), false, 'the late edit counts as unsaved, so Cancel keeps it')
+  assert.strictEqual(state.account.account_name, 'Typed late')
+  setModal('confirm')
+  await loadWorkbookFromFile(fileOf('next.xlsx', workbookBuffer('Next')), null)
+  assert.strictEqual(state.account.account_name, 'Next')
   console.log('data-loss: ok')
 })().catch(e => { console.error(e); process.exit(1) })
 `
 vm.runInNewContext(src, sandbox)
+
+// An autosave that cannot be read is kept aside before the next save writes over it.
+const broken = { 'accountPlanningTool.state.v2': '{not json' }
+vm.runInNewContext(fs.readFileSync(path.join(root, 'js/state.js'), 'utf8'), { ...sandbox, localStorage: { getItem: k => (k in broken ? broken[k] : null), setItem: (k, v) => { broken[k] = String(v) } } })
+assert.strictEqual(broken['accountPlanningTool.state.v2.corrupt'], '{not json')

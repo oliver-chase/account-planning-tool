@@ -74,7 +74,14 @@ function emptyState() {
 }
 
 const STORAGE_KEY = 'accountPlanningTool.state.v2'
-let state = (() => { try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? mergeStored(JSON.parse(raw)) : null } catch (e) { return null } })() || emptyState()
+// An autosave that cannot be read is kept under its own key before the next save writes over it.
+let state = (() => {
+  let raw = null
+  try { raw = localStorage.getItem(STORAGE_KEY); return raw ? mergeStored(JSON.parse(raw)) : null } catch (e) {
+    try { if (raw) localStorage.setItem(STORAGE_KEY + '.corrupt', raw) } catch (e2) { /* storage is unavailable */ }
+    return null
+  }
+})() || emptyState()
 let fileHandle = null // File System Access API handle, set once Update Excel picks a target
 
 // A reporting loop (A reports to B, B to A) cannot be drawn. Cut each loop where it closes,
@@ -112,6 +119,7 @@ function writeLocalNow() {
 // Saves queued by editable() and the header fields that have not run yet, so Update Excel and closing
 // the page can run them first.
 const pendingEditSaves = new Set()
+function flushPendingSaves() { [...pendingEditSaves].forEach(run => run()) }
 let persistTimer = null
 let changeCount = 0 // counts persist() calls so a save can tell whether anything changed while it ran
 function persist() {

@@ -770,7 +770,14 @@ function emptyState() {
 }
 
 const STORAGE_KEY = 'accountPlanningTool.state.v2'
-let state = (() => { try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? mergeStored(JSON.parse(raw)) : null } catch (e) { return null } })() || emptyState()
+// An autosave that cannot be read is kept under its own key before the next save writes over it.
+let state = (() => {
+  let raw = null
+  try { raw = localStorage.getItem(STORAGE_KEY); return raw ? mergeStored(JSON.parse(raw)) : null } catch (e) {
+    try { if (raw) localStorage.setItem(STORAGE_KEY + '.corrupt', raw) } catch (e2) { /* storage is unavailable */ }
+    return null
+  }
+})() || emptyState()
 let fileHandle = null // File System Access API handle, set once Update Excel picks a target
 
 // A reporting loop (A reports to B, B to A) cannot be drawn. Cut each loop where it closes,
@@ -808,6 +815,7 @@ function writeLocalNow() {
 // Saves queued by editable() and the header fields that have not run yet, so Update Excel and closing
 // the page can run them first.
 const pendingEditSaves = new Set()
+function flushPendingSaves() { [...pendingEditSaves].forEach(run => run()) }
 let persistTimer = null
 let changeCount = 0 // counts persist() calls so a save can tell whether anything changed while it ran
 function persist() {
@@ -1064,6 +1072,7 @@ function parseStateFromRows(getRows, sourceName) {
 }
 
 function importWorkbook(wb, sourceName) {
+  flushPendingSaves()
   unknownStatuses = 0
   const next = parseStateFromRows(base => sheetRowsByName(wb, base), sourceName)
   state = next
@@ -1159,7 +1168,7 @@ async function contentUpdateWouldRemove(handle, wb) {
 }
 
 async function updateExcel() {
-  ;[...pendingEditSaves].forEach(run => run()) // an edit blurred a moment ago is in the file
+  flushPendingSaves() // an edit blurred a moment ago is in the file
   const wb = buildWorkbook()
   const changesAtSnapshot = changeCount // an edit made while the save runs is not in the file, so it stays unsaved
   if (window.showSaveFilePicker) {
@@ -1203,6 +1212,7 @@ async function updateExcel() {
 // never write into the previous account's file.
 // True when it is fine to replace the working state: nothing is unsaved, or the person agrees to lose it.
 async function confirmReplaceUnsavedEdits(what) {
+  flushPendingSaves() // an edit blurred a moment ago counts as unsaved, and never lands in the next account
   if (!unsavedEdits) return true
   const r = await showModal({ title: 'Replace your unsaved edits?', message: 'You have edits that no Excel file has received yet. ' + what + ' replaces them.', confirmLabel: 'Replace', dangerConfirm: true })
   return r.buttonValue === 'confirm'
@@ -1287,6 +1297,7 @@ async function reacquireRememberedFile(askIfNeeded) {
     const ok = await loadWorkbookFromFile(await handle.getFile(), handle)
     return ok ? 'ok' : 'error'
   } catch (e) {
+    if (e && e.name === 'NotFoundError') forgetPersistedFileHandle() // moved or deleted: stop offering it
     return 'error'
   }
 }
@@ -3163,7 +3174,7 @@ function makeNoteCard(note, teamNames) {
   copyBtn.type = 'button'; copyBtn.title = 'Copy to clipboard'
   copyBtn.addEventListener('click', async e => {
     e.stopPropagation()
-    ;[...pendingEditSaves].forEach(run => run()) // text typed a moment ago is in the copy
+    flushPendingSaves() // text typed a moment ago is in the copy
     const ok = await copyToClipboard(noteToMarkdown(currentNote(note)))
     showToast(ok ? 'Copied to clipboard' : 'Copy failed. Select the text and copy it.')
   })
@@ -3744,6 +3755,7 @@ function wireShell() {
   document.getElementById('btn-show-help').addEventListener('click', toggleHelp)
   document.getElementById('btn-export-menu').addEventListener('click', openExportMenu)
   document.getElementById('btn-new-blank-workbook').addEventListener('click', async () => {
+    flushPendingSaves()
     const r = await showModal({ title: 'Start a blank workbook?', message: unsavedEdits ? 'Edits you have not saved to Excel will be deleted. Click Update Excel first to keep them.' : 'This replaces the account in this browser with a blank one.', confirmLabel: 'Start blank', dangerConfirm: unsavedEdits })
     if (r.buttonValue !== 'confirm') return
     state = emptyState(); fileHandle = null
@@ -3762,7 +3774,11 @@ function wireShell() {
 
 wireShell()
 renderAll()
-setSyncState(state.meta && state.meta.sourceFileName ? 'ok' : 'idle', state.meta && state.meta.sourceFileName ? 'Loaded from local autosave (' + state.meta.sourceFileName + ')' : 'No file imported yet')
+{
+  const source = state.meta && state.meta.sourceFileName
+  const hasData = state.account.account_name || state.stakeholders.length || state.actions.length || state.notes.length
+  setSyncState(source || hasData ? 'ok' : 'idle', source ? 'Loaded from local autosave (' + source + ')' : hasData ? 'Loaded from local autosave' : 'No file imported yet')
+}
 
 // Remembered-file reconnect (Chrome/Edge only). Silent check first — queryPermission()
 // needs no user gesture, and if it's already granted the file loads with zero clicks.

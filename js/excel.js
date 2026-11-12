@@ -164,6 +164,7 @@ function parseStateFromRows(getRows, sourceName) {
 }
 
 function importWorkbook(wb, sourceName) {
+  flushPendingSaves()
   unknownStatuses = 0
   const next = parseStateFromRows(base => sheetRowsByName(wb, base), sourceName)
   state = next
@@ -259,7 +260,7 @@ async function contentUpdateWouldRemove(handle, wb) {
 }
 
 async function updateExcel() {
-  ;[...pendingEditSaves].forEach(run => run()) // an edit blurred a moment ago is in the file
+  flushPendingSaves() // an edit blurred a moment ago is in the file
   const wb = buildWorkbook()
   const changesAtSnapshot = changeCount // an edit made while the save runs is not in the file, so it stays unsaved
   if (window.showSaveFilePicker) {
@@ -303,6 +304,7 @@ async function updateExcel() {
 // never write into the previous account's file.
 // True when it is fine to replace the working state: nothing is unsaved, or the person agrees to lose it.
 async function confirmReplaceUnsavedEdits(what) {
+  flushPendingSaves() // an edit blurred a moment ago counts as unsaved, and never lands in the next account
   if (!unsavedEdits) return true
   const r = await showModal({ title: 'Replace your unsaved edits?', message: 'You have edits that no Excel file has received yet. ' + what + ' replaces them.', confirmLabel: 'Replace', dangerConfirm: true })
   return r.buttonValue === 'confirm'
@@ -387,6 +389,7 @@ async function reacquireRememberedFile(askIfNeeded) {
     const ok = await loadWorkbookFromFile(await handle.getFile(), handle)
     return ok ? 'ok' : 'error'
   } catch (e) {
+    if (e && e.name === 'NotFoundError') forgetPersistedFileHandle() // moved or deleted: stop offering it
     return 'error'
   }
 }

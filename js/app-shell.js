@@ -124,6 +124,7 @@ function wireShell() {
   document.getElementById('btn-show-help').addEventListener('click', toggleHelp)
   document.getElementById('btn-export-menu').addEventListener('click', openExportMenu)
   document.getElementById('btn-new-blank-workbook').addEventListener('click', async () => {
+    flushPendingSaves()
     const r = await showModal({ title: 'Start a blank workbook?', message: unsavedEdits ? 'Edits you have not saved to Excel will be deleted. Click Update Excel first to keep them.' : 'This replaces the account in this browser with a blank one.', confirmLabel: 'Start blank', dangerConfirm: unsavedEdits })
     if (r.buttonValue !== 'confirm') return
     state = emptyState(); fileHandle = null
@@ -142,7 +143,11 @@ function wireShell() {
 
 wireShell()
 renderAll()
-setSyncState(state.meta && state.meta.sourceFileName ? 'ok' : 'idle', state.meta && state.meta.sourceFileName ? 'Loaded from local autosave (' + state.meta.sourceFileName + ')' : 'No file imported yet')
+{
+  const source = state.meta && state.meta.sourceFileName
+  const hasData = state.account.account_name || state.stakeholders.length || state.actions.length || state.notes.length
+  setSyncState(source || hasData ? 'ok' : 'idle', source ? 'Loaded from local autosave (' + source + ')' : hasData ? 'Loaded from local autosave' : 'No file imported yet')
+}
 
 // Remembered-file reconnect (Chrome/Edge only). Silent check first — queryPermission()
 // needs no user gesture, and if it's already granted the file loads with zero clicks.

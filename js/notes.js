@@ -109,7 +109,7 @@ function makeNoteCard(note, teamNames) {
   copyBtn.type = 'button'; copyBtn.title = 'Copy to clipboard'
   copyBtn.addEventListener('click', async e => {
     e.stopPropagation()
-    ;[...pendingEditSaves].forEach(run => run()) // text typed a moment ago is in the copy
+    flushPendingSaves() // text typed a moment ago is in the copy
     const ok = await copyToClipboard(noteToMarkdown(currentNote(note)))
     showToast(ok ? 'Copied to clipboard' : 'Copy failed. Select the text and copy it.')
   })
