@@ -101,6 +101,7 @@ function renderNotesBody() {
 function makeNoteCard(note, teamNames) {
   let expanded = notesExpanded.has(note.id)
   const card = el('div', 'note-card', null)
+  card.setAttribute('role', 'group') // a group carries the card's name and state without nesting fields inside a button
   card.dataset.noteId = note.id
   card.title = 'Last updated: ' + (note.last_updated || '')
 

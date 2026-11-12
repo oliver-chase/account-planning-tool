@@ -137,9 +137,9 @@ function renderPeopleBody() {
 
   const toggle = el('div', 'app-view-toggle', null)
   const cardsBtn = el('button', 'app-view-toggle-btn' + (peopleView === 'cards' ? ' active' : ''), 'Cards')
-  cardsBtn.type = 'button'; cardsBtn.dataset.fk = 'view-cards'; cardsBtn.addEventListener('click', () => { peopleView = 'cards'; renderPeople() })
+  cardsBtn.type = 'button'; cardsBtn.setAttribute('aria-pressed', String(peopleView === 'cards')); cardsBtn.dataset.fk = 'view-cards'; cardsBtn.addEventListener('click', () => { peopleView = 'cards'; renderPeople() })
   const orgBtn = el('button', 'app-view-toggle-btn' + (peopleView === 'orgchart' ? ' active' : ''), 'Org')
-  orgBtn.type = 'button'; orgBtn.dataset.fk = 'view-org'; orgBtn.addEventListener('click', () => { peopleView = 'orgchart'; renderPeople() })
+  orgBtn.type = 'button'; orgBtn.setAttribute('aria-pressed', String(peopleView === 'orgchart')); orgBtn.dataset.fk = 'view-org'; orgBtn.addEventListener('click', () => { peopleView = 'orgchart'; renderPeople() })
   toggle.appendChild(cardsBtn); toggle.appendChild(orgBtn)
   actionsWrap.appendChild(toggle)
   row2.appendChild(actionsWrap)
@@ -183,6 +183,7 @@ function paginationRow(page, total, onChange) {
   return row
 }
 
+let execIdCount = 0
 function makePersonCard(person) {
   // The side-panel card outlives renderPeople(), so current() re-reads the record before every save.
   const current = () => state.stakeholders.find(x => x.id === person.id) || person
@@ -216,7 +217,7 @@ function makePersonCard(person) {
   const execRow = el('div', 'card-meta-row', null)
   const execCb = el('input', null, null); execCb.type = 'checkbox'
   execCb.checked = isExec(person)
-  const execId = 'exec-cb-' + person.id
+  const execId = 'exec-cb-' + person.id + '-' + (++execIdCount) // the side panel draws the same person again
   execCb.id = execId
   execCb.addEventListener('change', () => { savePerson({ ...current(), is_executive: execCb.checked ? 'true' : 'false' }); renderPeople() })
   execRow.appendChild(execCb)
@@ -331,7 +332,7 @@ function openPersonDetail(person) {
   panel.appendChild(content)
   document.body.appendChild(panel)
   closeBtn.focus()
-  const onKey = e => { if (e.key === 'Escape') closePanel() }
+  const onKey = e => { if (e.key === 'Escape' && !openPopoverState) closePanel() }
   personPanelOnKey = onKey
   document.addEventListener('keydown', onKey)
 }

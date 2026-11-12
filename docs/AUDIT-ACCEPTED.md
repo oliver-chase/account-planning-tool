@@ -14,7 +14,7 @@ Audit findings that were reviewed and not changed, each with its reason.
 | Undo for deleting notes and people | Deleting asks for confirmation and starts on Cancel, and notes and people carry linked data. |
 | Moving a card with the keyboard has a visible hint and a picked outline, no Move button | The hint line and outline cover the path; a button per card adds visual noise. |
 | Reviewing `ORG_EXPORT_CSS` against `accounts.css` | A standalone page needs its own CSS, and the export test checks the output exists and is static. |
-| Note cards carry no `role` or `aria-expanded` | A card holds editable fields, so a button role would nest interactive controls inside a button. The accessible name says collapsed or expanded instead. |
+| Note cards carry the group role, with no button role or `aria-expanded` | A card holds editable fields, so a button role would nest interactive controls inside a button. The group's accessible name says collapsed or expanded instead. |
 | Focus after picking from a status, sort or owner dropdown | The dropdown trigger is rebuilt with its section. Weekday chips, pagination, filters and the org chart restore focus. Restoring dropdown triggers needs a stable key on every picker, for a narrow gain. |
 | Shared test sandbox stub across test files | Each test needs a different set of stubs, so one shared helper would need options for most of them. |
 | No CI workflow | Decided against: the PR workflows are off by choice. The pre-commit hook and `scripts/validate.sh` run the same checks. |

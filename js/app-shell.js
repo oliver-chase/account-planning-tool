@@ -36,12 +36,14 @@ function wireAccountHeader() {
   // Header fields save after a short pause, and Update Excel and closing the page run a waiting save first.
   const headerSaver = field => {
     let timer = null, run = null
-    return v => {
+    const save = v => {
       clearTimeout(timer); pendingEditSaves.delete(run)
       run = () => { clearTimeout(timer); pendingEditSaves.delete(run); state.account[field] = v; state.account.last_updated = today(); persist(); renderAccountHeader() }
       pendingEditSaves.add(run)
       timer = setTimeout(run, 300)
     }
+    save.pending = () => pendingEditSaves.has(run)
+    return save
   }
   // The account name cannot be emptied; the company can.
   const wireField = (node, field, required) => {
@@ -49,7 +51,7 @@ function wireAccountHeader() {
     node.addEventListener('blur', () => {
       const v = node.textContent.trim()
       if (!v && required) { node.textContent = state.account[field] || ''; return }
-      if (v !== (state.account[field] || '')) save(v)
+      if (v !== (state.account[field] || '') || save.pending()) save(v) // a retyped original replaces a queued change
     })
     node.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); node.blur() } })
   }

@@ -17,10 +17,13 @@ function closeOpenPopover() {
 // reach all of them. A plain clickable div with no tabindex is invisible to a keyboard user.
 function focusableRow(rowEl, onActivate) {
   rowEl.setAttribute('role', 'option')
+  rowEl.setAttribute('aria-selected', String(rowEl.classList.contains('selected')))
   return makeActivatable(rowEl, null, onActivate)
 }
 
 function openPopover(anchor, buildContent) {
+  // A second click on the same trigger closes its popover.
+  if (openPopoverState && openPopoverState.anchor === anchor) { closeOpenPopover(); return }
   closeOpenPopover()
   const pop = el('div', 'app-popover', null)
   pop.setAttribute('role', 'listbox')
@@ -51,7 +54,7 @@ function openPopover(anchor, buildContent) {
   }
   document.addEventListener('mousedown', onDocMouseDown)
   document.addEventListener('keydown', onKey)
-  openPopoverState = { el: pop, cleanup: () => { document.removeEventListener('mousedown', onDocMouseDown); document.removeEventListener('keydown', onKey); anchor.setAttribute('aria-expanded', 'false') } }
+  openPopoverState = { el: pop, anchor, cleanup: () => { document.removeEventListener('mousedown', onDocMouseDown); document.removeEventListener('keydown', onKey); anchor.setAttribute('aria-expanded', 'false') } }
   const search = pop.querySelector('.app-popover-search')
   if (search) search.focus()
 }

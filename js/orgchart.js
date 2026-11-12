@@ -46,7 +46,7 @@ function orgMakeCard(person, isUnassigned, onOpenDetail, staticMode) {
   const card = el('div', 'org-node-card' + workerModifier, null)
   if (workerModifier) card.title = person.worker_type // the outline color alone means nothing to a reader who wasn't told the convention -- on a static export, nobody's here to ask
   card.dataset.id = person.id
-  if (!staticMode) { card.draggable = true; card.setAttribute('role', 'button'); card.tabIndex = 0 }
+  if (!staticMode) { card.draggable = true; card.setAttribute('role', 'group'); card.setAttribute('aria-label', person.name || 'Person'); card.tabIndex = 0 }
 
   const headerRow = el('div', 'org-node-header-row', null)
   headerRow.appendChild(el('div', 'org-node-name', person.name || ''))
@@ -174,10 +174,10 @@ function drawOrgLines(outer, tree) {
 
 let orgZoom = 1.0
 
-// The chart as a node tree. The editable version carries zoom and drag zones; the static one is
-// what the downloaded page serializes.
+// The chart as a node tree. The editable version carries zoom and drag zones and follows the People
+// filters; the static one is what the downloaded page serializes, with everyone.
 function buildOrgChartOuter(staticMode) {
-  const model = buildOrgModel(state.stakeholders)
+  const model = buildOrgModel(staticMode ? state.stakeholders : filteredPeople())
   const open = staticMode ? () => {} : openPersonDetail
   const outer = el('div', 'org-chart-outer', null)
   if (!staticMode) {

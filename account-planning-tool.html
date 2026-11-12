@@ -246,7 +246,7 @@
 .module-data-table td{padding:var(--spacing-10) var(--spacing-14);border-bottom:1px solid var(--color-border);font-size:var(--font-size-sm);color:var(--color-text-primary);vertical-align:middle;font-family:var(--font-family-base)}
 .module-data-table tr:last-child td{border-bottom:none}
 .module-data-table tbody tr:hover td{background:var(--color-bg-page)}
-.module-data-table tr.done-row td{opacity:.4}
+.module-data-table tr.done-row td{color:var(--color-text-secondary)}
 .module-data-table tr.done-row .action-text{text-decoration:line-through}
 .module-sort-arrow{display:inline-block;width:0;height:0;vertical-align:middle;margin-left:var(--spacing-2xs);opacity:.3;border-left:4px solid transparent;border-right:4px solid transparent}
 .module-sort-arrow[data-dir="asc"]{border-bottom:5px solid currentColor}
@@ -1617,10 +1617,13 @@ function closeOpenPopover() {
 // reach all of them. A plain clickable div with no tabindex is invisible to a keyboard user.
 function focusableRow(rowEl, onActivate) {
   rowEl.setAttribute('role', 'option')
+  rowEl.setAttribute('aria-selected', String(rowEl.classList.contains('selected')))
   return makeActivatable(rowEl, null, onActivate)
 }
 
 function openPopover(anchor, buildContent) {
+  // A second click on the same trigger closes its popover.
+  if (openPopoverState && openPopoverState.anchor === anchor) { closeOpenPopover(); return }
   closeOpenPopover()
   const pop = el('div', 'app-popover', null)
   pop.setAttribute('role', 'listbox')
@@ -1651,7 +1654,7 @@ function openPopover(anchor, buildContent) {
   }
   document.addEventListener('mousedown', onDocMouseDown)
   document.addEventListener('keydown', onKey)
-  openPopoverState = { el: pop, cleanup: () => { document.removeEventListener('mousedown', onDocMouseDown); document.removeEventListener('keydown', onKey); anchor.setAttribute('aria-expanded', 'false') } }
+  openPopoverState = { el: pop, anchor, cleanup: () => { document.removeEventListener('mousedown', onDocMouseDown); document.removeEventListener('keydown', onKey); anchor.setAttribute('aria-expanded', 'false') } }
   const search = pop.querySelector('.app-popover-search')
   if (search) search.focus()
 }
@@ -2328,7 +2331,7 @@ function orgMakeCard(person, isUnassigned, onOpenDetail, staticMode) {
   const card = el('div', 'org-node-card' + workerModifier, null)
   if (workerModifier) card.title = person.worker_type // the outline color alone means nothing to a reader who wasn't told the convention -- on a static export, nobody's here to ask
   card.dataset.id = person.id
-  if (!staticMode) { card.draggable = true; card.setAttribute('role', 'button'); card.tabIndex = 0 }
+  if (!staticMode) { card.draggable = true; card.setAttribute('role', 'group'); card.setAttribute('aria-label', person.name || 'Person'); card.tabIndex = 0 }
 
   const headerRow = el('div', 'org-node-header-row', null)
   headerRow.appendChild(el('div', 'org-node-name', person.name || ''))
@@ -2456,10 +2459,10 @@ function drawOrgLines(outer, tree) {
 
 let orgZoom = 1.0
 
-// The chart as a node tree. The editable version carries zoom and drag zones; the static one is
-// what the downloaded page serializes.
+// The chart as a node tree. The editable version carries zoom and drag zones and follows the People
+// filters; the static one is what the downloaded page serializes, with everyone.
 function buildOrgChartOuter(staticMode) {
-  const model = buildOrgModel(state.stakeholders)
+  const model = buildOrgModel(staticMode ? state.stakeholders : filteredPeople())
   const open = staticMode ? () => {} : openPersonDetail
   const outer = el('div', 'org-chart-outer', null)
   if (!staticMode) {
@@ -2668,9 +2671,9 @@ function renderPeopleBody() {
 
   const toggle = el('div', 'app-view-toggle', null)
   const cardsBtn = el('button', 'app-view-toggle-btn' + (peopleView === 'cards' ? ' active' : ''), 'Cards')
-  cardsBtn.type = 'button'; cardsBtn.dataset.fk = 'view-cards'; cardsBtn.addEventListener('click', () => { peopleView = 'cards'; renderPeople() })
+  cardsBtn.type = 'button'; cardsBtn.setAttribute('aria-pressed', String(peopleView === 'cards')); cardsBtn.dataset.fk = 'view-cards'; cardsBtn.addEventListener('click', () => { peopleView = 'cards'; renderPeople() })
   const orgBtn = el('button', 'app-view-toggle-btn' + (peopleView === 'orgchart' ? ' active' : ''), 'Org')
-  orgBtn.type = 'button'; orgBtn.dataset.fk = 'view-org'; orgBtn.addEventListener('click', () => { peopleView = 'orgchart'; renderPeople() })
+  orgBtn.type = 'button'; orgBtn.setAttribute('aria-pressed', String(peopleView === 'orgchart')); orgBtn.dataset.fk = 'view-org'; orgBtn.addEventListener('click', () => { peopleView = 'orgchart'; renderPeople() })
   toggle.appendChild(cardsBtn); toggle.appendChild(orgBtn)
   actionsWrap.appendChild(toggle)
   row2.appendChild(actionsWrap)
@@ -2714,6 +2717,7 @@ function paginationRow(page, total, onChange) {
   return row
 }
 
+let execIdCount = 0
 function makePersonCard(person) {
   // The side-panel card outlives renderPeople(), so current() re-reads the record before every save.
   const current = () => state.stakeholders.find(x => x.id === person.id) || person
@@ -2747,7 +2751,7 @@ function makePersonCard(person) {
   const execRow = el('div', 'card-meta-row', null)
   const execCb = el('input', null, null); execCb.type = 'checkbox'
   execCb.checked = isExec(person)
-  const execId = 'exec-cb-' + person.id
+  const execId = 'exec-cb-' + person.id + '-' + (++execIdCount) // the side panel draws the same person again
   execCb.id = execId
   execCb.addEventListener('change', () => { savePerson({ ...current(), is_executive: execCb.checked ? 'true' : 'false' }); renderPeople() })
   execRow.appendChild(execCb)
@@ -2862,7 +2866,7 @@ function openPersonDetail(person) {
   panel.appendChild(content)
   document.body.appendChild(panel)
   closeBtn.focus()
-  const onKey = e => { if (e.key === 'Escape') closePanel() }
+  const onKey = e => { if (e.key === 'Escape' && !openPopoverState) closePanel() }
   personPanelOnKey = onKey
   document.addEventListener('keydown', onKey)
 }
@@ -3162,6 +3166,7 @@ function renderNotesBody() {
 function makeNoteCard(note, teamNames) {
   let expanded = notesExpanded.has(note.id)
   const card = el('div', 'note-card', null)
+  card.setAttribute('role', 'group') // a group carries the card's name and state without nesting fields inside a button
   card.dataset.noteId = note.id
   card.title = 'Last updated: ' + (note.last_updated || '')
 
@@ -3663,12 +3668,14 @@ function wireAccountHeader() {
   // Header fields save after a short pause, and Update Excel and closing the page run a waiting save first.
   const headerSaver = field => {
     let timer = null, run = null
-    return v => {
+    const save = v => {
       clearTimeout(timer); pendingEditSaves.delete(run)
       run = () => { clearTimeout(timer); pendingEditSaves.delete(run); state.account[field] = v; state.account.last_updated = today(); persist(); renderAccountHeader() }
       pendingEditSaves.add(run)
       timer = setTimeout(run, 300)
     }
+    save.pending = () => pendingEditSaves.has(run)
+    return save
   }
   // The account name cannot be emptied; the company can.
   const wireField = (node, field, required) => {
@@ -3676,7 +3683,7 @@ function wireAccountHeader() {
     node.addEventListener('blur', () => {
       const v = node.textContent.trim()
       if (!v && required) { node.textContent = state.account[field] || ''; return }
-      if (v !== (state.account[field] || '')) save(v)
+      if (v !== (state.account[field] || '') || save.pending()) save(v) // a retyped original replaces a queued change
     })
     node.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); node.blur() } })
   }
