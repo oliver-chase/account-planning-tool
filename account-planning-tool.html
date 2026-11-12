@@ -1951,8 +1951,7 @@ function revenuePatch(year, fields) { const rev = state.background.revenue || {}
 
 function saveBg(patch) {
   state.background = { ...state.background, ...patch, last_updated: today() }
-  persist()
-  renderOverview()
+  persist(); renderOverview()
 }
 
 function renderOverview() { renderKeepingFocus('overview-body', renderOverviewBody) }
@@ -2116,9 +2115,8 @@ function renderOverviewBody() {
     if (!histOpen) return
     histSlot.appendChild(historicalYearForm(b, (year, proj, closed) => {
       saveBg(revenuePatch(year, { projected: proj, closed }))
-      histOpen = false; renderHistForm()
-      // Saving re-renders the Plan page, so focus goes to the new button once it exists.
-      requestAnimationFrame(() => { const live = document.getElementById('btn-add-hist-year'); if (live) live.focus() })
+      histOpen = false; renderHistForm() // saving re-renders the page, so the rebuilt button takes focus
+      requestAnimationFrame(() => document.getElementById('btn-add-hist-year')?.focus())
     }, () => { histOpen = false; renderHistForm(); histBtn.focus() }))
   }
   renderHistForm()
