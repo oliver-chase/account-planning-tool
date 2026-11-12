@@ -2,12 +2,15 @@
 // Org chart: drag-and-drop and click-to-move reporting lines, a loop guard, SVG connectors
 // and a department-grouped unassigned zone.
 
-function buildOrgModel(people) {
+// `people` is who the chart shows; `everyone` is the whole account, which a filter may narrow.
+function buildOrgModel(people, everyone) {
   const ids = {}; people.forEach(p => { ids[p.id] = true })
   const childMap = {}
   people.forEach(p => { if (p.reports_to && ids[p.reports_to]) { (childMap[p.reports_to] = childMap[p.reports_to] || []).push(p.id) } })
-  // A root manages someone and reports to no one on the chart.
-  const roots = people.filter(p => childMap[p.id] && !(p.reports_to && ids[p.reports_to]))
+  // A root reports to no one on the chart and either manages someone or has a manager a filter hides,
+  // so a filter never moves a placed person into the unplaced zone, where a drop clears the manager.
+  const known = {}; (everyone || people).forEach(p => { known[p.id] = true })
+  const roots = people.filter(p => !(p.reports_to && ids[p.reports_to]) && (childMap[p.id] || (p.reports_to && known[p.reports_to])))
   // People in a reporting loop (A reports to B and B to A) have a boss but no route to a root,
   // so they would vanish from the chart. Anyone the roots cannot reach goes to the unassigned zone.
   const reachable = {}
@@ -177,7 +180,7 @@ let orgZoom = 1.0
 // The chart as a node tree. The editable version carries zoom and drag zones and follows the People
 // filters; the static one is what the downloaded page serializes, with everyone.
 function buildOrgChartOuter(staticMode) {
-  const model = buildOrgModel(staticMode ? state.stakeholders : filteredPeople())
+  const model = buildOrgModel(staticMode ? state.stakeholders : filteredPeople(), state.stakeholders)
   const open = staticMode ? () => {} : openPersonDetail
   const outer = el('div', 'org-chart-outer', null)
   if (!staticMode) {

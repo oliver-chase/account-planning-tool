@@ -84,6 +84,11 @@ const model2 = buildOrgModel(people)
 assert.strictEqual(model2.unassigned.length, 0, 'after the cut everyone is on the chart')
 assert.strictEqual(breakReportingCycles([{ id: 'x', reports_to: 'x' }]), 1, 'reporting to yourself is a loop')
 assert.strictEqual(breakReportingCycles([{ id: 'p', reports_to: 'q' }, { id: 'q', reports_to: '' }]), 0)
+// A filter that hides a manager keeps the report on the chart, out of the zone where a drop clears the manager.
+const everyone = [{ id: 'carol', reports_to: '' }, { id: 'bob', reports_to: 'carol' }, { id: 'ann', reports_to: '' }]
+const shown = buildOrgModel(everyone.filter(p => p.id !== 'carol'), everyone)
+assert.strictEqual(shown.roots.map(p => p.id).join(), 'bob')
+assert.deepStrictEqual(shown.unassigned.map(p => p.id), ['ann'])
 
 // 5. Sorting by Due puts undated actions last, both ways.
 const acts = [{ id: 'x' }, { id: 'b', due_date: '2026-12-01' }, { id: 'a', due_date: '2026-11-01' }]
