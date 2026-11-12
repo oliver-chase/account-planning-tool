@@ -1,11 +1,11 @@
 'use strict'
 // Loads the built page in a simulated browser (jsdom) and walks the main features:
 // the sample account, Plan edits, the historical-year form, keyboard access, the org chart and its
-// download, and empty lists. Needs `npm install --no-save jsdom@26`; without it the test says so and
+// download, and empty lists. Needs `npm install`; without it the test says so and
 // passes. Run: node tests/dom.js
 let JSDOM, VirtualConsole
 try { ({ JSDOM, VirtualConsole } = require('jsdom')) } catch (e) {
-  if (e.code === 'MODULE_NOT_FOUND') { console.log('dom: jsdom is not installed, skipping (npm install --no-save jsdom@26)'); process.exit(0) }
+  if (e.code === 'MODULE_NOT_FOUND') { console.log('dom: jsdom is not installed, skipping (run npm install)'); process.exit(0) }
   console.log('dom: jsdom is installed but cannot load on Node ' + process.version + ': ' + e.message.split('\n')[0]); process.exit(1)
 }
 const fs = require('fs'), assert = require('assert')

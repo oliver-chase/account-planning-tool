@@ -15,7 +15,6 @@ function sheetRowsByName(wb, name) {
   return XLSX.utils.sheet_to_json(ws, { defval: '' }).map(r => { Object.keys(r).forEach(k => { r[k] = cellValue(r[k]) }); return r })
 }
 
-// Parses the workbook's sheets (base name to rows) into the live state shape.
 // Reads a status typed any way (open, In-Progress, complete) as one of the three the screens know.
 let unknownStatuses = 0 // statuses the last import could not read
 function actionStatus(v) {
@@ -26,6 +25,7 @@ function actionStatus(v) {
   return 'Open'
 }
 
+// Parses the workbook's sheets (base name to rows) into the live state shape.
 function parseStateFromRows(getRows, sourceName) {
   // Two rows with one ID would overwrite each other on the first edit, so a repeated ID gets a new one.
   const seenIds = new Set()
@@ -170,7 +170,7 @@ function importWorkbook(wb, sourceName) {
   state = next
   // A different account's data is about to render. UI-only state left over from the previous
   // account (overview.js's cadence-panel open/closed flag) was derived from that account's
-  // meeting frequency, so it resets here. Tests that load excel.js alone define no overview.
+  // meeting frequency, so it resets here.
   resetOverviewCadenceUI()
   const cutLoops = breakReportingCycles(state.stakeholders)
   persist()
@@ -297,9 +297,6 @@ async function updateExcel() {
   showToast('Excel downloaded — replace your working copy with this file')
 }
 
-// The one way a file becomes the working state. Asks before replacing unsaved edits, says
-// so when the file cannot be read, and ties Update Excel to the file just opened so it can
-// never write into the previous account's file.
 // True when it is fine to replace the working state: nothing is unsaved, or the person agrees to lose it.
 async function confirmReplaceUnsavedEdits(what) {
   flushPendingSaves() // an edit blurred a moment ago counts as unsaved, and never lands in the next account
@@ -308,6 +305,9 @@ async function confirmReplaceUnsavedEdits(what) {
   return r.buttonValue === 'confirm'
 }
 
+// Opens a picked or remembered file. Asks before replacing unsaved edits, says so when the file
+// cannot be read, and ties Update Excel to the file just opened so it can never write into the
+// previous account's file.
 async function loadWorkbookFromFile(file, handle) {
   if (!(await confirmReplaceUnsavedEdits('Opening this file'))) return false
   try {

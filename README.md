@@ -29,7 +29,7 @@ Chrome and Edge give the full experience: Update Excel writes into your workbook
 
 ## Working on the source
 
-Run `npm install` once, then `scripts/validate.sh` to run every test and the build check. `python3 scripts/build-single-file.py` rebuilds `account-planning-tool.html`, which is tracked so the repo holds the file people open. `bash tests/webkit/run.sh` loads the built page in WebKit, the engine Safari uses, at six widths from 390 to 1280 px on a Mac. `DESIGN_SYSTEM.md` lists the components and tokens. Run `git config core.hooksPath .githooks` once per clone so each commit runs the validation first.
+You need Node and Python 3, and the WebKit run also needs macOS with the Xcode command-line tools. Run `npm install` once, then `scripts/validate.sh` to run every test and the build check. `python3 scripts/build-single-file.py` rebuilds `account-planning-tool.html`, which is tracked so the repo holds the file people open. `bash tests/webkit/run.sh` loads the built page in WebKit, the engine Safari uses, at six widths from 390 to 1280 px on a Mac. `DESIGN_SYSTEM.md` lists the components and tokens. Run `git config core.hooksPath .githooks` once per clone so each commit runs the validation first.
 
 ## Where things are
 
@@ -40,14 +40,18 @@ Run `npm install` once, then `scripts/validate.sh` to run every test and the bui
 | `scripts/build-single-file.py` | Builds the single file from the source, and checks it is current with `--check` |
 | `tests/` | The Node tests, the simulated-browser test (`dom.js`) and the WebKit run (`webkit/`) |
 | `tests/fixtures/` | A workbook that stores dates the way Excel does, and the script that writes it |
-| `tests/banned-words.local.txt` | Your own list of names that must never ship, one per line, kept out of git. The test skips that check when the file is missing |
+| `tests/banned-words.local.txt` | Your own list of names that must never ship, one per line, kept out of git. Without the file the test reads a comma-separated `BANNED_WORDS` variable, and with neither it skips that check |
 | `scripts/validate.sh` | Runs every Node test and the build check. The pre-commit hook calls it |
 | `.githooks/pre-commit` | Runs `scripts/validate.sh` before each commit once `core.hooksPath` is set |
 | `docs/CATALOG.md` | One row per script and config file, generated from the files themselves |
 | `docs/AUDIT-ACCEPTED.md` | Audit findings that were reviewed and not changed, with the reason for each |
 | `docs/SHARING.md` | Whether the tool is shared, and what blocks a public copy |
 | `docs/backlog-config.example.json` | Template for the local, git-ignored `docs/backlog-config.json` that the owner's backlog tooling reads. The tool never reads either |
-| `package.json` | Lists jsdom, which only `tests/dom.js` uses. The tool has no dependencies |
-| `LICENSE` | MIT license |
+| `package.json` | Lists jsdom, which only `tests/dom.js` uses |
+| `js/xlsx.full.min.js` | SheetJS Community Edition 0.20.3, which reads and writes the workbook, bundled under the Apache 2.0 license (sheetjs.com) |
+| `LICENSE` | MIT license for this tool's own code |
 | `DESIGN_SYSTEM.md` | The components and tokens every section is built from |
 
+## Security
+
+To report a security problem, open an issue titled Security with no details, and the maintainer will reply with a private way to send them.

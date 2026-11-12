@@ -12,7 +12,7 @@ To rebrand, change the brand values in `css/tokens.css` and `js/brand.js` togeth
 
 - Body text uses `var(--font-family-base)`, `var(--font-size-sm)` and `var(--line-height-base)`
 - Section headlines use `.app-section-title`
-- Small and secondary text uses the `fontXs` and `textSecondary` classes from `css/local.css`
+- Each component styles its own small and secondary text, such as `.app-card-label` and `.note-date`. The `fontXs` and `textSecondary` classes in `css/local.css` serve the How-to guide and the org chart
 
 ## Color
 
@@ -24,11 +24,11 @@ To rebrand, change the brand values in `css/tokens.css` and `js/brand.js` togeth
 
 | Component | Use | Example |
 |---|---|---|
-| `inlineActionButton(label, onClick)` | The one primary add action in a section header | Add person, Add action |
+| `inlineActionButton(label, onClick, opts)` | The one primary add action in a section header | Add person, Add action |
 | `.module-filter-chip` (`.on` when active) | A two-state view toggle | Filters |
 | `singleSelectEl(..., 'sort-select')` | Sort order and filter by value | Newest first, Overdue |
 | `.app-view-toggle-btn` (`.active`) | Two full views of the same data | Cards, Org |
-| `compactRemoveButton(title, onClick)` | Delete or discard, always the `×` | Every card's delete button |
+| `compactRemoveButton(title, onClick, extraClass)` | Delete or discard, always the `×` | Every card's delete button |
 | `.btn` with `.btn-primary`, `.btn-ghost` or `.btn-danger` | Modal confirm and cancel, and actions outside a section header | Copy text, Cancel |
 | `.app-sidebar-item` | Sidebar navigation and file actions | Export, Update Excel |
 
