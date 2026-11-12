@@ -103,6 +103,11 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   check('the new row owner can be cleared after a pick', [...d.querySelectorAll('.app-popover .app-popover-item')].some(i => /Clear selection/.test(i.textContent)))
   ev(d.activeElement || d.body, 'keydown', { key: 'Escape' })
   w.eval("actionsAdding = false; renderActions()")
+  // A field that still has focus when the page closes is saved.
+  w.eval("renderOverview()")
+  const field = d.querySelector('.plan-header-card [role="textbox"]'); field.focus(); field.textContent = 'Typed before closing'
+  w.dispatchEvent(new w.Event('pagehide'))
+  check('closing the page saves the focused field', w.localStorage.getItem('accountPlanningTool.state.v2').includes('Typed before closing'))
   // 9. empty lists say so
   w.eval("state.notes = []; state.actions = []; persist(); renderNotes(); renderActions()")
   check('empty Notes and Actions explain themselves', /No notes yet/.test(d.getElementById('notes-body-wrap').textContent) && /No actions yet/.test(d.getElementById('actions-body-wrap').textContent))

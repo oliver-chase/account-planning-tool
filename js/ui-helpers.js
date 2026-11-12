@@ -125,8 +125,12 @@ function renderKeepingFocus(rootId, body) {
   n.focus()
 }
 
+// Closing the page saves what is waiting. A field that still has focus is blurred first, since
+// browsers do not reliably fire blur on close and the field queues its save on blur.
 window.addEventListener('pagehide', () => {
-  ;[...pendingEditSaves].forEach(run => run())
+  const active = document.activeElement
+  if (active && active.getAttribute && active.getAttribute('role') === 'textbox') active.blur()
+  flushPendingSaves()
   if (persistTimer) { clearTimeout(persistTimer); persistTimer = null; writeLocalNow() }
 })
 
@@ -134,7 +138,7 @@ window.addEventListener('pagehide', () => {
 function editable(tag, className, value, placeholder, onSave, opts) {
   opts = opts || {}
   const node = el(tag, className + (opts.multiline ? ' editable-multiline' : ''), null)
-  node.contentEditable = 'true'
+  node.setAttribute('contenteditable', 'true') // the attribute, so selectors and test DOMs see it too
   node.setAttribute('role', 'textbox')
   // An empty field has no text to read, so fall back to its placeholder as the name.
   const accName = opts.ariaLabel || (placeholder || '').replace(/[….]+$/, '').replace(/^e\.g\. /, '')
@@ -144,7 +148,7 @@ function editable(tag, className, value, placeholder, onSave, opts) {
   let timer = null, pending = null
   node.addEventListener('blur', () => {
     // innerText keeps the line breaks typed with Enter; textContent drops them.
-    const v = (opts.multiline ? node.innerText : node.textContent).trim()
+    const v = String(opts.multiline && node.innerText != null ? node.innerText : node.textContent).trim()
     if (!v && opts.revertOnEmpty) { node.textContent = value || ''; return }
     // Clicking into a field and out again changes nothing. New-item cards opt out, because
     // an empty blur is how they decide to discard themselves.

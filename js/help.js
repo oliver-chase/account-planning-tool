@@ -24,7 +24,7 @@ function renderHelpBanner() {
   const bullets = [
     ['Start', 'A new account offers three ways in. Start a new account, open an Excel file you already keep, or try a sample account and discard it later with New blank workbook in the sidebar. The start screen also downloads a blank workbook and a sample workbook'],
     ['Check who is on the call', 'Read the Plan page. Open People to see the org chart. Drag a card onto another to set who reports to whom. More fields on a card shows sentiment, owners, engagement, worker type and the executive flag'],
-    ['Capture the call', 'Add actions with an owner and a due date. Write the call into Notes. Everything you type saves in this browser right away. Deleting an action shows Undo for a few seconds, and deleting a person or note asks you to confirm'],
+    ['Capture the call', 'Add actions with an owner and a due date. Write the call into Notes. Everything you type saves in this browser as you leave each field. Deleting an action shows Undo for a few seconds, and deleting a person or note asks you to confirm'],
     ['Send the recap', 'Click Export, then Call summary. Copy the text into an email, or download it as a page. Export also makes a picture of the org chart'],
     ['Save your work to the file', 'Click Update Excel. In Chrome and Edge it writes into your workbook. In Safari and Firefox it downloads a new file, so replace your working copy with it'],
     ['Come back next time', 'Open the file again. Chrome and Edge reconnect your workbook and may ask permission. Edits you had not saved yet are kept, and Connect Excel file loads the workbook over them if you want that'],
