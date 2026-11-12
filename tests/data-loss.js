@@ -119,6 +119,14 @@ const src = ['js/state.js', 'js/excel.js'].map(f => fs.readFileSync(path.join(ro
   setModal('confirm'); await updateExcel()
   assert.strictEqual(wroteChanged, true)
   assert.strictEqual(fileStamp(), '2000', 'the stamp follows the write')
+  // Deleting every action is not reported as content the tool does not keep; a sheet the tool never writes is.
+  const oldWb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(oldWb, XLSX.utils.aoa_to_sheet([['Field', 'Value'], ['Account Name', 'A']]), 'Overview')
+  XLSX.utils.book_append_sheet(oldWb, XLSX.utils.aoa_to_sheet([['ID', 'Description'], ['a1', 'Old action']]), 'Actions')
+  XLSX.utils.book_append_sheet(oldWb, XLSX.utils.aoa_to_sheet([['Budget'], ['10']]), 'Finance')
+  state.actions = []
+  const lostNow = await contentUpdateWouldRemove({ getFile: async () => fileOf('o.xlsx', XLSX.write(oldWb, { bookType: 'xlsx', type: 'array' })) }, buildWorkbook())
+  assert.deepStrictEqual(lostNow, ['the sheet Finance'])
   console.log('data-loss: ok')
 })().catch(e => { console.error(e); process.exit(1) })
 `

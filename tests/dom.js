@@ -108,6 +108,14 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   const field = d.querySelector('.plan-header-card [role="textbox"]'); field.focus(); field.textContent = 'Typed before closing'
   w.dispatchEvent(new w.Event('pagehide'))
   check('closing the page saves the focused field', w.localStorage.getItem('accountPlanningTool.state.v2').includes('Typed before closing'))
+  // A name typed with a comma stays one person, and a person's notes popup closes again.
+  w.eval("peopleView = 'cards'; peopleFilterPanelOpen = false; peopleFilters.exec = false; peopleAdding = true; renderPeople()")
+  await until(() => d.querySelector('.person-card [aria-label="Name"]'))
+  const nameField = d.querySelector('.person-card [aria-label="Name"]'); nameField.focus(); nameField.textContent = 'Smith, John'; nameField.dispatchEvent(new w.Event('blur')); await saved()
+  check('a new person named with a comma is stored whole', w.eval("state.stakeholders.some(p => p.name === 'Smith John')"))
+  const notesBtn = d.querySelector('.person-card .card-section-label--link'); notesBtn.click()
+  await until(() => d.querySelector('.card-notes-popup')); notesBtn.click()
+  check('clicking Notes again closes the popup', !d.querySelector('.card-notes-popup'))
   // 9. empty lists say so
   w.eval("state.notes = []; state.actions = []; persist(); renderNotes(); renderActions()")
   check('empty Notes and Actions explain themselves', /No notes yet/.test(d.getElementById('notes-body-wrap').textContent) && /No actions yet/.test(d.getElementById('actions-body-wrap').textContent))

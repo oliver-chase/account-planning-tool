@@ -251,7 +251,8 @@ async function contentUpdateWouldRemove(handle, wb) {
     old.SheetNames.forEach(name => {
       const rows = XLSX.utils.sheet_to_json(old.Sheets[name], { header: 1 })
       const hasData = c => rows.slice(1).some(r => String(r[c] == null ? '' : r[c]).trim() !== '')
-      if (!wb.SheetNames.includes(name)) { if (rows[0] && rows[0].some((h, c) => hasData(c))) lost.push('the sheet ' + name); return }
+      // A sheet this tool owns but left out holds nothing on screen, so its rows were deleted here on purpose.
+      if (!wb.SheetNames.includes(name)) { if (!SHEET_BASES.includes(name) && rows[0] && rows[0].some((h, c) => hasData(c))) lost.push('the sheet ' + name); return }
       const keeps = (XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1 })[0] || []).map(String)
       ;(rows[0] || []).forEach((h, c) => { if (h && !keeps.includes(String(h)) && hasData(c)) lost.push('the column ' + h + ' on ' + name) })
     })

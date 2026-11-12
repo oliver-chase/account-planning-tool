@@ -264,13 +264,15 @@ function makePersonCard(person) {
   const notesLabel = el('div', 'card-section-label card-section-label--link card-section-label--reset', 'Notes' + (person.notes ? ' •' : ''))
   let notesOpen = false
   const notesSlot = el('div', null, null)
-  const openNotes = () => { notesOpen = true; renderNotesSlot() }
-  notesLabel.addEventListener('click', openNotes)
-  makeActivatable(notesLabel, 'Notes', openNotes); notesLabel.setAttribute('role', 'button')
+  const toggleNotes = () => { notesOpen = !notesOpen; notesLabel.setAttribute('aria-expanded', String(notesOpen)); renderNotesSlot() }
+  notesLabel.addEventListener('click', toggleNotes)
+  makeActivatable(notesLabel, 'Notes', toggleNotes); notesLabel.setAttribute('role', 'button'); notesLabel.setAttribute('aria-expanded', 'false')
   function renderNotesSlot() {
     notesSlot.innerHTML = ''
     if (!notesOpen) return
     const pop = el('div', 'app-popover card-notes-popup', null)
+    // Escape closes the popup.
+    pop.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); toggleNotes(); notesLabel.focus() } })
     pop.appendChild(editable('div', 'card-body-text', person.notes, 'Add notes about this person', v => { savePerson({ ...current(), notes: v }); renderPeople() }, { multiline: true, ariaLabel: 'Notes' }))
     notesSlot.appendChild(pop)
   }
@@ -289,8 +291,8 @@ function makeInlinePersonCard() {
   const info = el('div', 'person-card-info', null)
   const nameEl = editable('div', 'name field-required-highlight inline-title-text', '', 'Full name…', v => {
     if (discarded) return
-    rec.name = v
-    if (v) { state.stakeholders.push(rec); peopleAdding = false; persist(); renderPeople() }
+    rec.name = sanitizeName(v)
+    if (rec.name) { state.stakeholders.push(rec); peopleAdding = false; persist(); renderPeople() }
     else if (card.isConnected && !newCardInUse(card)) { peopleAdding = false; renderPeople() }
   }, { ariaLabel: 'Name', alwaysSave: true })
   info.appendChild(nameEl)
