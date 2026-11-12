@@ -31,6 +31,8 @@ for size in 390:844 540:900 700:900 800:900 1000:800 1280:800; do
   echo "$sample" | grep -q '"actions":[1-9]' || { echo "the sample account loaded no actions"; fail=1; }
   for sec in overview people actions notes; do echo "$layout" | grep -q "\"$sec\":\"ok\"" || { echo "the $sec section overflows the window"; fail=1; }; done
   echo "$layout" | grep -q '"pokesOutOfCard":\[\]' || { echo "something pokes out of its card"; fail=1; }
+  cols=1; [ "$w" -gt 1024 ] && cols=2
+  echo "$layout" | grep -q "\"planColumns\":$cols" || { echo "the Plan rows should be $cols column(s) at $w px"; fail=1; }
   if [ "$w" -le 720 ]; then echo "$layout" | grep -q '"small":\[\]' || { echo "touch targets under 44 px"; fail=1; }; fi
 done
 [ "$fail" = 0 ] && echo "webkit: ok"

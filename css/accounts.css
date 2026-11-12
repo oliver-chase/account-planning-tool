@@ -90,25 +90,6 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
 .app-view-toggle-btn:not(:last-child){border-right:1px solid var(--color-border)}
 .app-view-toggle-btn.active{background:var(--color-brand-primary);color:var(--color-white);border-color:var(--color-brand-primary);font-weight:normal}
 .app-view-toggle-btn:hover:not(.active){background:var(--color-bg-page)}
-@media (max-width:1024px){
-  .overview-row{grid-template-columns:1fr}
-  .person-detail-panel{width:320px}
-}
-@media(max-width:500px){
-  .main{margin-left:0;padding-left:var(--module-main-pad-x);padding-right:var(--module-main-pad-x);padding-bottom:var(--accounts-mobile-main-pad-bottom)}
-  .overview-stats{flex-direction:column}
-  .account-header-actions{flex-direction:column;width:100%;gap:var(--spacing-sm)}
-  .account-card-remove-btn{min-width:var(--day-btn-size);min-height:var(--day-btn-size);width:auto;height:auto;padding:var(--spacing-xs)}
-  .overview-stat{min-width:140px!important;flex:1 1 140px!important}
-  .app-section-header{flex-wrap:wrap!important;gap:var(--spacing-6)!important}
-  .people-grid{grid-template-columns:1fr!important}
-  .person-card .name,.note-title{font-size:var(--font-size-sm)}
-  .org-chart-outer{overflow-x:auto!important;max-width:100%}
-  .person-detail-panel{width:100%}
-}
-@media print{
-  .main{margin-left:0;padding-top:0}
-}
 .person-detail-panel{position:fixed;top:var(--topbar-h);right:0;bottom:0;width:380px;max-width:100vw;background:var(--color-white);box-shadow:var(--shadow-modal);z-index:var(--z-modal);display:flex;flex-direction:column;overflow:hidden}
 .person-detail-header{display:flex;align-items:center;justify-content:space-between;padding:var(--spacing-sm) var(--spacing-md);border-bottom:1px solid var(--color-border);flex-shrink:0}
 .person-detail-title{font-weight:var(--font-weight-semibold);font-size:var(--font-size-base)}
@@ -189,3 +170,23 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
 .sidebar-backdrop{display:none;position:fixed;inset:0;background:var(--color-modal-overlay);z-index:49;opacity:0;transition:opacity var(--transition-base);pointer-events:none}
 
 .org-node-card.picked{box-shadow:0 0 0 2px var(--color-brand-accent)}
+/* Narrow screens. These come last so they win over the base rules above. */
+@media (max-width:1024px){
+  .overview-row{grid-template-columns:1fr}
+  .person-detail-panel{width:320px}
+}
+@media(max-width:500px){
+  .main{margin-left:0;padding-left:var(--module-main-pad-x);padding-right:var(--module-main-pad-x);padding-bottom:var(--accounts-mobile-main-pad-bottom)}
+  .overview-stats{flex-direction:column}
+  .account-header-actions{flex-direction:column;width:100%;gap:var(--spacing-sm)}
+  .account-card-remove-btn{min-width:var(--day-btn-size);min-height:var(--day-btn-size);width:auto;height:auto;padding:var(--spacing-xs)}
+  .overview-stat{min-width:140px!important;flex:1 1 140px!important}
+  .app-section-header{flex-wrap:wrap!important;gap:var(--spacing-6)!important}
+  .people-grid{grid-template-columns:1fr!important}
+  .person-card .name,.note-title{font-size:var(--font-size-sm)}
+  .org-chart-outer{overflow-x:auto!important;max-width:100%}
+  .person-detail-panel{width:100%}
+}
+@media print{
+  .main{margin-left:0;padding-top:0}
+}
