@@ -4,8 +4,9 @@
 const fs = require('fs'), path = require('path'), assert = require('assert')
 const root = path.join(__dirname, '..')
 
-// Every tracked text file except the vendored library and the binary fixture is checked.
-const shipped = require('child_process').execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).split('\n').filter(f => f && !/xlsx|account-planning-tool\.html$/.test(f))
+// Every tracked text file is checked, including the built page people download, except the vendored
+// library and the binary fixture.
+const shipped = require('child_process').execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).split('\n').filter(f => f && !/xlsx/.test(f))
 // Words that identify a person or company are not stored in this repo. List them, one per line, in
 // tests/banned-words.local.txt (untracked), or in the BANNED_WORDS variable when that file is missing,
 // separated by commas. With no list the word check is skipped and the other checks still run.

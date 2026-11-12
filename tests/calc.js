@@ -1,6 +1,6 @@
 'use strict'
 // Dates, money, the next meeting and seniority are computed correctly, in any time zone.
-// Run: node tests/calc-bugs.js
+// Run: node tests/calc.js
 const fs = require('fs'), path = require('path'), vm = require('vm'), assert = require('assert'), cp = require('child_process')
 const root = path.join(__dirname, '..')
 const read = f => fs.readFileSync(path.join(root, f), 'utf8')
@@ -10,7 +10,7 @@ if (process.argv[2] !== '--child') {
   for (const tz of ['UTC', 'Pacific/Kiritimati', 'Pacific/Pago_Pago', 'Europe/Berlin', 'America/New_York']) {
     cp.execFileSync(process.execPath, [__filename, '--child'], { env: { ...process.env, TZ: tz }, stdio: 'pipe' })
   }
-  console.log('calc-bugs: ok')
+  console.log('calc: ok')
   process.exit(0)
 }
 

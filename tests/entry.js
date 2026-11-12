@@ -2,7 +2,7 @@
 // Editing fields keep line breaks and ignore an unchanged blur, labels are text, Delete offers one Undo,
 // and loops in the org chart are cut.
 // A clickable element made with makeActivatable opens on Enter and Space, and ignores keys pressed inside it.
-// Run: node tests/entry-bugs.js
+// Run: node tests/entry.js
 const fs = require('fs'), path = require('path'), vm = require('vm'), assert = require('assert')
 const root = path.join(__dirname, '..')
 const read = f => fs.readFileSync(path.join(root, f), 'utf8')
@@ -93,7 +93,7 @@ assert.strictEqual(sortActions(acts, 'due_date', 'desc').map(a => a.id).join(), 
 // 6. newCardInUse
 assert.strictEqual(newCardInUse({ contains: () => true }), true)
 assert.strictEqual(newCardInUse({ contains: () => false }), false)
-console.log('entry-bugs: ok')
+console.log('entry: ok')
 `
 sandbox.process = process
 vm.runInNewContext(src, sandbox)

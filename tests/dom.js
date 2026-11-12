@@ -62,8 +62,8 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   ev(d.activeElement, 'keydown', { key: 'Escape' }); await wait(20)
   // 7. zoom redraws the lines
   w.eval('window.__draws = 0; const _d = drawOrgLines; drawOrgLines = function () { window.__draws++; return _d.apply(this, arguments) }')
-  const zin = [...d.querySelectorAll('.org-zoom-controls button')].find(b => /in/i.test(b.textContent) && /zoom/i.test(b.textContent)); zin.click()
-  await checkSoon('zoom in redraws the connector lines', () => w.__draws >= 1)
+  const zin = [...d.querySelectorAll('.org-zoom-controls button')].find(b => /in/i.test(b.textContent) && /zoom/i.test(b.textContent)); const scale0 = d.querySelector('.org-tree').style.transform; zin.click()
+  await checkSoon('zoom in scales the chart and redraws the connector lines', () => w.__draws >= 1 && d.querySelector('.org-tree').style.transform !== scale0)
   // 8. org chart download is static
   let captured = ''; w.eval('window.__cap = null; downloadHtml = function (h, n) { window.__cap = h }'); w.eval('downloadOrgChart()'); await until(() => w.__cap)
   captured = w.__cap || ''
