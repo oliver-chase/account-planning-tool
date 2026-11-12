@@ -1,5 +1,6 @@
 .DS_Store
 tests/banned-words.local.txt
 node_modules/
+.env
 docs/backlog-config.json
 package-lock.json

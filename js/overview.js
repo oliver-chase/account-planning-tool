@@ -53,12 +53,8 @@ let overviewCadenceOpen = null
 // panel's open/closed state doesn't carry over from whatever account was open before.
 function resetOverviewCadenceUI() { overviewCadenceOpen = null }
 
-// Writes one year's revenue fields into the stored record at save time, so an edit made from an
-// older render never writes back a value that another edit has since replaced.
-function revenuePatch(year, fields) {
-  const rev = state.background.revenue || {}
-  return { revenue: { ...rev, [year]: { ...(rev[year] || {}), ...fields } } }
-}
+// Patches one year's revenue from the stored record, so an edit from an older render never undoes another.
+function revenuePatch(year, fields) { const rev = state.background.revenue || {}; return { revenue: { ...rev, [year]: { ...(rev[year] || {}), ...fields } } } }
 
 function saveBg(patch) {
   state.background = { ...state.background, ...patch, last_updated: today() }

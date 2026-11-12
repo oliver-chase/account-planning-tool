@@ -75,8 +75,6 @@ function popoverAddNewRow(onSubmit) {
       row.tabIndex = -1
       const input = el('input', 'app-popover-search', null)
       input.placeholder = 'Full name'
-      input.style.border = 'none'
-      input.style.width = '100%'
       input.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); const name = sanitizeName(input.value); if (name) onSubmit(name); else showToast('Type a name first.') }
         if (e.key === 'Escape') { e.stopPropagation(); adding = false; render() }

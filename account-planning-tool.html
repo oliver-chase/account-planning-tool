@@ -179,7 +179,7 @@
 .app-popover-item.active{background:var(--color-bg-hover)}
 .app-popover-empty{padding:var(--spacing-xs) var(--spacing-sm);font-size:var(--font-size-xs);color:var(--color-text-secondary);font-style:italic}
 .app-modal-overlay{position:fixed;inset:0;z-index:var(--z-modal-backdrop);display:flex;align-items:center;justify-content:center;padding:80px var(--spacing-lg) var(--spacing-lg);background:var(--color-modal-overlay)}
-.app-modal{background:var(--color-bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-modal);max-width:var(--modal-max-w);width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.app-modal{background:var(--color-bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-modal);max-width:var(--modal-max-w);width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;position:relative}
 .app-modal-title{padding:var(--spacing-md) var(--spacing-lg);margin:0;font-family:var(--font-family-base);font-size:var(--font-size-lg);font-weight:var(--font-weight-bold);color:var(--color-text-primary);border-bottom:1px solid var(--color-border)}
 .app-modal-body{padding:var(--spacing-md) var(--spacing-lg);overflow-y:auto;font-size:var(--font-size-base);line-height:var(--line-height-base);color:var(--color-text-primary)}
 .app-modal-actions{padding:var(--spacing-md) var(--spacing-lg);display:flex;gap:var(--spacing-sm);justify-content:flex-end;border-top:1px solid var(--color-border)}
@@ -188,7 +188,6 @@
 .app-toast-undo{background:none;border:none;color:var(--color-brand-accent);font-family:var(--font-family-base);font-size:var(--font-size-base);font-weight:var(--font-weight-bold);cursor:pointer;padding:var(--spacing-xs) var(--spacing-sm)}
 .app-toast-undo:hover{text-decoration:underline}
 .app-modal-lg{max-width:var(--modal-lg-max-w)}
-.app-modal{position:relative}
 .app-modal-close{position:absolute;top:var(--spacing-sm);right:var(--spacing-sm);width:var(--modal-close-size);height:var(--modal-close-size);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--color-text-secondary);font-size:var(--font-size-lg);line-height:1;background:none;border:none;z-index:1}
 .app-modal-close:hover{background:var(--color-bg-hover)}
 @media (max-width:500px){
@@ -213,10 +212,8 @@
 .app.show-hamburger .topbar-hamburger{display:none;width:var(--day-btn-size);height:var(--day-btn-size);align-items:center;justify-content:center;cursor:pointer;color:var(--color-text-secondary);background:none;border:none;border-radius:var(--radius-sm)}
 .app.show-hamburger .topbar-hamburger:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:1px}
 .app.show-hamburger .main{margin-left:var(--sidebar-w);min-height:100vh}
-.org-node-name{display:block;font-family:var(--font-family-base)}
 @media (max-width:500px){
   .app-card{width:100%}
-  .org-branch{flex-direction:column}
   .app-popover{width:calc(100vw - var(--spacing-md) * 2);max-width:100%}
   .app-modal{width:100%;max-width:calc(100vw - var(--spacing-md) * 2)}
   .app-toast-container{bottom:var(--spacing-sm);right:var(--spacing-sm);left:var(--spacing-sm);max-width:none}
@@ -330,7 +327,7 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
 .org-branch{display:flex;flex-direction:column;align-items:center;position:relative;flex-shrink:0}
 .org-node-card{width:var(--org-node-w);min-height:var(--org-node-h-min);box-sizing:border-box;background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--spacing-10) var(--spacing-12);cursor:grab;position:relative;transition:.12s;flex-shrink:0;overflow:hidden}
 .org-node-card:hover{border-color:var(--border2);box-shadow:var(--shadow-card)}
-.org-node-name{font-size:var(--font-size-sm);font-weight:var(--font-weight-semibold);color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.org-node-name{display:block;font-family:var(--font-family-base);font-size:var(--font-size-sm);font-weight:var(--font-weight-semibold);color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
 .org-node-meta{font-size:var(--font-size-xs);color:var(--color-text-secondary);margin-top:var(--spacing-2xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .org-unlink-btn{position:absolute;top:var(--spacing-6);right:var(--spacing-6);width:15px;height:15px;border-radius:var(--radius-full);background:none;border:none;font-size:var(--font-size-sm);color:var(--color-text-placeholder);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;font-family:var(--font-family-base)}
 .org-unlink-btn:hover{color:var(--color-sentiment-detractor)}
@@ -445,7 +442,6 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
   .app-section-header{flex-wrap:wrap!important;gap:var(--spacing-6)!important}
   .people-grid{grid-template-columns:1fr!important}
   .person-card .name,.note-title{font-size:var(--font-size-sm)}
-  .org-chart-outer{overflow-x:auto!important;max-width:100%}
   .person-detail-panel{width:100%}
 }
 @media print{
@@ -670,7 +666,6 @@ t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=xk(e,t);t.type="arra
         <div id="overview-body"></div>
       </div>
 
-
       <div id="people" class="section">
         <div id="people-body"></div>
       </div>
@@ -678,9 +673,6 @@ t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=xk(e,t);t.type="arra
       <div id="actions" class="section">
         <div id="actions-body-wrap"></div>
       </div>
-
-
-
 
       <div id="notes" class="section">
         <div id="notes-body-wrap"></div>
@@ -994,9 +986,7 @@ function parseStateFromRows(getRows, sourceName) {
       const id = idOf(r, 'p')
       const name = String(r.Name || '').trim()
       idSet.add(id)
-      // Ambiguous on a duplicate name: leave unset here and let ReportsToID (below) be the
-      // real source of truth for sheets this tool wrote. Only used as a last-resort fallback
-      // for legacy/hand-edited sheets that don't carry ReportsToID at all.
+      // A name two people share maps to null, so it cannot pick a manager on its own.
       if (!(name.toLowerCase() in nameToId)) nameToId[name.toLowerCase()] = id
       else nameToId[name.toLowerCase()] = null
       next.stakeholders.push({
@@ -1114,9 +1104,7 @@ function buildAoasFromState() {
   aoas.Revenue = [['Year', 'Projected', 'Closed']]
   Object.keys(b.revenue).sort().forEach(y => aoas.Revenue.push([y, b.revenue[y].projected || '', b.revenue[y].closed || '']))
 
-  // ReportsTo is the human-readable name (what someone sees/edits in Excel); ReportsToID is
-  // the stable row-id reference this tool itself round-trips on, immune to the duplicate-name
-  // collision ReportsTo alone has (see the People parsing in parseStateFromRows).
+  // ReportsTo is the name people edit; ReportsToID tells two people with one name apart (see parseStateFromRows).
   aoas.People = [['ID', 'Name', 'Title', 'Department', 'Organization', 'IsExecutive', 'Sentiment', 'WorkerType', 'PrimaryOwner', 'SecondaryOwner', 'ReportsTo', 'ReportsToID', 'Engagement', 'Notes']]
   state.stakeholders.forEach(p => {
     const mgr = p.reports_to ? (state.stakeholders.find(x => x.id === p.reports_to) || {}).name || '' : ''
@@ -1252,10 +1240,8 @@ async function loadWorkbookFromFile(file, handle) {
   return true
 }
 
-// Remembered-file convenience (Chrome/Edge only — the File System Access API doesn't
-// exist elsewhere). A FileSystemFileHandle is structured-clone-able, so it can be stored
-// in IndexedDB directly, no manual serialization. Best-effort throughout — any failure
-// here just means the tool falls back to a normal manual Import, never a hard error.
+// The remembered file (Chrome and Edge only). A file handle can be stored in IndexedDB as it is, and any
+// failure here only means the person connects the file by hand next time.
 const HANDLE_DB_NAME = 'accountPlanningToolFiles'
 const HANDLE_STORE = 'handles'
 const HANDLE_KEY = 'primary'
@@ -1689,8 +1675,6 @@ function popoverAddNewRow(onSubmit) {
       row.tabIndex = -1
       const input = el('input', 'app-popover-search', null)
       input.placeholder = 'Full name'
-      input.style.border = 'none'
-      input.style.width = '100%'
       input.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); const name = sanitizeName(input.value); if (name) onSubmit(name); else showToast('Type a name first.') }
         if (e.key === 'Escape') { e.stopPropagation(); adding = false; render() }
@@ -1948,12 +1932,8 @@ let overviewCadenceOpen = null
 // panel's open/closed state doesn't carry over from whatever account was open before.
 function resetOverviewCadenceUI() { overviewCadenceOpen = null }
 
-// Writes one year's revenue fields into the stored record at save time, so an edit made from an
-// older render never writes back a value that another edit has since replaced.
-function revenuePatch(year, fields) {
-  const rev = state.background.revenue || {}
-  return { revenue: { ...rev, [year]: { ...(rev[year] || {}), ...fields } } }
-}
+// Patches one year's revenue from the stored record, so an edit from an older render never undoes another.
+function revenuePatch(year, fields) { const rev = state.background.revenue || {}; return { revenue: { ...rev, [year]: { ...(rev[year] || {}), ...fields } } } }
 
 function saveBg(patch) {
   state.background = { ...state.background, ...patch, last_updated: today() }
@@ -2402,9 +2382,9 @@ function orgMakeCard(person, isUnassigned, onOpenDetail, staticMode) {
   card.addEventListener('click', e => {
     if (e.target.closest('button')) return
     if (orgPickedId && orgPickedId !== person.id && !isUnassigned) {
-      if (isDescendantOf(person.id, orgPickedId, state.stakeholders)) { showToast('Cannot create circular reporting relationship') }
-      else orgSetReportsTo(orgPickedId, person.id)
-      const moved = orgPickedId; orgPickedId = null; renderOrgChart(moved)
+      const moved = orgPickedId; orgPickedId = null // cleared first, so the one render below drops the picked outline
+      if (isDescendantOf(person.id, moved, state.stakeholders)) { showToast('Cannot create circular reporting relationship'); renderOrgChart(moved) }
+      else orgSetReportsTo(moved, person.id)
       return
     }
     onOpenDetail(person)

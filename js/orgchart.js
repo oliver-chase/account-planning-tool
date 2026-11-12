@@ -100,9 +100,9 @@ function orgMakeCard(person, isUnassigned, onOpenDetail, staticMode) {
   card.addEventListener('click', e => {
     if (e.target.closest('button')) return
     if (orgPickedId && orgPickedId !== person.id && !isUnassigned) {
-      if (isDescendantOf(person.id, orgPickedId, state.stakeholders)) { showToast('Cannot create circular reporting relationship') }
-      else orgSetReportsTo(orgPickedId, person.id)
-      const moved = orgPickedId; orgPickedId = null; renderOrgChart(moved)
+      const moved = orgPickedId; orgPickedId = null // cleared first, so the one render below drops the picked outline
+      if (isDescendantOf(person.id, moved, state.stakeholders)) { showToast('Cannot create circular reporting relationship'); renderOrgChart(moved) }
+      else orgSetReportsTo(moved, person.id)
       return
     }
     onOpenDetail(person)

@@ -80,9 +80,7 @@ function parseStateFromRows(getRows, sourceName) {
       const id = idOf(r, 'p')
       const name = String(r.Name || '').trim()
       idSet.add(id)
-      // Ambiguous on a duplicate name: leave unset here and let ReportsToID (below) be the
-      // real source of truth for sheets this tool wrote. Only used as a last-resort fallback
-      // for legacy/hand-edited sheets that don't carry ReportsToID at all.
+      // A name two people share maps to null, so it cannot pick a manager on its own.
       if (!(name.toLowerCase() in nameToId)) nameToId[name.toLowerCase()] = id
       else nameToId[name.toLowerCase()] = null
       next.stakeholders.push({
@@ -200,9 +198,7 @@ function buildAoasFromState() {
   aoas.Revenue = [['Year', 'Projected', 'Closed']]
   Object.keys(b.revenue).sort().forEach(y => aoas.Revenue.push([y, b.revenue[y].projected || '', b.revenue[y].closed || '']))
 
-  // ReportsTo is the human-readable name (what someone sees/edits in Excel); ReportsToID is
-  // the stable row-id reference this tool itself round-trips on, immune to the duplicate-name
-  // collision ReportsTo alone has (see the People parsing in parseStateFromRows).
+  // ReportsTo is the name people edit; ReportsToID tells two people with one name apart (see parseStateFromRows).
   aoas.People = [['ID', 'Name', 'Title', 'Department', 'Organization', 'IsExecutive', 'Sentiment', 'WorkerType', 'PrimaryOwner', 'SecondaryOwner', 'ReportsTo', 'ReportsToID', 'Engagement', 'Notes']]
   state.stakeholders.forEach(p => {
     const mgr = p.reports_to ? (state.stakeholders.find(x => x.id === p.reports_to) || {}).name || '' : ''
@@ -338,10 +334,8 @@ async function loadWorkbookFromFile(file, handle) {
   return true
 }
 
-// Remembered-file convenience (Chrome/Edge only — the File System Access API doesn't
-// exist elsewhere). A FileSystemFileHandle is structured-clone-able, so it can be stored
-// in IndexedDB directly, no manual serialization. Best-effort throughout — any failure
-// here just means the tool falls back to a normal manual Import, never a hard error.
+// The remembered file (Chrome and Edge only). A file handle can be stored in IndexedDB as it is, and any
+// failure here only means the person connects the file by hand next time.
 const HANDLE_DB_NAME = 'accountPlanningToolFiles'
 const HANDLE_STORE = 'handles'
 const HANDLE_KEY = 'primary'
