@@ -2,10 +2,10 @@
 // Loads the built page in a simulated browser (jsdom) and walks the main features:
 // the sample account, Plan edits, the historical-year form, keyboard access, the org chart and its
 // download, and empty lists. Needs `npm install`; without it the test says so and
-// passes. Run: node tests/dom.js
+// fails. Run: node tests/dom.js
 let JSDOM, VirtualConsole
 try { ({ JSDOM, VirtualConsole } = require('jsdom')) } catch (e) {
-  if (e.code === 'MODULE_NOT_FOUND') { console.log('dom: jsdom is not installed, skipping (run npm install)'); process.exit(0) }
+  if (e.code === 'MODULE_NOT_FOUND') { console.log('dom: jsdom is not installed. Run npm install, then run this test again'); process.exit(1) }
   console.log('dom: jsdom is installed but cannot load on Node ' + process.version + ': ' + e.message.split('\n')[0]); process.exit(1)
 }
 const fs = require('fs'), assert = require('assert')
@@ -34,10 +34,10 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   const before = errors.length
   const objective = d.querySelector('.plan-header-card [contenteditable], .plan-header-card textarea, .plan-header-card input')
   assert.ok(objective, 'plan header has an editable field')
-  if (objective.isContentEditable !== undefined && objective.getAttribute('contenteditable') !== null) { objective.focus(); objective.textContent = 'New objective'; objective.dispatchEvent(new w.Event('blur')) }
+  if (objective.getAttribute('contenteditable') !== null) { objective.focus(); objective.textContent = 'New objective'; objective.dispatchEvent(new w.Event('blur')) }
   else { objective.value = objective.type === 'date' ? '2026-12-31' : 'New objective'; objective.dispatchEvent(new w.Event('change')); objective.dispatchEvent(new w.Event('blur')) }
   await saved()
-  check('editing a Plan field raises no error', errors.length === before)
+  check('editing a Plan field saves it with no error', errors.length === before && w.eval("JSON.stringify(state.plans).includes('New objective')"))
   // 3. historical year form prefills stored values
   w.eval("state.background.revenue = { '" + (new Date().getFullYear() - 1) + "': { projected: '$500K', closed: '$300K' } }; persist(); renderOverview()")
   const hist = [...d.querySelectorAll('button')].find(b => /Add historical year/i.test(b.textContent)); assert.ok(hist, 'Add historical year button')
@@ -49,7 +49,7 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   w.eval("state.background.meeting_frequency='weekly'; persist(); renderOverview()")
   const row = d.querySelector('.overview-cadence-summary-row'); const exp0 = row.getAttribute('aria-expanded')
   row.focus(); ev(row, 'keydown', { key: 'Enter' })
-  await checkSoon('cadence summary toggles with Enter', () => d.querySelector('.overview-cadence-summary-row').getAttribute('aria-expanded') !== exp0 || row.getAttribute('aria-expanded') !== exp0)
+  await checkSoon('cadence summary toggles with Enter', () => d.querySelector('.overview-cadence-summary-row').getAttribute('aria-expanded') !== exp0)
   // 5. org chart view: Enter on remove button does not open the panel
   location_hash(w, 'people'); await until(() => d.querySelector('.app-view-toggle-btn'))
   const orgBtn = [...d.querySelectorAll('.app-view-toggle-btn')].find(b => /org/i.test(b.textContent)); assert.ok(orgBtn, 'org view toggle'); orgBtn.click(); await until(() => d.querySelector('.org-node-card .org-unlink-btn'))
@@ -58,7 +58,7 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   check('Enter on a remove button does not open the person panel', !d.getElementById('org-person-panel'))
   // 6. Space on a card focuses it again after the rebuild
   const card = d.querySelector('.org-node-card'); const id = card.dataset.id; card.focus(); ev(card, 'keydown', { key: ' ' })
-  await checkSoon('card keeps focus after Space', () => d.activeElement && d.activeElement.dataset && d.activeElement.dataset.id === id)
+  await checkSoon('card keeps focus after Space', () => d.activeElement !== card && d.activeElement && d.activeElement.dataset && d.activeElement.dataset.id === id)
   ev(d.activeElement, 'keydown', { key: 'Escape' }); await wait(20)
   // 7. zoom redraws the lines
   w.eval('window.__draws = 0; const _d = drawOrgLines; drawOrgLines = function () { window.__draws++; return _d.apply(this, arguments) }')
@@ -79,11 +79,11 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   await checkSoon('deleting a person closes the side panel', () => !d.getElementById('org-person-panel'))
   w.eval("peopleFilterPanelOpen = true; renderPeople()"); await until(() => d.querySelector('[data-fk="exec"]'))
   const exec = d.querySelector('[data-fk="exec"]'); exec.focus(); exec.checked = true; exec.dispatchEvent(new w.Event('change'))
-  await checkSoon('a filter change keeps keyboard focus', () => d.activeElement && d.activeElement.dataset && d.activeElement.dataset.fk === 'exec')
+  await checkSoon('a filter change keeps keyboard focus', () => d.activeElement !== exec && d.activeElement && d.activeElement.dataset && d.activeElement.dataset.fk === 'exec')
   // 8c. a weekday chip keeps focus after the overview rebuilds, and Escape closes the Filters panel
   w.eval("state.background.meeting_frequency = 'weekly'; renderOverview()"); await until(() => d.querySelector('[data-fk="day-Wed"]'))
   const chip = d.querySelector('[data-fk="day-Wed"]'); chip.focus(); chip.click()
-  await checkSoon('a weekday chip keeps focus after the overview rebuilds', () => d.activeElement && d.activeElement.dataset && d.activeElement.dataset.fk === 'day-Wed')
+  await checkSoon('a weekday chip keeps focus after the overview rebuilds', () => d.activeElement !== chip && d.activeElement && d.activeElement.dataset && d.activeElement.dataset.fk === 'day-Wed')
   w.eval("peopleView = 'cards'; peopleFilterPanelOpen = true; renderPeople()"); await until(() => d.querySelector('.people-filter-panel [data-fk="exec"]'))
   ev(d.querySelector('.people-filter-panel [data-fk="exec"]'), 'keydown', { key: 'Escape' })
   await checkSoon('Escape closes the Filters panel', () => !d.querySelector('.people-filter-panel'))
@@ -100,7 +100,7 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   await until(() => d.querySelector('.app-popover .app-popover-item'))
   ;[...d.querySelectorAll('.app-popover .app-popover-item')].find(i => i.textContent === 'Ann Lee').click()
   ownerBtn.click(); await until(() => d.querySelector('.app-popover .app-popover-item'))
-  check('the new row owner can be cleared after a pick', [...d.querySelectorAll('.app-popover .app-popover-item')].some(i => /Clear selection/.test(i.textContent)))
+  check('the new row owner shows its pick and can be cleared', ownerBtn.textContent === 'Ann Lee' && [...d.querySelectorAll('.app-popover .app-popover-item')].some(i => /Clear selection/.test(i.textContent)))
   ev(d.activeElement || d.body, 'keydown', { key: 'Escape' })
   w.eval("actionsAdding = false; renderActions()")
   // A field that still has focus when the page closes is saved.

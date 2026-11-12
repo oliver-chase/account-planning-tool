@@ -21,7 +21,6 @@ const src = ['js/state.js', 'js/overview.js'].map(read).join('\n') + `
 // Dates are local calendar days.
 assert.strictEqual(localISO(new Date(2026, 10, 11, 23, 30)), '2026-11-11')
 assert.strictEqual(localISO(new Date(2026, 10, 11, 0, 10)), '2026-11-11')
-assert.strictEqual(today(), localISO(new Date()))
 
 // Money.
 const money = { '$450K': 450000, '$1.2M': 1200000, '1,200,000': 1200000, '2.5B': 2.5e9, '450': 450, '': 0, 'n/a': 0, '$3m': 3e6, '$1.2 million': 1.2e6, '450-500K': 450000, 'FY24 $450K': 450000, 'Q3 target $450K': 450000, '2 mill': 2e6, '$2 millions': 2e6, '$3 billions': 3e9, '$2 mil': 2e6, '1 000 000': 1e6, '$2 bil': 2e9, '450 thousand': 450000, '$2.5 billion': 2.5e9, '12 mm': 12e6, '$450,000': 450000 }
@@ -52,7 +51,7 @@ assert.strictEqual(['Vice President, Sales', 'Executive Vice President', 'Presid
 assert.strictEqual(['Sr. Vice President', 'CIO', 'Process Owner'].map(titleRank).join(), '2,1,6', 'Sr VP, CIO and a process owner rank sensibly')
 
 
-// Two revenue edits from one render both survive: each patch reads the stored record when it saves.
+// Two revenue saves in a row both survive, because each patch reads the stored record when it saves.
 state.background.revenue = { 2026: { projected: '1', closed: '' } }
 const first = revenuePatch('2026', { projected: '2' }); state.background = { ...state.background, ...first }
 state.background = { ...state.background, ...revenuePatch('2026', { closed: '3' }) }

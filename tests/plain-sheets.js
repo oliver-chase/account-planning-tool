@@ -12,21 +12,24 @@ const sandbox = { assert, console, XLSX, process, localStorage: { getItem: k => 
 const src = ['js/state.js', 'js/excel.js', 'js/start.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n') + `
 const names = wb => wb.SheetNames.join()
 
-// A brand-new account with a name, one person and one action: plain names, six or fewer.
+// A brand-new account with a name, one person and one action: plain names.
 startNewAccount('Acme', 'Ada', 'CEO')
 state.actions.push({ id: 'a1', description: 'Send deck', owner: 'Ada', engagement: '', status: 'Open', due_date: '2026-11-20', closed_date: '', created_date: today(), last_updated: today() })
 let wb = buildWorkbook()
 assert.strictEqual(names(wb), 'Overview,People,Actions', names(wb))
 
-// It opens again with everything intact.
-importWorkbook(wb, 'acme.xlsx')
-assert.strictEqual(state.account.account_name, 'Acme')
-assert.strictEqual(state.stakeholders.length, 1)
-assert.strictEqual(state.actions[0].due_date, '2026-11-20')
-
 // A type with content gets its sheet; an empty type does not.
 state.notes.push({ id: 'n1', date: today(), type: 'Meeting', title: 'Kickoff', attendees: [], body: 'x', transcript_link: '', created_date: today(), last_updated: today() })
 assert.strictEqual(names(buildWorkbook()), 'Overview,People,Actions,Notes')
+
+// It opens again with everything intact: the sample account, saved and opened again, holds the same
+// account, people, actions, notes, plans and revenue.
+const snapshot = () => JSON.stringify({ account: state.account, background: state.background, people: state.stakeholders, actions: state.actions, notes: state.notes, plans: state.plans })
+importWorkbook(starterWorkbook(true), 'sample.xlsx')
+const before = snapshot(), firstSave = buildWorkbook()
+importWorkbook(firstSave, 'sample.xlsx')
+assert.strictEqual(snapshot(), before)
+assert.ok(firstSave.SheetNames.length >= 5, firstSave.SheetNames.join())
 
 // Two rows with one ID get separate IDs, so editing one cannot overwrite the other.
 const dup = XLSX.utils.book_new()

@@ -23,7 +23,7 @@ assert.deepStrictEqual(hits, [], 'employer or owner identifiers found:\n' + hits
 // The brand values in js/brand.js and css/tokens.css agree.
 const brand = fs.readFileSync(path.join(root, 'js/brand.js'), 'utf8')
 const tokens = fs.readFileSync(path.join(root, 'css/tokens.css'), 'utf8')
-const get = (src, re) => (src.match(re) || [])[1]
+const get = (src, re) => { const m = src.match(re); assert.ok(m, 'missing brand value: ' + re); return m[1] }
 assert.strictEqual(get(brand, /primary: '(#[0-9a-f]{6})'/i), get(tokens, /--color-brand-primary:(#[0-9a-f]{6})/i))
 assert.strictEqual(get(brand, /accent: '(#[0-9a-f]{6})'/i), get(tokens, /--color-brand-accent:(#[0-9a-f]{6})/i))
 

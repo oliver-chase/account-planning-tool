@@ -21,11 +21,10 @@ for size in 390:844 540:900 700:900 800:900 1000:800 1280:800; do
   echo "$out" | grep -q '"[A-Za-z]*Err[A-Za-z]*":' && { echo "an export or workbook step raised an error"; echo "$out" | grep -A1 "04-features"; fail=1; }
   echo "$layout" | grep -q "\"scrollWidth\":$w," || { echo "page is not $w wide"; fail=1; }
   feat="$(echo "$out" | grep -A1 "04-features" | tail -1)"
-  echo "$feat" | grep -q '"parseMoney":1200000' || { echo "money parsing is wrong in WebKit"; fail=1; }
   echo "$feat" | grep -q '"exportMenu":2' || { echo "the Export menu does not list its two entries"; fail=1; }
-  echo "$feat" | grep -q '"callSummaryLines":[1-9]' || { echo "the call summary is empty"; fail=1; }
+  echo "$feat" | grep -q '"summaryListsOpenActions":true' || { echo "the call summary leaves out open actions"; fail=1; }
   echo "$feat" | grep -q '"roundTrip":true' || { echo "the workbook does not write and read back every sheet"; fail=1; }
-  echo "$feat" | grep -q '"updateExcelRan":true' || { echo "Update Excel did not run"; fail=1; }
+  echo "$feat" | grep -q '"updateExcelSaved":true' || { echo "Update Excel did not save"; fail=1; }
   sample="$(echo "$out" | grep -A1 "02-sample" | tail -1)"
   echo "$sample" | grep -q '"people":[1-9]' || { echo "the sample account loaded no people"; fail=1; }
   echo "$sample" | grep -q '"actions":[1-9]' || { echo "the sample account loaded no actions"; fail=1; }

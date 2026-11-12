@@ -127,10 +127,15 @@ const src = ['js/state.js', 'js/excel.js'].map(f => fs.readFileSync(path.join(ro
   state.actions = []
   const lostNow = await contentUpdateWouldRemove({ getFile: async () => fileOf('o.xlsx', XLSX.write(oldWb, { bookType: 'xlsx', type: 'array' })) }, buildWorkbook())
   assert.deepStrictEqual(lostNow, ['the sheet Finance'])
+  finish()
   console.log('data-loss: ok')
 })().catch(e => { console.error(e); process.exit(1) })
 `
+let finished = false
+sandbox.finish = () => { finished = true }
 vm.runInNewContext(src, sandbox)
+// The checks above run in a promise; one that never settles would otherwise end the run with no failure.
+process.on('exit', code => { if (!finished && code === 0) { console.error('data-loss: the checks did not finish'); process.exitCode = 1 } })
 
 // An autosave that cannot be read is kept aside before the next save writes over it.
 const broken = { 'accountPlanningTool.state.v2': '{not json' }

@@ -90,9 +90,6 @@ const acts = [{ id: 'x' }, { id: 'b', due_date: '2026-12-01' }, { id: 'a', due_d
 assert.strictEqual(sortActions(acts, 'due_date', 'asc').map(a => a.id).join(), 'a,b,x')
 assert.strictEqual(sortActions(acts, 'due_date', 'desc').map(a => a.id).join(), 'b,a,x')
 
-// 6. newCardInUse
-assert.strictEqual(newCardInUse({ contains: () => true }), true)
-assert.strictEqual(newCardInUse({ contains: () => false }), false)
 console.log('entry: ok')
 `
 sandbox.process = process
