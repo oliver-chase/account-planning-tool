@@ -28,3 +28,8 @@ Audit findings that were reviewed and not changed, each with its reason.
 
 Accepted: owner-identity account-planning-tool.html
 Accepted: owner-identity index.html
+| Identical declarations under different selectors in `accounts.css` (hover, focus and margin helpers) | Each rule sits at its own point in the cascade, and merging selectors moves them, so a computed-style comparison would be needed for a few lines saved. |
+| 37 pixel sizes written outside the tokens | They are one-off layout measurements, such as a chart gutter or an icon box, that no other rule shares. A token for each adds names without a second use. |
+| Three copies of the queued-save timer in People, Notes and Actions | Covered by the save-helper row above: each path stamps and re-renders differently. |
+| The README layout table names the audit ledger and accepted-findings files | The files ship in the repository, and the layout table names every file a reader will find. |
+

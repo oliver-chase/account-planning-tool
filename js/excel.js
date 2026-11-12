@@ -32,7 +32,6 @@ function parseStateFromRows(getRows, sourceName) {
   const idOf = (r, prefix) => { let id = String(r.ID || '').trim(); if (!id || seenIds.has(id)) id = uid(prefix); seenIds.add(id); return id }
   const next = emptyState()
   next.meta.sourceFileName = sourceName || ''
-  next.meta.importedAt = today()
 
   const overview = getRows('Overview')
   if (overview) {

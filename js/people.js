@@ -332,7 +332,9 @@ function openPersonDetail(person) {
   panel.appendChild(content)
   document.body.appendChild(panel)
   closeBtn.focus()
-  const onKey = e => { if (e.key === 'Escape' && !openPopoverState) closePanel() }
+  // Escape in a field reverts that field, so only Escape outside one closes the panel.
+  const inField = t => Boolean(t && t.closest && t.closest('[contenteditable], input, textarea, select'))
+  const onKey = e => { if (e.key === 'Escape' && !openPopoverState && !inField(e.target)) closePanel() }
   personPanelOnKey = onKey
   document.addEventListener('keydown', onKey)
 }

@@ -4,3 +4,5 @@ node_modules/
 .env
 docs/backlog-config.json
 package-lock.json
+*.xlsx
+!tests/fixtures/*.xlsx

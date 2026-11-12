@@ -223,7 +223,9 @@ function renderOverviewBody() {
     if (!histOpen) return
     histSlot.appendChild(historicalYearForm(b, (year, proj, closed) => {
       saveBg(revenuePatch(year, { projected: proj, closed }))
-      histOpen = false; renderHistForm(); histBtn.focus()
+      histOpen = false; renderHistForm()
+      // Saving re-renders the Plan page, so focus goes to the new button once it exists.
+      requestAnimationFrame(() => { const live = document.getElementById('btn-add-hist-year'); if (live) live.focus() })
     }, () => { histOpen = false; renderHistForm(); histBtn.focus() }))
   }
   renderHistForm()

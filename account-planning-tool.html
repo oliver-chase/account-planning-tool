@@ -384,7 +384,7 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
 .overview-date-input{font-size:var(--font-size-sm);font-family:var(--font-family-base);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:var(--spacing-7) var(--spacing-10);margin-top:var(--spacing-xs);background:var(--color-bg-card);color:var(--color-text-primary);outline:none}
 .overview-stat-date-empty{color:var(--color-text-secondary);font-style:italic}
 .overview-legend-row{display:flex;align-items:center;gap:var(--spacing-md);margin-bottom:var(--spacing-sm)}
-.overview-chart-canvas{position:relative;width:100%;flex:1;min-height:0}
+.overview-chart-canvas{position:relative;width:100%;flex:1;min-height:0;overflow-x:auto}
 .overview-chart-tooltip{position:fixed;background:var(--color-text-primary);color:var(--color-white);font-size:var(--font-size-xs);padding:var(--spacing-5) var(--spacing-10);border-radius:var(--radius-sm);pointer-events:none;z-index:100;display:none;white-space:nowrap}
 .overview-bar-edit-input{position:absolute;font-size:var(--font-size-sm);font-family:var(--font-family-base);border:1px solid var(--color-brand-accent);border-radius:var(--radius-sm);padding:var(--spacing-7) var(--spacing-10);width:90px;z-index:50;background:var(--color-bg-card);color:var(--color-text-primary)}
 .overview-interval-input{width:var(--interval-input-w);font-family:var(--font-family-base);font-size:var(--font-size-sm);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:var(--spacing-xs) var(--spacing-6);color:var(--color-text-primary);background:var(--color-bg-card);outline:none}
@@ -580,6 +580,12 @@ body.show-start .section,body.show-start .account-header-row{display:none}
 .help-header{justify-content:space-between}
 .help-close{position:static}
 
+/* Read by screen readers, not shown. */
+.visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+/* Shown only when a keyboard user reaches it. */
+.skip-link{position:absolute;left:var(--spacing-md);top:-100px;z-index:1000;background:var(--color-bg-card);color:var(--color-text-primary);padding:var(--spacing-md);border-radius:var(--radius-sm)}
+.skip-link:focus{top:var(--spacing-md)}
+
 </style>
 <script>
 /*! xlsx.js (C) 2013-present SheetJS -- http://sheetjs.com */
@@ -610,6 +616,7 @@ t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=xk(e,t);t.type="arra
 </script>
 </head>
 <body>
+<a class="skip-link" href="#account-content">Skip to the account</a>
 
 <aside class="app-sidebar" id="sidebar" aria-label="Account tools">
   <div class="app-sidebar-logo">
@@ -642,7 +649,8 @@ t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=xk(e,t);t.type="arra
   </div>
 
   <main class="main">
-    <div id="account-content">
+    <h1 class="visually-hidden">Account Planning Tool</h1>
+    <div id="account-content" tabindex="-1">
 
       <div id="help-banner-slot"></div>
       <div id="start-slot"></div>
@@ -758,16 +766,19 @@ function emptyState() {
     actions: [],
     notes: [],
     plans: [],
-    meta: { sourceFileName: '', importedAt: '' },
+    meta: { sourceFileName: '' },
   }
 }
 
 const STORAGE_KEY = 'accountPlanningTool.state.v2'
+// Set when the last autosave could not be read, so the page can say why it started empty.
+let autosaveWasUnreadable = false
 // An autosave that cannot be read is kept under its own key before the next save writes over it.
 let state = (() => {
   let raw = null
   try { raw = localStorage.getItem(STORAGE_KEY); return raw ? mergeStored(JSON.parse(raw)) : null } catch (e) {
     try { if (raw) localStorage.setItem(STORAGE_KEY + '.corrupt', raw) } catch (e2) { /* storage is unavailable */ }
+    autosaveWasUnreadable = Boolean(raw)
     return null
   }
 })() || emptyState()
@@ -938,7 +949,6 @@ function parseStateFromRows(getRows, sourceName) {
   const idOf = (r, prefix) => { let id = String(r.ID || '').trim(); if (!id || seenIds.has(id)) id = uid(prefix); seenIds.add(id); return id }
   const next = emptyState()
   next.meta.sourceFileName = sourceName || ''
-  next.meta.importedAt = today()
 
   const overview = getRows('Overview')
   if (overview) {
@@ -2105,7 +2115,9 @@ function renderOverviewBody() {
     if (!histOpen) return
     histSlot.appendChild(historicalYearForm(b, (year, proj, closed) => {
       saveBg(revenuePatch(year, { projected: proj, closed }))
-      histOpen = false; renderHistForm(); histBtn.focus()
+      histOpen = false; renderHistForm()
+      // Saving re-renders the Plan page, so focus goes to the new button once it exists.
+      requestAnimationFrame(() => { const live = document.getElementById('btn-add-hist-year'); if (live) live.focus() })
     }, () => { histOpen = false; renderHistForm(); histBtn.focus() }))
   }
   renderHistForm()
@@ -2869,7 +2881,9 @@ function openPersonDetail(person) {
   panel.appendChild(content)
   document.body.appendChild(panel)
   closeBtn.focus()
-  const onKey = e => { if (e.key === 'Escape' && !openPopoverState) closePanel() }
+  // Escape in a field reverts that field, so only Escape outside one closes the panel.
+  const inField = t => Boolean(t && t.closest && t.closest('[contenteditable], input, textarea, select'))
+  const onKey = e => { if (e.key === 'Escape' && !openPopoverState && !inField(e.target)) closePanel() }
   personPanelOnKey = onKey
   document.addEventListener('keydown', onKey)
 }
@@ -3739,6 +3753,10 @@ function wireShell() {
     sidebar.inert = narrow.matches && !open
   }
   hamburger.addEventListener('click', () => setSidebar(!sidebar.classList.contains('open')))
+  // Escape closes the open sidebar and returns focus to the button that opened it.
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && narrow.matches && sidebar.classList.contains('open')) { setSidebar(false); hamburger.focus() }
+  })
   backdrop.addEventListener('click', () => setSidebar(false))
   document.querySelectorAll('#section-nav a').forEach(a => a.addEventListener('click', () => setSidebar(false)))
   if (narrow.addEventListener) narrow.addEventListener('change', () => setSidebar(false))
@@ -3798,6 +3816,7 @@ renderAll()
 // requestPermission() does need a real gesture in most browsers, so that path only ever
 // runs from the toast button below, never automatically on load.
 ;(async () => {
+  if (autosaveWasUnreadable) showToast('Your last autosave could not be read, so the tool started empty. A copy is kept in this browser.')
   const result = await reacquireRememberedFile(false)
   if (result === 'ok') { showToast('Reconnected to your account file'); return }
   if (result === 'kept-local') { showToast('Kept your unsaved edits from last time. Use Connect Excel file to replace them.'); return }

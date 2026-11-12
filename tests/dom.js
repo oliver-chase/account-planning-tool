@@ -127,7 +127,12 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   check('Escape in a picker leaves the side panel open', !d.querySelector('.app-popover') && !!d.getElementById('org-person-panel'))
   trig.click(); trig.click()
   check('a second click on a picker closes it', !d.querySelector('.app-popover'))
+  // Escape inside a panel field reverts the field and leaves the panel open.
+  const panelField = d.querySelector('#org-person-panel [contenteditable]')
+  if (panelField) { panelField.focus(); ev(panelField, 'keydown', { key: 'Escape' }) }
+  check('Escape in a panel field leaves the side panel open', !panelField || !!d.getElementById('org-person-panel'))
   ev(d.body, 'keydown', { key: 'Escape' })
+  check('the page has one h1 and a skip link to the account', d.querySelectorAll('h1').length === 1 && d.querySelector('a.skip-link[href="#account-content"]') !== null)
   // 9. empty lists say so
   w.eval("state.notes = []; state.actions = []; persist(); renderNotes(); renderActions()")
   check('empty Notes and Actions explain themselves', /No notes yet/.test(d.getElementById('notes-body-wrap').textContent) && /No actions yet/.test(d.getElementById('actions-body-wrap').textContent))
