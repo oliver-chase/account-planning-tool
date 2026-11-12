@@ -74,14 +74,15 @@ function emptyState() {
 }
 
 const STORAGE_KEY = 'accountPlanningTool.state.v2'
-// Set when the last autosave could not be read, so the page can say why it started empty.
-let autosaveWasUnreadable = false
+// The last autosave when it could not be read, so the page can say why it started empty and offer the copy.
+let unreadableAutosave = null
+let unreadableAutosaveKept = false
 // An autosave that cannot be read is kept under its own key before the next save writes over it.
 let state = (() => {
   let raw = null
   try { raw = localStorage.getItem(STORAGE_KEY); return raw ? mergeStored(JSON.parse(raw)) : null } catch (e) {
-    try { if (raw) localStorage.setItem(STORAGE_KEY + '.corrupt', raw) } catch (e2) { /* storage is unavailable */ }
-    autosaveWasUnreadable = Boolean(raw)
+    unreadableAutosave = raw
+    try { if (raw) { localStorage.setItem(STORAGE_KEY + '.corrupt', raw); unreadableAutosaveKept = true } } catch (e2) { /* storage is full or unavailable */ }
     return null
   }
 })() || emptyState()

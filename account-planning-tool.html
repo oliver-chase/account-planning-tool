@@ -384,7 +384,7 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
 .overview-date-input{font-size:var(--font-size-sm);font-family:var(--font-family-base);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:var(--spacing-7) var(--spacing-10);margin-top:var(--spacing-xs);background:var(--color-bg-card);color:var(--color-text-primary);outline:none}
 .overview-stat-date-empty{color:var(--color-text-secondary);font-style:italic}
 .overview-legend-row{display:flex;align-items:center;gap:var(--spacing-md);margin-bottom:var(--spacing-sm)}
-.overview-chart-canvas{position:relative;width:100%;flex:1;min-height:0;overflow-x:auto}
+.overview-chart-canvas{position:relative;width:100%;flex:1;min-height:0}
 .overview-chart-tooltip{position:fixed;background:var(--color-text-primary);color:var(--color-white);font-size:var(--font-size-xs);padding:var(--spacing-5) var(--spacing-10);border-radius:var(--radius-sm);pointer-events:none;z-index:100;display:none;white-space:nowrap}
 .overview-bar-edit-input{position:absolute;font-size:var(--font-size-sm);font-family:var(--font-family-base);border:1px solid var(--color-brand-accent);border-radius:var(--radius-sm);padding:var(--spacing-7) var(--spacing-10);width:90px;z-index:50;background:var(--color-bg-card);color:var(--color-text-primary)}
 .overview-interval-input{width:var(--interval-input-w);font-family:var(--font-family-base);font-size:var(--font-size-sm);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:var(--spacing-xs) var(--spacing-6);color:var(--color-text-primary);background:var(--color-bg-card);outline:none}
@@ -771,14 +771,15 @@ function emptyState() {
 }
 
 const STORAGE_KEY = 'accountPlanningTool.state.v2'
-// Set when the last autosave could not be read, so the page can say why it started empty.
-let autosaveWasUnreadable = false
+// The last autosave when it could not be read, so the page can say why it started empty and offer the copy.
+let unreadableAutosave = null
+let unreadableAutosaveKept = false
 // An autosave that cannot be read is kept under its own key before the next save writes over it.
 let state = (() => {
   let raw = null
   try { raw = localStorage.getItem(STORAGE_KEY); return raw ? mergeStored(JSON.parse(raw)) : null } catch (e) {
-    try { if (raw) localStorage.setItem(STORAGE_KEY + '.corrupt', raw) } catch (e2) { /* storage is unavailable */ }
-    autosaveWasUnreadable = Boolean(raw)
+    unreadableAutosave = raw
+    try { if (raw) { localStorage.setItem(STORAGE_KEY + '.corrupt', raw); unreadableAutosaveKept = true } } catch (e2) { /* storage is full or unavailable */ }
     return null
   }
 })() || emptyState()
@@ -3755,7 +3756,9 @@ function wireShell() {
   hamburger.addEventListener('click', () => setSidebar(!sidebar.classList.contains('open')))
   // Escape closes the open sidebar and returns focus to the button that opened it.
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && narrow.matches && sidebar.classList.contains('open')) { setSidebar(false); hamburger.focus() }
+    if (e.key !== 'Escape' || !narrow.matches || !sidebar.classList.contains('open')) return
+    if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return
+    setSidebar(false); hamburger.focus()
   })
   backdrop.addEventListener('click', () => setSidebar(false))
   document.querySelectorAll('#section-nav a').forEach(a => a.addEventListener('click', () => setSidebar(false)))
@@ -3816,7 +3819,16 @@ renderAll()
 // requestPermission() does need a real gesture in most browsers, so that path only ever
 // runs from the toast button below, never automatically on load.
 ;(async () => {
-  if (autosaveWasUnreadable) showToast('Your last autosave could not be read, so the tool started empty. A copy is kept in this browser.')
+  if (unreadableAutosave) {
+    const kept = unreadableAutosaveKept ? ' A copy is kept in this browser.' : ''
+    showToast('Your last autosave could not be read, so the tool started empty.' + kept, 'Download it', () => {
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(new Blob([unreadableAutosave], { type: 'application/json' }))
+      a.download = 'unreadable-autosave.json'
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+    })
+  }
   const result = await reacquireRememberedFile(false)
   if (result === 'ok') { showToast('Reconnected to your account file'); return }
   if (result === 'kept-local') { showToast('Kept your unsaved edits from last time. Use Connect Excel file to replace them.'); return }

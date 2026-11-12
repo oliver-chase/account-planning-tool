@@ -128,9 +128,9 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   trig.click(); trig.click()
   check('a second click on a picker closes it', !d.querySelector('.app-popover'))
   // Escape inside a panel field reverts the field and leaves the panel open.
-  const panelField = d.querySelector('#org-person-panel [contenteditable]')
-  if (panelField) { panelField.focus(); ev(panelField, 'keydown', { key: 'Escape' }) }
-  check('Escape in a panel field leaves the side panel open', !panelField || !!d.getElementById('org-person-panel'))
+  const panelField = d.querySelector('#org-person-panel [contenteditable]'); assert.ok(panelField, 'the side panel has an editable field')
+  panelField.focus(); ev(panelField, 'keydown', { key: 'Escape' })
+  check('Escape in a panel field leaves the side panel open', !!d.getElementById('org-person-panel'))
   ev(d.body, 'keydown', { key: 'Escape' })
   check('the page has one h1 and a skip link to the account', d.querySelectorAll('h1').length === 1 && d.querySelector('a.skip-link[href="#account-content"]') !== null)
   // 9. empty lists say so

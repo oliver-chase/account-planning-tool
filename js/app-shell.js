@@ -106,7 +106,9 @@ function wireShell() {
   hamburger.addEventListener('click', () => setSidebar(!sidebar.classList.contains('open')))
   // Escape closes the open sidebar and returns focus to the button that opened it.
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && narrow.matches && sidebar.classList.contains('open')) { setSidebar(false); hamburger.focus() }
+    if (e.key !== 'Escape' || !narrow.matches || !sidebar.classList.contains('open')) return
+    if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable]')) return
+    setSidebar(false); hamburger.focus()
   })
   backdrop.addEventListener('click', () => setSidebar(false))
   document.querySelectorAll('#section-nav a').forEach(a => a.addEventListener('click', () => setSidebar(false)))
@@ -167,7 +169,16 @@ renderAll()
 // requestPermission() does need a real gesture in most browsers, so that path only ever
 // runs from the toast button below, never automatically on load.
 ;(async () => {
-  if (autosaveWasUnreadable) showToast('Your last autosave could not be read, so the tool started empty. A copy is kept in this browser.')
+  if (unreadableAutosave) {
+    const kept = unreadableAutosaveKept ? ' A copy is kept in this browser.' : ''
+    showToast('Your last autosave could not be read, so the tool started empty.' + kept, 'Download it', () => {
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(new Blob([unreadableAutosave], { type: 'application/json' }))
+      a.download = 'unreadable-autosave.json'
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+    })
+  }
   const result = await reacquireRememberedFile(false)
   if (result === 'ok') { showToast('Reconnected to your account file'); return }
   if (result === 'kept-local') { showToast('Kept your unsaved edits from last time. Use Connect Excel file to replace them.'); return }
