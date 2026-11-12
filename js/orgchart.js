@@ -6,9 +6,8 @@ function buildOrgModel(people) {
   const ids = {}; people.forEach(p => { ids[p.id] = true })
   const childMap = {}
   people.forEach(p => { if (p.reports_to && ids[p.reports_to]) { (childMap[p.reports_to] = childMap[p.reports_to] || []).push(p.id) } })
-  const placed = {}
-  people.forEach(p => { if ((p.reports_to && ids[p.reports_to]) || (childMap[p.id] && childMap[p.id].length)) placed[p.id] = true })
-  const roots = people.filter(p => placed[p.id] && (!p.reports_to || !ids[p.reports_to]))
+  // A root manages someone and reports to no one on the chart.
+  const roots = people.filter(p => childMap[p.id] && !(p.reports_to && ids[p.reports_to]))
   // People in a reporting loop (A reports to B and B to A) have a boss but no route to a root,
   // so they would vanish from the chart. Anyone the roots cannot reach goes to the unassigned zone.
   const reachable = {}

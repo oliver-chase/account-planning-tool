@@ -1,5 +1,6 @@
 'use strict'
-// A workbook has one plainly named sheet per type, and opens again with everything intact.
+// A workbook has one plainly named sheet per type, and opens again with everything intact,
+// including the Plans sheet, which comes back unchanged.
 // Run: node tests/plain-sheets.js
 const fs = require('fs'), path = require('path'), vm = require('vm'), assert = require('assert')
 const root = path.join(__dirname, '..')
@@ -51,6 +52,15 @@ assert.strictEqual(people([['a', 'Ann', '', ''], ['c', 'Cy', '', ''], ['b', 'Bo'
 assert.strictEqual(people([['a', 'Ann', '', ''], ['c', 'Cy', '', ''], ['b', 'Bo', 'Cy', 'a']]), 'c', 'an edited name wins')
 assert.strictEqual(people([['a', 'Ann', '', ''], ['c', 'Cy', '', ''], ['b', 'Bo', '', 'a']]), '', 'a cleared name clears the manager')
 assert.strictEqual(people([['a', 'Ann', '', ''], ['a2', 'Ann', '', ''], ['b', 'Bo', 'Ann', 'a2']]), 'a2', 'the ID picks between two people with one name')
+
+// The Plans sheet survives an import and a save unchanged.
+const planRows = [['ID', 'Year', 'Objective', 'RevenueTarget', 'Strategy', 'RisksSummary', 'LastReviewedAt', 'NextReviewAt'], ['pl1', '2027', 'Grow', '$1M', 'Land', 'Budget', '2026-10-01', '2026-12-01']]
+const pw = XLSX.utils.book_new()
+XLSX.utils.book_append_sheet(pw, XLSX.utils.aoa_to_sheet([['Field', 'Value'], ['Account Name', 'Acme']]), 'Overview')
+XLSX.utils.book_append_sheet(pw, XLSX.utils.aoa_to_sheet(planRows), 'Plans')
+importWorkbook(pw, 'old.xlsx')
+const planBack = XLSX.utils.sheet_to_json(buildWorkbook().Sheets.Plans, { header: 1, defval: '' })
+assert.strictEqual(JSON.stringify(planBack.map(r => r.map(String))), JSON.stringify(planRows), 'Plans comes back unchanged')
 
 console.log('plain-sheets: ok')
 `

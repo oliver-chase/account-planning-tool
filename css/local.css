@@ -29,10 +29,9 @@ button.popover-trigger{font:inherit;max-width:220px;overflow:hidden;text-overflo
 /* Person card rows: the picker fills the room left in its row. Scoped to a direct child so multi-pickers keep their compact size. */
 .card-meta-row > button.popover-trigger{flex:1 1 auto;min-width:0}
 .app-popover-search{width:100%;box-sizing:border-box}
-.app-popover-item{cursor:pointer}
 /* Plain block list: a flex container blockifies its <li> children per
    spec, which drops their list-item marker (the bullet) entirely. */
-.howto-list{margin:0;padding-left:var(--spacing-lg)}
+.howto-list{margin:var(--spacing-sm) 0 0;padding-left:var(--spacing-lg)}
 .howto-list li{font-size:var(--font-size-xs);margin-bottom:var(--spacing-sm)}
 .howto-list li:last-child{margin-bottom:0}
 @media(max-width:500px){
@@ -125,3 +124,6 @@ body.show-start .section,body.show-start .account-header-row{display:none}
 .textSecondary{color: var(--color-text-secondary)}
 .flexRow{display: flex;gap: var(--spacing-sm);align-items: center}
 .fontSmall{font-size: var(--font-size-sm)}
+.help-card{margin-bottom:var(--spacing-lg);position:relative;border-color:var(--color-brand-accent);background:var(--color-brand-accent-light)}
+.help-header{justify-content:space-between}
+.help-close{position:static}

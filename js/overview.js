@@ -78,7 +78,7 @@ function renderOverviewBody() {
   const teamMembers = toArray(b.account_team)
   const override = b.next_meeting_override && b.next_meeting_override >= today() ? b.next_meeting_override : null
   const computed = !override ? computeNextMeeting(b, state.notes) : null
-  const lastNote = [...state.notes].filter(n => n.date).sort((a, c) => c.date.localeCompare(a.date))[0]
+  const lastNote = state.notes.filter(n => n.date).sort((a, c) => c.date.localeCompare(a.date))[0]
 
   renderPlanHeader(root)
 
@@ -91,7 +91,7 @@ function renderOverviewBody() {
   card1.appendChild(el('div', 'app-card-label overview-label-top', 'Account manager'))
   card1.appendChild(personSelectEl(b.account_manager || '', v => saveBg({ account_manager: v }), 'card-owner-btn'))
   card1.appendChild(el('div', 'app-card-label overview-label-top', 'Account team'))
-  card1.appendChild(multiPicker(teamNames.length ? teamNames : teamMembers, teamMembers, next => saveBg({ account_team: next.join('; ') }), 'Add person'))
+  card1.appendChild(multiPicker(teamNames, teamMembers, next => saveBg({ account_team: next.join('; ') }), 'Add person'))
   const rosterLink = el('button', 'card-action-link', 'Manage roster')
   rosterLink.type = 'button'
   rosterLink.addEventListener('click', () => openRosterModal(state.background, name => saveBg(removeTeamMember(state.background, name))))

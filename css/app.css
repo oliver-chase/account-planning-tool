@@ -37,7 +37,7 @@
 .app-popover-search{padding:var(--spacing-xs) var(--spacing-sm);border:none;border-bottom:1px solid var(--color-border);outline:none;background:transparent;font-family:var(--font-family-base);font-size:var(--font-size-xs);color:var(--color-text-primary)}
 .app-popover-search::placeholder{color:var(--color-text-placeholder);font-style:italic}
 .app-popover-list{overflow-y:auto;max-height:360px;padding:var(--spacing-xs) 0}
-.app-popover-item{display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-xs) var(--spacing-sm);font-family:var(--font-family-base);font-size:var(--font-size-xs);color:var(--color-text-primary);user-select:none;min-height:var(--touch-target)}
+.app-popover-item{cursor:pointer;display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-xs) var(--spacing-sm);font-family:var(--font-family-base);font-size:var(--font-size-xs);color:var(--color-text-primary);user-select:none;min-height:var(--touch-target)}
 .app-popover-item>span:last-child{white-space:nowrap}
 @media (max-width:500px){
   .app-popover-item{padding:var(--spacing-10) var(--spacing-sm)}
@@ -83,7 +83,6 @@
 .app.show-hamburger .topbar-hamburger{display:none;width:var(--day-btn-size);height:var(--day-btn-size);align-items:center;justify-content:center;cursor:pointer;color:var(--color-text-secondary);background:none;border:none;border-radius:var(--radius-sm)}
 .app.show-hamburger .topbar-hamburger:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:1px}
 .app.show-hamburger .main{margin-left:var(--sidebar-w);min-height:100vh}
-.app.show-hamburger{--module-main-pad-top:calc(var(--topbar-h) + var(--spacing-md) + var(--spacing-20));--module-main-pad-x:var(--spacing-lg);--module-main-pad-bottom:calc(var(--spacing-xl) + var(--spacing-2xl))}
 .org-node-name{display:block;font-family:var(--font-family-base)}
 @media (max-width:500px){
   .app-card{width:100%}

@@ -272,12 +272,10 @@ async function updateExcel() {
           types: [{ description: 'Excel Workbook', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }],
         })
       }
-      {
-        const lost = await contentUpdateWouldRemove(handle, wb)
-        if (lost.length) {
-          const r = await showModal({ title: 'Update Excel will remove content', message: 'Your file has ' + lost.slice(0, 5).join(', ') + (lost.length > 5 ? ' and ' + (lost.length - 5) + ' more' : '') + ' that this tool does not keep. Updating replaces the file without it.', confirmLabel: 'Update anyway', dangerConfirm: true })
-          if (r.buttonValue !== 'confirm') return
-        }
+      const lost = await contentUpdateWouldRemove(handle, wb)
+      if (lost.length) {
+        const r = await showModal({ title: 'Update Excel will remove content', message: 'Your file has ' + lost.slice(0, 5).join(', ') + (lost.length > 5 ? ' and ' + (lost.length - 5) + ' more' : '') + ' that this tool does not keep. Updating replaces the file without it.', confirmLabel: 'Update anyway', dangerConfirm: true })
+        if (r.buttonValue !== 'confirm') return
       }
       const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
       const writable = await handle.createWritable()

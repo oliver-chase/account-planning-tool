@@ -169,7 +169,6 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
 .card-section-label--link{cursor:pointer;user-select:none}
 .card-section-label--reset{margin-top:0}
 .inline-title-text{color:var(--color-text-primary)}
-.note-card{position:relative}
 .note-date-editable{outline:none;border-radius:var(--editable-radius);cursor:text;padding:var(--editable-padding)}
 .export-helper-text{margin-top:var(--spacing-sm);color:var(--color-text-secondary);font-size:var(--font-size-sm);line-height:var(--line-height-base)}
 .person-card:hover .account-card-remove-btn{display:flex}

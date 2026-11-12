@@ -167,7 +167,7 @@
 .app-popover-search{padding:var(--spacing-xs) var(--spacing-sm);border:none;border-bottom:1px solid var(--color-border);outline:none;background:transparent;font-family:var(--font-family-base);font-size:var(--font-size-xs);color:var(--color-text-primary)}
 .app-popover-search::placeholder{color:var(--color-text-placeholder);font-style:italic}
 .app-popover-list{overflow-y:auto;max-height:360px;padding:var(--spacing-xs) 0}
-.app-popover-item{display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-xs) var(--spacing-sm);font-family:var(--font-family-base);font-size:var(--font-size-xs);color:var(--color-text-primary);user-select:none;min-height:var(--touch-target)}
+.app-popover-item{cursor:pointer;display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-xs) var(--spacing-sm);font-family:var(--font-family-base);font-size:var(--font-size-xs);color:var(--color-text-primary);user-select:none;min-height:var(--touch-target)}
 .app-popover-item>span:last-child{white-space:nowrap}
 @media (max-width:500px){
   .app-popover-item{padding:var(--spacing-10) var(--spacing-sm)}
@@ -213,7 +213,6 @@
 .app.show-hamburger .topbar-hamburger{display:none;width:var(--day-btn-size);height:var(--day-btn-size);align-items:center;justify-content:center;cursor:pointer;color:var(--color-text-secondary);background:none;border:none;border-radius:var(--radius-sm)}
 .app.show-hamburger .topbar-hamburger:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:1px}
 .app.show-hamburger .main{margin-left:var(--sidebar-w);min-height:100vh}
-.app.show-hamburger{--module-main-pad-top:calc(var(--topbar-h) + var(--spacing-md) + var(--spacing-20));--module-main-pad-x:var(--spacing-lg);--module-main-pad-bottom:calc(var(--spacing-xl) + var(--spacing-2xl))}
 .org-node-name{display:block;font-family:var(--font-family-base)}
 @media (max-width:500px){
   .app-card{width:100%}
@@ -431,7 +430,6 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
 .card-section-label--link{cursor:pointer;user-select:none}
 .card-section-label--reset{margin-top:0}
 .inline-title-text{color:var(--color-text-primary)}
-.note-card{position:relative}
 .note-date-editable{outline:none;border-radius:var(--editable-radius);cursor:text;padding:var(--editable-padding)}
 .export-helper-text{margin-top:var(--spacing-sm);color:var(--color-text-secondary);font-size:var(--font-size-sm);line-height:var(--line-height-base)}
 .person-card:hover .account-card-remove-btn{display:flex}
@@ -486,10 +484,9 @@ button.popover-trigger{font:inherit;max-width:220px;overflow:hidden;text-overflo
 /* Person card rows: the picker fills the room left in its row. Scoped to a direct child so multi-pickers keep their compact size. */
 .card-meta-row > button.popover-trigger{flex:1 1 auto;min-width:0}
 .app-popover-search{width:100%;box-sizing:border-box}
-.app-popover-item{cursor:pointer}
 /* Plain block list: a flex container blockifies its <li> children per
    spec, which drops their list-item marker (the bullet) entirely. */
-.howto-list{margin:0;padding-left:var(--spacing-lg)}
+.howto-list{margin:var(--spacing-sm) 0 0;padding-left:var(--spacing-lg)}
 .howto-list li{font-size:var(--font-size-xs);margin-bottom:var(--spacing-sm)}
 .howto-list li:last-child{margin-bottom:0}
 @media(max-width:500px){
@@ -582,6 +579,9 @@ body.show-start .section,body.show-start .account-header-row{display:none}
 .textSecondary{color: var(--color-text-secondary)}
 .flexRow{display: flex;gap: var(--spacing-sm);align-items: center}
 .fontSmall{font-size: var(--font-size-sm)}
+.help-card{margin-bottom:var(--spacing-lg);position:relative;border-color:var(--color-brand-accent);background:var(--color-brand-accent-light)}
+.help-header{justify-content:space-between}
+.help-close{position:static}
 
 </style>
 <script>
@@ -1180,12 +1180,10 @@ async function updateExcel() {
           types: [{ description: 'Excel Workbook', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }],
         })
       }
-      {
-        const lost = await contentUpdateWouldRemove(handle, wb)
-        if (lost.length) {
-          const r = await showModal({ title: 'Update Excel will remove content', message: 'Your file has ' + lost.slice(0, 5).join(', ') + (lost.length > 5 ? ' and ' + (lost.length - 5) + ' more' : '') + ' that this tool does not keep. Updating replaces the file without it.', confirmLabel: 'Update anyway', dangerConfirm: true })
-          if (r.buttonValue !== 'confirm') return
-        }
+      const lost = await contentUpdateWouldRemove(handle, wb)
+      if (lost.length) {
+        const r = await showModal({ title: 'Update Excel will remove content', message: 'Your file has ' + lost.slice(0, 5).join(', ') + (lost.length > 5 ? ' and ' + (lost.length - 5) + ' more' : '') + ' that this tool does not keep. Updating replaces the file without it.', confirmLabel: 'Update anyway', dangerConfirm: true })
+        if (r.buttonValue !== 'confirm') return
       }
       const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
       const writable = await handle.createWritable()
@@ -1315,19 +1313,12 @@ function renderHelpBanner() {
   slot.innerHTML = ''
   if (!helpForcedOpen) return
 
-  const card = el('div', 'app-card', null)
-  card.style.marginBottom = 'var(--spacing-lg)'
-  card.style.position = 'relative'
-  card.style.borderColor = 'var(--color-brand-accent)'
-  card.style.background = 'var(--color-brand-accent-light)'
-
-  const headerRow = el('div', 'flexRow', null)
-  headerRow.style.justifyContent = 'space-between'
+  const card = el('div', 'app-card help-card', null)
+  const headerRow = el('div', 'flexRow help-header', null)
   headerRow.appendChild(el('span', 'app-card-label', 'How-to guide'))
 
-  const closeBtn = el('button', 'app-modal-close', '×')
+  const closeBtn = el('button', 'app-modal-close help-close', '×')
   closeBtn.type = 'button'
-  closeBtn.style.position = 'static'
   closeBtn.setAttribute('aria-label', 'Dismiss instructions')
   closeBtn.addEventListener('click', () => { helpForcedOpen = false; renderHelpBanner() })
   headerRow.appendChild(closeBtn)
@@ -1344,7 +1335,6 @@ function renderHelpBanner() {
     ['Remember where the record lives', 'Your autosave exists only in this browser. Click Update Excel before you close it, because the workbook is the record'],
   ]
   const list = el('ul', 'howto-list', null)
-  list.style.marginTop = 'var(--spacing-sm)'
   bullets.forEach(([lead, rest]) => {
     const li = el('li', 'fontXs textSecondary', null)
     li.appendChild(el('strong', null, lead + ': '))
@@ -1962,7 +1952,7 @@ function renderOverviewBody() {
   const teamMembers = toArray(b.account_team)
   const override = b.next_meeting_override && b.next_meeting_override >= today() ? b.next_meeting_override : null
   const computed = !override ? computeNextMeeting(b, state.notes) : null
-  const lastNote = [...state.notes].filter(n => n.date).sort((a, c) => c.date.localeCompare(a.date))[0]
+  const lastNote = state.notes.filter(n => n.date).sort((a, c) => c.date.localeCompare(a.date))[0]
 
   renderPlanHeader(root)
 
@@ -1975,7 +1965,7 @@ function renderOverviewBody() {
   card1.appendChild(el('div', 'app-card-label overview-label-top', 'Account manager'))
   card1.appendChild(personSelectEl(b.account_manager || '', v => saveBg({ account_manager: v }), 'card-owner-btn'))
   card1.appendChild(el('div', 'app-card-label overview-label-top', 'Account team'))
-  card1.appendChild(multiPicker(teamNames.length ? teamNames : teamMembers, teamMembers, next => saveBg({ account_team: next.join('; ') }), 'Add person'))
+  card1.appendChild(multiPicker(teamNames, teamMembers, next => saveBg({ account_team: next.join('; ') }), 'Add person'))
   const rosterLink = el('button', 'card-action-link', 'Manage roster')
   rosterLink.type = 'button'
   rosterLink.addEventListener('click', () => openRosterModal(state.background, name => saveBg(removeTeamMember(state.background, name))))
@@ -2297,9 +2287,8 @@ function buildOrgModel(people) {
   const ids = {}; people.forEach(p => { ids[p.id] = true })
   const childMap = {}
   people.forEach(p => { if (p.reports_to && ids[p.reports_to]) { (childMap[p.reports_to] = childMap[p.reports_to] || []).push(p.id) } })
-  const placed = {}
-  people.forEach(p => { if ((p.reports_to && ids[p.reports_to]) || (childMap[p.id] && childMap[p.id].length)) placed[p.id] = true })
-  const roots = people.filter(p => placed[p.id] && (!p.reports_to || !ids[p.reports_to]))
+  // A root manages someone and reports to no one on the chart.
+  const roots = people.filter(p => childMap[p.id] && !(p.reports_to && ids[p.reports_to]))
   // People in a reporting loop (A reports to B and B to A) have a boss but no route to a root,
   // so they would vanish from the chart. Anyone the roots cannot reach goes to the unassigned zone.
   const reachable = {}
@@ -3678,20 +3667,18 @@ function wireAccountHeader() {
       timer = setTimeout(run, 300)
     }
   }
-  const saveName = headerSaver('account_name'), saveCompany = headerSaver('client_company')
-  nameEl.addEventListener('blur', () => {
-    const v = nameEl.textContent.trim()
-    if (!v) { nameEl.textContent = state.account.account_name || ''; return }
-    if (v === state.account.account_name) return
-    saveName(v)
-  })
-  nameEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); nameEl.blur() } })
-  companyEl.addEventListener('blur', () => {
-    const v = companyEl.textContent.trim()
-    if (v === (state.account.client_company || '')) return
-    saveCompany(v)
-  })
-  companyEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); companyEl.blur() } })
+  // The account name cannot be emptied; the company can.
+  const wireField = (node, field, required) => {
+    const save = headerSaver(field)
+    node.addEventListener('blur', () => {
+      const v = node.textContent.trim()
+      if (!v && required) { node.textContent = state.account[field] || ''; return }
+      if (v !== (state.account[field] || '')) save(v)
+    })
+    node.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); node.blur() } })
+  }
+  wireField(nameEl, 'account_name', true)
+  wireField(companyEl, 'client_company', false)
 }
 
 // File actions live in the sidebar under their own Actions header, styled like the section

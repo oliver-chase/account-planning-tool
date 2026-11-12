@@ -9,19 +9,12 @@ function renderHelpBanner() {
   slot.innerHTML = ''
   if (!helpForcedOpen) return
 
-  const card = el('div', 'app-card', null)
-  card.style.marginBottom = 'var(--spacing-lg)'
-  card.style.position = 'relative'
-  card.style.borderColor = 'var(--color-brand-accent)'
-  card.style.background = 'var(--color-brand-accent-light)'
-
-  const headerRow = el('div', 'flexRow', null)
-  headerRow.style.justifyContent = 'space-between'
+  const card = el('div', 'app-card help-card', null)
+  const headerRow = el('div', 'flexRow help-header', null)
   headerRow.appendChild(el('span', 'app-card-label', 'How-to guide'))
 
-  const closeBtn = el('button', 'app-modal-close', '×')
+  const closeBtn = el('button', 'app-modal-close help-close', '×')
   closeBtn.type = 'button'
-  closeBtn.style.position = 'static'
   closeBtn.setAttribute('aria-label', 'Dismiss instructions')
   closeBtn.addEventListener('click', () => { helpForcedOpen = false; renderHelpBanner() })
   headerRow.appendChild(closeBtn)
@@ -38,7 +31,6 @@ function renderHelpBanner() {
     ['Remember where the record lives', 'Your autosave exists only in this browser. Click Update Excel before you close it, because the workbook is the record'],
   ]
   const list = el('ul', 'howto-list', null)
-  list.style.marginTop = 'var(--spacing-sm)'
   bullets.forEach(([lead, rest]) => {
     const li = el('li', 'fontXs textSecondary', null)
     li.appendChild(el('strong', null, lead + ': '))

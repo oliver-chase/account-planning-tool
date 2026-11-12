@@ -43,20 +43,18 @@ function wireAccountHeader() {
       timer = setTimeout(run, 300)
     }
   }
-  const saveName = headerSaver('account_name'), saveCompany = headerSaver('client_company')
-  nameEl.addEventListener('blur', () => {
-    const v = nameEl.textContent.trim()
-    if (!v) { nameEl.textContent = state.account.account_name || ''; return }
-    if (v === state.account.account_name) return
-    saveName(v)
-  })
-  nameEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); nameEl.blur() } })
-  companyEl.addEventListener('blur', () => {
-    const v = companyEl.textContent.trim()
-    if (v === (state.account.client_company || '')) return
-    saveCompany(v)
-  })
-  companyEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); companyEl.blur() } })
+  // The account name cannot be emptied; the company can.
+  const wireField = (node, field, required) => {
+    const save = headerSaver(field)
+    node.addEventListener('blur', () => {
+      const v = node.textContent.trim()
+      if (!v && required) { node.textContent = state.account[field] || ''; return }
+      if (v !== (state.account[field] || '')) save(v)
+    })
+    node.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); node.blur() } })
+  }
+  wireField(nameEl, 'account_name', true)
+  wireField(companyEl, 'client_company', false)
 }
 
 // File actions live in the sidebar under their own Actions header, styled like the section
