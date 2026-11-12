@@ -96,9 +96,18 @@ function wireShell() {
   const sidebar = document.getElementById('sidebar')
   const backdrop = document.getElementById('sidebar-backdrop')
   const hamburger = document.getElementById('btn-hamburger')
-  hamburger.addEventListener('click', () => { sidebar.classList.toggle('open'); backdrop.classList.toggle('open') })
-  backdrop.addEventListener('click', () => { sidebar.classList.remove('open'); backdrop.classList.remove('open') })
-  document.querySelectorAll('#section-nav a').forEach(a => a.addEventListener('click', () => { sidebar.classList.remove('open'); backdrop.classList.remove('open') }))
+  // At 900 px and under the sidebar slides away; while it is away its links leave the tab order.
+  const narrow = window.matchMedia('(max-width:900px)')
+  const setSidebar = open => {
+    sidebar.classList.toggle('open', open); backdrop.classList.toggle('open', open)
+    hamburger.setAttribute('aria-expanded', String(open))
+    sidebar.inert = narrow.matches && !open
+  }
+  hamburger.addEventListener('click', () => setSidebar(!sidebar.classList.contains('open')))
+  backdrop.addEventListener('click', () => setSidebar(false))
+  document.querySelectorAll('#section-nav a').forEach(a => a.addEventListener('click', () => setSidebar(false)))
+  if (narrow.addEventListener) narrow.addEventListener('change', () => setSidebar(false))
+  setSidebar(false)
 
   document.getElementById('btn-import').addEventListener('click', async () => {
     if (window.showOpenFilePicker) {

@@ -128,7 +128,7 @@
 
 </style>
 <style>
-.btn:focus-visible,.app-popover-item:focus-visible,.app-view-toggle-btn:focus-visible,.app-chip:focus-visible,.app-sidebar-item:focus-visible,.app-modal:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:2px}
+.btn:focus-visible,.app-popover-item:focus-visible,.app-view-toggle-btn:focus-visible,.app-chip:focus-visible,.app-sidebar-item:focus-visible,.app-modal:focus-visible,.app-popover-search:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:2px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--spacing-xs);min-height:var(--touch-target);padding:var(--spacing-7) var(--spacing-10);border-radius:var(--radius-sm);border:1px solid transparent;font-family:var(--font-family-base);font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);line-height:var(--line-height-tight);cursor:pointer;transition:background var(--transition-fast),border-color var(--transition-fast),color var(--transition-fast);background:transparent;color:var(--color-text-primary)}
 .btn:disabled{opacity:0.5;cursor:not-allowed}
 .btn-primary{background:var(--color-brand-accent);color:var(--color-text-inverse);border-color:var(--color-brand-accent)}
@@ -532,7 +532,7 @@ body.show-start .section,body.show-start .account-header-row{display:none}
 .person-more-toggle{margin:var(--spacing-xs) 0 0;padding:0;background:none;border:none;color:var(--color-brand-primary);font:inherit;font-size:var(--font-size-xs);text-decoration:underline;cursor:pointer;min-height:var(--touch-target);text-align:left}
 .person-more-toggle:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:1px}
 .person-more-fields{margin-top:var(--spacing-xs);display:flex;flex-direction:column;gap:var(--spacing-2xs)}
-[contenteditable]:focus-visible,.note-card:focus-visible,.module-data-table th[tabindex]:focus-visible,.notes-search:focus-visible,.module-filter-date:focus-visible,.overview-date-input:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:1px}
+[contenteditable]:focus-visible,.note-card:focus-visible,.module-data-table th[tabindex]:focus-visible,.notes-search:focus-visible,.module-filter-date:focus-visible,.overview-date-input:focus-visible,.overview-interval-input:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:1px}
 #sync-text{display:inline-block;max-width:240px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
 /* Phone layout: nothing may push the page wider than the screen. Checked at 390 px and wider. */
   @media (max-width:720px){
@@ -552,7 +552,7 @@ body.show-start .section,body.show-start .account-header-row{display:none}
 /* Touch targets: 44 px on phones and touch screens. */
   @media (max-width:720px),(pointer:coarse){
   .card-owner-btn,.card-action-link,.inline-action-button,.module-filter-chip,.app-view-toggle-btn,.module-filter-search,.module-filter-date,.notes-search,.overview-date-input,.overview-cadence-summary-row,.card-section-label--link{min-height:var(--touch-target);box-sizing:border-box;display:flex;align-items:center}
-  .account-card-remove-btn,.note-copy-btn{min-width:var(--touch-target);min-height:var(--touch-target)}
+  .account-card-remove-btn,.note-copy-btn,.overview-day-btn,.picker-btn-inline,.org-unlink-btn,.app-chip-remove{min-width:var(--touch-target);min-height:var(--touch-target)}
 }
 /* Delete buttons are always visible on touch and keyboard devices. */
   @media (hover:none){
@@ -640,7 +640,7 @@ t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=xk(e,t);t.type="arra
         <span class="module-sync-dot" id="sync-dot"></span>
         <span id="sync-text">No file loaded</span>
       </span>
-      <input type="file" id="file-input" accept=".xlsx" style="display:none">
+      <input type="file" id="file-input" accept=".xlsx" hidden>
     </div>
   </div>
 
@@ -3731,9 +3731,18 @@ function wireShell() {
   const sidebar = document.getElementById('sidebar')
   const backdrop = document.getElementById('sidebar-backdrop')
   const hamburger = document.getElementById('btn-hamburger')
-  hamburger.addEventListener('click', () => { sidebar.classList.toggle('open'); backdrop.classList.toggle('open') })
-  backdrop.addEventListener('click', () => { sidebar.classList.remove('open'); backdrop.classList.remove('open') })
-  document.querySelectorAll('#section-nav a').forEach(a => a.addEventListener('click', () => { sidebar.classList.remove('open'); backdrop.classList.remove('open') }))
+  // At 900 px and under the sidebar slides away; while it is away its links leave the tab order.
+  const narrow = window.matchMedia('(max-width:900px)')
+  const setSidebar = open => {
+    sidebar.classList.toggle('open', open); backdrop.classList.toggle('open', open)
+    hamburger.setAttribute('aria-expanded', String(open))
+    sidebar.inert = narrow.matches && !open
+  }
+  hamburger.addEventListener('click', () => setSidebar(!sidebar.classList.contains('open')))
+  backdrop.addEventListener('click', () => setSidebar(false))
+  document.querySelectorAll('#section-nav a').forEach(a => a.addEventListener('click', () => setSidebar(false)))
+  if (narrow.addEventListener) narrow.addEventListener('change', () => setSidebar(false))
+  setSidebar(false)
 
   document.getElementById('btn-import').addEventListener('click', async () => {
     if (window.showOpenFilePicker) {
