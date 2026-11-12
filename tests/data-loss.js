@@ -47,7 +47,7 @@ const src = ['js/state.js', 'js/excel.js'].map(f => fs.readFileSync(path.join(ro
   assert.strictEqual(state.account.account_name, 'C')
   assert.strictEqual(unsavedEdits, false, 'importing marks the state as matching the file')
 
-  // A file that cannot be read says so and changes nothing.
+  // A file with none of the tool's sheets says so and changes nothing.
   toasts.length = 0
   const keep = state
   assert.strictEqual(await loadWorkbookFromFile(fileOf('bad.xlsx', new TextEncoder().encode('not a workbook').buffer), null), false)

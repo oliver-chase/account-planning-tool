@@ -11,10 +11,9 @@ function fakeNode(tag) {
   return { tag, className: '', textContent: '', innerText: '', attrs: {}, listeners: {}, children: [], contains: () => false, remove() {},
     setAttribute(k, v) { this.attrs[k] = v }, addEventListener(t, f) { this.listeners[t] = f }, appendChild(c) { this.children.push(c); return c } }
 }
-const toasts = []
 const toastBox = fakeNode('div')
 const store = {}
-const sandbox = { assert, console, toasts, toastBox,
+const sandbox = { assert, console, toastBox,
   document: { createElement: fakeNode, getElementById: id => (id === 'toast-container' ? toastBox : null), querySelector: () => null, activeElement: null },
   localStorage: { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v) } },
   window: { addEventListener(t, f) { if (t === 'pagehide') sandbox.pagehide = f } }, setTimeout: f => { f(); return 1 }, clearTimeout() {},

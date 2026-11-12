@@ -1,8 +1,8 @@
 const wait=ms=>new Promise(r=>setTimeout(r,ms)); const out={};
 const cw=document.documentElement.clientWidth; out.clientWidth=cw; out.scrollWidth=document.documentElement.scrollWidth;
-for (const id of ['overview','people','actions','notes']) { location.hash='#'+id; await wait(120);
-  const over=[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect(); return r.right>cw+2&&getComputedStyle(e).position!=='fixed'&&!e.closest('.module-table-wrap,.module-section-actions-scroll,.org-chart-outer,.app-sidebar')}).slice(0,3).map(e=>e.tagName+'.'+e.className.toString().slice(0,30)+' r='+Math.round(e.getBoundingClientRect().right));
-  out[id]=over.length?over:'ok'; }
+// The four sections share one page, so one pass measures them all.
+{ const over=[...document.querySelectorAll('body *')].filter(e=>{const r=e.getBoundingClientRect(); return r.right>cw+2&&getComputedStyle(e).position!=='fixed'&&!e.closest('.module-table-wrap,.module-section-actions-scroll,.org-chart-outer,.app-sidebar')}).slice(0,3).map(e=>e.tagName+'.'+e.className.toString().slice(0,30)+' r='+Math.round(e.getBoundingClientRect().right));
+  out.overflow=over.length?over:'ok'; }
 // Nothing may poke out of the card that holds it.
 out.pokesOutOfCard=[...document.querySelectorAll('.app-card *')].filter(e=>{const c=e.closest('.app-card'); if(!c||c===e) return false; const r=e.getBoundingClientRect(), cr=c.getBoundingClientRect(); return r.width>0&&r.right>cr.right+1&&getComputedStyle(e).position!=='fixed'&&!e.closest('.module-table-wrap,.org-chart-outer,.module-section-actions-scroll,.overview-bar-edit-input')}).slice(0,4).map(e=>e.tagName+'.'+e.className.toString().slice(0,30)+' "'+(e.textContent||'').trim().slice(0,20)+'" w='+Math.round(e.getBoundingClientRect().width)+' cardR='+Math.round(e.closest('.app-card').getBoundingClientRect().right)+' r='+Math.round(e.getBoundingClientRect().right));
 out.small=[...new Set([...document.querySelectorAll('button,a,input,select,[role=button]')].filter(e=>{const r=e.getBoundingClientRect();const cs=getComputedStyle(e);return r.width>0&&r.height>0&&r.height<44&&cs.visibility!=='hidden'&&!e.closest('.app-sidebar,.module-table-wrap')}).map(e=>e.tagName+'.'+e.className.toString().slice(0,24)+' h='+Math.round(e.getBoundingClientRect().height)))].slice(0,10);
