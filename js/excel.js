@@ -103,17 +103,16 @@ function parseStateFromRows(getRows, sourceName) {
         created_date: today(), last_updated: today(),
       })
     })
+    const byId = Object.fromEntries(next.stakeholders.map(p => [p.id, p]))
     next.stakeholders.forEach(p => {
-      // ReportsToID is the stable reference this tool itself writes on every export (see
-      // buildAoasFromState) -- prefer it outright, since it can't collide the way a name can.
-      // Only fall back to name-matching for a legacy sheet or a hand-edited one missing it.
-      if (p._reportsToId && idSet.has(p._reportsToId) && p._reportsToId !== p.id) {
-        p.reports_to = p._reportsToId
-      } else {
-        const want = (p._reportsToName || '').toLowerCase()
-        const matched = want ? nameToId[want] : null
-        if (matched && matched !== p.id) p.reports_to = matched
-      }
+      // ReportsTo is the name a person reads and edits in Excel; ReportsToID is the reference this
+      // tool writes beside it, which survives duplicate names. The ID wins while its person still
+      // carries the ReportsTo name. An edited or cleared name wins, unless it names two people.
+      const want = (p._reportsToName || '').toLowerCase()
+      const byRef = p._reportsToId && idSet.has(p._reportsToId) && p._reportsToId !== p.id ? p._reportsToId : ''
+      const matched = want ? nameToId[want] : ''
+      if (byRef && (byId[byRef].name.toLowerCase() === want || matched === null)) p.reports_to = byRef
+      else if (matched && matched !== p.id) p.reports_to = matched
       delete p._reportsToName
       delete p._reportsToId
     })

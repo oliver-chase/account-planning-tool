@@ -44,6 +44,14 @@ assert.strictEqual(state.actions.map(a => a.status).join(), 'Open,In Progress,Do
 assert.strictEqual(state.actions[2].closed_date, '', 'a Done row with no closed date keeps none, so an old action is not counted as finished this week')
 assert.strictEqual(JSON.stringify(state.notes[0].attendees), '["Smith, John","Ann"]')
 
+// A manager edited or cleared in the ReportsTo column wins over the ID this tool wrote beside it;
+// an unedited name keeps the ID, which tells two people with one name apart.
+const people = rows => { const w = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(w, XLSX.utils.aoa_to_sheet([['Field', 'Value'], ['Account Name', 'Org']]), 'Overview'); XLSX.utils.book_append_sheet(w, XLSX.utils.aoa_to_sheet([['ID', 'Name', 'ReportsTo', 'ReportsToID'], ...rows]), 'People'); importWorkbook(w, 'org.xlsx'); return state.stakeholders.find(p => p.id === 'b').reports_to }
+assert.strictEqual(people([['a', 'Ann', '', ''], ['c', 'Cy', '', ''], ['b', 'Bo', 'Ann', 'a']]), 'a', 'unedited name keeps the ID')
+assert.strictEqual(people([['a', 'Ann', '', ''], ['c', 'Cy', '', ''], ['b', 'Bo', 'Cy', 'a']]), 'c', 'an edited name wins')
+assert.strictEqual(people([['a', 'Ann', '', ''], ['c', 'Cy', '', ''], ['b', 'Bo', '', 'a']]), '', 'a cleared name clears the manager')
+assert.strictEqual(people([['a', 'Ann', '', ''], ['a2', 'Ann', '', ''], ['b', 'Bo', 'Ann', 'a2']]), 'a2', 'the ID picks between two people with one name')
+
 console.log('plain-sheets: ok')
 `
 vm.runInNewContext(src, sandbox)
