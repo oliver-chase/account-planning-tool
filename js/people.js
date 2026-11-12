@@ -24,6 +24,7 @@ function confirmDeletePerson(person) {
     if (r.buttonValue !== 'confirm') return
     deletePerson(person)
     document.querySelectorAll('.person-detail-panel').forEach(p => p.remove())
+    if (personPanelOnKey) document.removeEventListener('keydown', personPanelOnKey)
     renderPeople()
   })
 }

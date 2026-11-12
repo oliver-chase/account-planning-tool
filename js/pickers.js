@@ -162,19 +162,20 @@ function openRosterModal(bg, onRemove) {
 function personSelectEl(value, onChange, className) {
   const trigger = el('button', (className || 'card-owner-btn') + ' popover-trigger', value || 'Select person…')
   trigger.type = 'button'
+  let selected = value // a new-record row never re-renders, so the picker keeps its own selection
   trigger.addEventListener('click', () => {
     openPopover(trigger, (pop, close) => {
       const names = getTeamNames(state.background)
-      if (value) {
+      if (selected) {
         const clearRow = el('div', 'app-popover-item', 'Clear selection')
         clearRow.style.color = 'var(--color-text-secondary)'
         clearRow.style.fontStyle = 'italic'
-        const clear = () => { onChange(''); close() }
+        const clear = () => { selected = ''; trigger.textContent = 'Select person…'; onChange(''); close() }
         clearRow.addEventListener('click', clear)
         focusableRow(clearRow, clear)
         pop.appendChild(clearRow)
       }
-      const { search, list } = popoverOptionsList(names, n => n === value, n => { trigger.textContent = n; onChange(n); close() })
+      const { search, list } = popoverOptionsList(names, n => n === selected, n => { selected = n; trigger.textContent = n; onChange(n); close() })
       pop.appendChild(search)
       pop.appendChild(list)
       pop.appendChild(popoverAddNewRow(name => {
@@ -183,6 +184,7 @@ function personSelectEl(value, onChange, className) {
           state.background.last_updated = today()
           persist()
         }
+        selected = name
         trigger.textContent = name
         onChange(name)
         close()

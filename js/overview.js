@@ -253,7 +253,7 @@ function historicalYearForm(bg, onSave, onCancel) {
   const wrap = el('div', 'overview-hist-form', null)
   const row = el('div', 'overview-hist-form-row', null)
   const years = []
-  const earliest = Math.min(2017, ...Object.keys(bg.revenue || {}).filter(k => /^\d{4}$/.test(k)).map(Number))
+  const earliest = Math.min(curYear - 10, ...Object.keys(bg.revenue || {}).filter(k => /^\d{4}$/.test(k)).map(Number))
   for (let y = curYear - 1; y >= earliest; y--) years.push(String(y))
   // singleSelectEl's trigger is a button with no native value or change event, so the selection lives
   // in this variable and the popover's onChange updates it.
@@ -325,7 +325,8 @@ function renderRevenueChart(bg, container, onSave) {
     container.appendChild(svg); return
   }
   const H = 110, BP = 22, ML = 44
-  const barW = Math.max(2, Math.min(32, Math.floor((W - ML - years.length * 8) / (years.length * 2 + 1))))
+  // Each year takes two bars plus 16 px of gap and padding, so the bars always fit the card's width.
+  const barW = Math.max(2, Math.min(32, Math.floor((W - ML - years.length * 16) / (years.length * 2))))
   const gap = 4, colW = barW * 2 + gap + 12
   const chartW = Math.max(W, ML + years.length * colW)
   let maxVal = 0
