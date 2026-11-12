@@ -106,6 +106,11 @@ function mergeStored(stored) {
 // True while the browser holds edits that no Excel file has received yet. Kept in
 // localStorage so a reload remembers it.
 const UNSYNCED_KEY = STORAGE_KEY + '.unsynced'
+// The modified time of the connected file when this tool last read or wrote it, so Update Excel
+// can tell when someone saved the file in Excel since.
+const FILE_STAMP_KEY = STORAGE_KEY + '.fileStamp'
+function rememberFileStamp(ms) { try { localStorage.setItem(FILE_STAMP_KEY, ms ? String(ms) : '') } catch (e) { /* non-fatal */ } }
+function fileStamp() { try { return localStorage.getItem(FILE_STAMP_KEY) || '' } catch (e) { return '' } }
 let unsavedEdits = (() => { try { return localStorage.getItem(UNSYNCED_KEY) === '1' } catch (e) { return false } })()
 
 function writeLocalNow() {

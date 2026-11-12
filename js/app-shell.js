@@ -134,7 +134,7 @@ function wireShell() {
     flushPendingSaves()
     const r = await showModal({ title: 'Start a blank workbook?', message: unsavedEdits ? 'Edits you have not saved to Excel will be deleted. Click Update Excel first to keep them.' : 'This replaces the account in this browser with a blank one.', confirmLabel: 'Start blank', dangerConfirm: unsavedEdits })
     if (r.buttonValue !== 'confirm') return
-    state = emptyState(); fileHandle = null
+    state = emptyState(); fileHandle = null; rememberFileStamp('')
     resetOverviewCadenceUI()
     forgetPersistedFileHandle()
     persist(); renderAll()

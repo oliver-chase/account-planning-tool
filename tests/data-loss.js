@@ -110,6 +110,15 @@ const src = ['js/state.js', 'js/excel.js'].map(f => fs.readFileSync(path.join(ro
   setModal('confirm')
   await loadWorkbookFromFile(fileOf('next.xlsx', workbookBuffer('Next')), null)
   assert.strictEqual(state.account.account_name, 'Next')
+  // A file saved in Excel since the tool last read or wrote it is not overwritten without asking.
+  let wroteChanged = false, mtime = 1000
+  fileHandle = { getFile: async () => ({ ...fileOf('c.xlsx', workbookBuffer('C')), lastModified: mtime }), createWritable: async () => ({ write: async () => { wroteChanged = true }, close: async () => {} }) }
+  rememberFileStamp(1000); mtime = 2000; setModal('cancel')
+  await updateExcel()
+  assert.strictEqual(wroteChanged, false, 'Cancel keeps the changed file')
+  setModal('confirm'); await updateExcel()
+  assert.strictEqual(wroteChanged, true)
+  assert.strictEqual(fileStamp(), '2000', 'the stamp follows the write')
   console.log('data-loss: ok')
 })().catch(e => { console.error(e); process.exit(1) })
 `

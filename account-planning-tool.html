@@ -802,6 +802,11 @@ function mergeStored(stored) {
 // True while the browser holds edits that no Excel file has received yet. Kept in
 // localStorage so a reload remembers it.
 const UNSYNCED_KEY = STORAGE_KEY + '.unsynced'
+// The modified time of the connected file when this tool last read or wrote it, so Update Excel
+// can tell when someone saved the file in Excel since.
+const FILE_STAMP_KEY = STORAGE_KEY + '.fileStamp'
+function rememberFileStamp(ms) { try { localStorage.setItem(FILE_STAMP_KEY, ms ? String(ms) : '') } catch (e) { /* non-fatal */ } }
+function fileStamp() { try { return localStorage.getItem(FILE_STAMP_KEY) || '' } catch (e) { return '' } }
 let unsavedEdits = (() => { try { return localStorage.getItem(UNSYNCED_KEY) === '1' } catch (e) { return false } })()
 
 function writeLocalNow() {
@@ -1180,6 +1185,14 @@ async function updateExcel() {
           types: [{ description: 'Excel Workbook', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }],
         })
       }
+      if (handle === fileHandle && fileStamp()) {
+        let now = ''
+        try { now = String((await handle.getFile()).lastModified || '') } catch (e) { /* unreadable: the write reports it */ }
+        if (now && now !== fileStamp()) {
+          const r = await showModal({ title: 'Your Excel file changed', message: 'Someone saved this file after the tool last opened or updated it. Updating replaces their changes with what is on screen. Choose Cancel, then Connect Excel file, to load their version instead.', confirmLabel: 'Update anyway', dangerConfirm: true })
+          if (r.buttonValue !== 'confirm') return
+        }
+      }
       const lost = await contentUpdateWouldRemove(handle, wb)
       if (lost.length) {
         const r = await showModal({ title: 'Update Excel will remove content', message: 'Your file has ' + lost.slice(0, 5).join(', ') + (lost.length > 5 ? ' and ' + (lost.length - 5) + ' more' : '') + ' that this tool does not keep. Updating replaces the file without it.', confirmLabel: 'Update anyway', dangerConfirm: true })
@@ -1191,6 +1204,7 @@ async function updateExcel() {
       await writable.close()
       fileHandle = handle
       persistFileHandle(handle)
+      try { rememberFileStamp((await handle.getFile()).lastModified) } catch (e) { rememberFileStamp('') }
       if (changeCount === changesAtSnapshot) markSynced()
       showToast('Excel updated in place')
       setSyncState('ok', 'Excel updated at ' + new Date().toLocaleTimeString())
@@ -1231,6 +1245,7 @@ async function loadWorkbookFromFile(file, handle) {
     return false
   }
   fileHandle = handle || null
+  rememberFileStamp(handle ? file.lastModified : '')
   if (handle) persistFileHandle(handle); else forgetPersistedFileHandle()
   return true
 }
@@ -3758,7 +3773,7 @@ function wireShell() {
     flushPendingSaves()
     const r = await showModal({ title: 'Start a blank workbook?', message: unsavedEdits ? 'Edits you have not saved to Excel will be deleted. Click Update Excel first to keep them.' : 'This replaces the account in this browser with a blank one.', confirmLabel: 'Start blank', dangerConfirm: unsavedEdits })
     if (r.buttonValue !== 'confirm') return
-    state = emptyState(); fileHandle = null
+    state = emptyState(); fileHandle = null; rememberFileStamp('')
     resetOverviewCadenceUI()
     forgetPersistedFileHandle()
     persist(); renderAll()
