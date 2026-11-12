@@ -1,0 +1,63 @@
+{
+  "_comment": "Example of the local docs/backlog-config.json that the owner backlog tooling reads. Copy it to docs/backlog-config.json (which git ignores) and fill in your own Project number, owner and field IDs. The tool itself never reads either file.",
+  "projectNumber": 7,
+  "projectOwner": "your-github-login",
+  "repoOwner": "your-github-login",
+  "repoName": "account-planning-tool",
+  "projectId": "EXAMPLE_ID",
+  "fields": {
+    "status": {
+      "id": "EXAMPLE_ID",
+      "options": {
+        "Backlog": "EXAMPLE_ID",
+        "Ready": "EXAMPLE_ID",
+        "In Progress": "EXAMPLE_ID",
+        "QA": "EXAMPLE_ID",
+        "Complete": "EXAMPLE_ID"
+      }
+    },
+    "priority": {
+      "id": "EXAMPLE_ID",
+      "options": {
+        "P0": "EXAMPLE_ID",
+        "P1": "EXAMPLE_ID",
+        "P2": "EXAMPLE_ID"
+      }
+    },
+    "size": {
+      "id": "EXAMPLE_ID",
+      "options": {
+        "XS": "EXAMPLE_ID",
+        "S": "EXAMPLE_ID",
+        "M": "EXAMPLE_ID",
+        "L": "EXAMPLE_ID",
+        "XL": "EXAMPLE_ID"
+      }
+    },
+    "workType": {
+      "id": "EXAMPLE_ID",
+      "options": {
+        "Epic": "EXAMPLE_ID",
+        "Story": "EXAMPLE_ID"
+      }
+    },
+    "area": {
+      "id": "EXAMPLE_ID",
+      "options": {
+        "Plan": "EXAMPLE_ID",
+        "People": "EXAMPLE_ID",
+        "Actions": "EXAMPLE_ID",
+        "Notes": "EXAMPLE_ID",
+        "Export": "EXAMPLE_ID",
+        "Platform": "EXAMPLE_ID"
+      }
+    }
+  },
+  "qaRequiredFromIssue": null,
+  "areaPolicy": {
+    "parked": [],
+    "catchAll": [
+      "EXAMPLE_ID"
+    ]
+  }
+}

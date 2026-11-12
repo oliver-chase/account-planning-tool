@@ -1,0 +1,127 @@
+/* Layout additions and responsive rules that sit on top of app.css and accounts.css. */
+#section-nav{display:flex;flex-direction:column;gap:var(--spacing-2xs)}
+#section-nav a{display:block;padding:var(--spacing-7) var(--spacing-md);font-size:var(--font-size-sm);color:var(--color-nav-text-strong);text-decoration:none;border-left:2px solid transparent}
+#section-nav a:hover{background:var(--color-nav-hover-bg);color:var(--color-white)}
+#section-nav a.active{border-left-color:var(--color-brand-accent);background:var(--color-nav-active-bg);color:var(--color-white);font-weight:var(--font-weight-bold)}
+.content-editable-cell{outline:none;border-radius:var(--radius-sm);cursor:text}
+.content-editable-cell:hover{background:var(--color-brand-accent-light)}
+/* Filter groups stack their labels in a column so the filter panel stays narrow with many owners. */
+.filter-radio-group{display:flex;flex-direction:column;gap:var(--spacing-6)}
+.filter-radio-group--top-spaced{margin-top:var(--spacing-md)}
+.filter-radio-group label{display:flex;align-items:center;gap:var(--spacing-6);font-size:var(--font-size-sm);color:var(--color-text-primary);cursor:pointer;user-select:none}
+.filter-radio-group input[type="radio"]{cursor:pointer;accent-color:var(--color-brand-accent)}
+.filter-radio-divider{font-size:var(--font-size-xs);font-weight:var(--font-weight-bold);letter-spacing:.04em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:var(--spacing-2xs)}
+.app-sidebar-item[disabled]{opacity:.5;cursor:default}
+#file-actions-bar{display:flex;flex-direction:column;gap:var(--spacing-2xs)}
+#file-actions-bar button{background:none;border:none;font:inherit;text-align:left}
+.topbar-search{display:flex;align-items:center;gap:var(--spacing-xs);flex:1 1 auto;min-width:0}
+.org-node-owners{color:var(--color-brand-accent)}
+/* Worker-type outlines on org chart cards. The 2px border does not change the card footprint because .org-node-card is box-sizing:border-box. */
+.org-node-card--internal{border-color:var(--color-worker-internal);border-width:2px}
+.org-node-card--contractor{border-color:var(--color-worker-contractor);border-width:2px}
+.account-header-tier-group{display:flex;flex-direction:column;align-items:flex-end;gap:var(--spacing-2xs)}
+/* Matches the specificity of .person-card .card-meta-row so the spaced variant takes effect. */
+.person-card .card-meta-row--spaced{margin-top:var(--spacing-md)}
+/* Popover triggers are buttons with the same pill and chevron. */
+button.popover-trigger{font:inherit;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:calc(var(--spacing-sm) + 14px);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M5 6L0 0h10z' fill='%23797979'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right var(--spacing-xs) center}
+/* Director and Manager pickers fill the card column. Scoped to a direct child so the Account Team picker keeps its compact size. */
+.overview-card-col > button.popover-trigger{width:100%}
+/* Person card rows: the picker fills the room left in its row. Scoped to a direct child so multi-pickers keep their compact size. */
+.card-meta-row > button.popover-trigger{flex:1 1 auto;min-width:0}
+.app-popover-search{width:100%;box-sizing:border-box}
+.app-popover-item{cursor:pointer}
+/* Plain block list: a flex container blockifies its <li> children per
+   spec, which drops their list-item marker (the bullet) entirely. */
+.howto-list{margin:0;padding-left:var(--spacing-lg)}
+.howto-list li{font-size:var(--font-size-xs);margin-bottom:var(--spacing-sm)}
+.howto-list li:last-child{margin-bottom:0}
+@media(max-width:500px){
+  .topbar-search{gap:var(--spacing-2xs)}
+  .topbar-search .module-filter-search{width:100%;min-width:0}
+}
+body.show-start .section,body.show-start .account-header-row{display:none}
+.start-card{max-width:720px;margin:var(--spacing-xl) auto;padding:var(--spacing-xl);background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg)}
+.start-title{margin:0 0 var(--spacing-xs);font-size:var(--font-size-xl)}
+.start-lead{margin:0 0 var(--spacing-lg);color:var(--color-text-secondary)}
+.start-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--spacing-md)}
+.start-option{display:flex;flex-direction:column;gap:var(--spacing-xs);padding:var(--spacing-md);text-align:left;background:var(--color-bg-page);border:1px solid var(--color-border);border-radius:var(--radius-lg);font:inherit;cursor:pointer;min-height:var(--touch-target)}
+.start-option:hover{border-color:var(--color-brand-accent)}
+.start-option:focus-visible,.start-go:focus-visible,.start-link:focus-visible,.start-field input:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:1px}
+.start-option-title{font-weight:var(--font-weight-bold);color:var(--color-text-primary)}
+.start-option-text{font-size:var(--font-size-sm);color:var(--color-text-secondary)}
+.start-form{display:grid;gap:var(--spacing-md);margin-top:var(--spacing-lg)}
+.start-field{display:flex;flex-direction:column;gap:var(--spacing-2xs)}
+.start-field input{padding:var(--spacing-xs) var(--spacing-sm);border:1px solid var(--color-border);border-radius:var(--radius-sm);font:inherit}
+.start-go{justify-self:start;padding:var(--spacing-xs) var(--spacing-lg);background:var(--color-brand-primary);color:var(--color-text-inverse);border:none;border-radius:var(--radius-sm);font:inherit;cursor:pointer;min-height:var(--touch-target)}
+.start-links{display:flex;flex-wrap:wrap;gap:var(--spacing-md);margin:var(--spacing-lg) 0 0}
+.start-link{background:none;border:none;padding:0;color:var(--color-brand-primary);font:inherit;text-decoration:underline;cursor:pointer}
+@media (max-width:720px){
+  .start-options{grid-template-columns:1fr}
+}
+.start-form[hidden]{display:none}
+.export-menu-item{display:flex;flex-direction:column;gap:var(--spacing-2xs);width:100%;margin-bottom:var(--spacing-sm);padding:var(--spacing-md);text-align:left;background:var(--color-bg-page);border:1px solid var(--color-border);border-radius:var(--radius-lg);font:inherit;cursor:pointer;min-height:var(--touch-target)}
+.export-menu-item:hover{border-color:var(--color-brand-accent)}
+.export-menu-item:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:1px}
+.export-menu-title{font-weight:var(--font-weight-bold);color:var(--color-text-primary)}
+.export-menu-text{font-size:var(--font-size-sm);color:var(--color-text-secondary)}
+.call-summary-text{width:100%;box-sizing:border-box;font:inherit;font-size:var(--font-size-sm);padding:var(--spacing-sm);border:1px solid var(--color-border);border-radius:var(--radius-sm);resize:vertical}
+.call-summary-actions{display:flex;gap:var(--spacing-sm);margin-top:var(--spacing-md)}
+.plan-header-card{margin-bottom:var(--spacing-md)}
+.plan-header-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--spacing-md)}
+.plan-header-cell{display:flex;flex-direction:column;gap:var(--spacing-2xs);min-width:0}
+@media (max-width:720px){
+  .plan-header-grid{grid-template-columns:1fr}
+}
+.person-more-toggle{margin:var(--spacing-xs) 0 0;padding:0;background:none;border:none;color:var(--color-brand-primary);font:inherit;font-size:var(--font-size-xs);text-decoration:underline;cursor:pointer;min-height:var(--touch-target);text-align:left}
+.person-more-toggle:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:1px}
+.person-more-fields{margin-top:var(--spacing-xs);display:flex;flex-direction:column;gap:var(--spacing-2xs)}
+[contenteditable]:focus-visible,.note-card:focus-visible,.module-data-table th[tabindex]:focus-visible,.notes-search:focus-visible,.module-filter-date:focus-visible,.overview-date-input:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:1px}
+#sync-text{display:inline-block;max-width:240px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+/* Phone layout: nothing may push the page wider than the screen. Checked at 390 px and wider. */
+  @media (max-width:720px){
+  .topbar-search{flex:1 1 0;min-width:0}
+  .module-filter-search{flex:1 1 0;min-width:0;width:auto}
+  .module-topbar-right{flex:0 1 auto;min-width:0}
+  #sync-text{display:inline-block;max-width:84px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+  .app-section-header,.section-header-row2{min-width:0;max-width:100%}
+  .section-header-row2{flex-wrap:wrap}
+  .module-section-actions-scroll{max-width:100%;min-width:0}
+  .overview-row>*{min-width:0;max-width:100%}
+  .app-card{max-width:100%;box-sizing:border-box}
+  .account-header-row{flex-wrap:wrap;min-width:0}
+  .account-header-row>*{min-width:0;max-width:100%}
+  .account-header-actions{flex-wrap:wrap;min-width:0}
+}
+/* Touch targets: 44 px on phones and touch screens. */
+  @media (max-width:720px),(pointer:coarse){
+  .card-owner-btn,.card-action-link,.inline-action-button,.module-filter-chip,.app-view-toggle-btn,.module-filter-search,.module-filter-date,.notes-search,.overview-date-input,.overview-cadence-summary-row,.card-section-label--link{min-height:var(--touch-target);box-sizing:border-box;display:flex;align-items:center}
+  .account-card-remove-btn,.note-copy-btn{min-width:var(--touch-target);min-height:var(--touch-target)}
+}
+/* Delete buttons are always visible on touch and keyboard devices. */
+  @media (hover:none){
+  .account-card-remove-btn{display:flex}
+}
+.person-card:focus-within .account-card-remove-btn,.org-node-card:focus-within .account-card-remove-btn{display:flex}
+.editable-multiline,.card-body-text,.note-body-text{white-space:pre-wrap}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:var(--spacing-xs)}
+/* Tablet and half-screen windows: the sidebar slides away at 900 px and under. */
+  @media (max-width:900px){
+  .sidebar-backdrop{display:block}
+  .sidebar-backdrop.open{opacity:1;pointer-events:auto}
+  .app-sidebar{transform:translateX(-100%);transition:transform var(--transition-base)}
+  .app-sidebar.open{transform:translateX(0)}
+  .app.show-hamburger .topbar{left:0;padding:0 var(--spacing-12)}
+  .app.show-hamburger .topbar-hamburger{display:flex !important;min-height:var(--touch-target)}
+  .app.show-hamburger .main{margin-left:0}
+  .app.show-hamburger{--module-main-pad-top:calc(var(--topbar-h) + var(--spacing-sm));--module-main-pad-x:var(--spacing-md)}
+}
+/* Narrow screens: a picker button never wider than the card holding it. */
+  @media (max-width:720px){
+  .card-owner-btn,.picker-btn-inline,.sort-select{max-width:100%;box-sizing:border-box}
+}
+/* Wide screens: keep line lengths readable. */
+#account-content{max-width:1440px;margin-left:auto;margin-right:auto}
+.fontXs{font-size: var(--font-size-xs)}
+.textSecondary{color: var(--color-text-secondary)}
+.flexRow{display: flex;gap: var(--spacing-sm);align-items: center}
+.fontSmall{font-size: var(--font-size-sm)}

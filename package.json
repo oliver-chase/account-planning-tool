@@ -1,0 +1,6 @@
+{
+  "name": "account-planning-tool",
+  "private": true,
+  "description": "Dev dependencies for the simulated-browser test. The tool itself has no dependencies.",
+  "devDependencies": { "jsdom": "26" }
+}

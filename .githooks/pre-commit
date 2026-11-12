@@ -1,0 +1,3 @@
+#!/bin/bash
+# Runs the repo's validation before every commit. Turn it on once per clone: git config core.hooksPath .githooks
+exec "$(git rev-parse --show-toplevel)/scripts/validate.sh"
