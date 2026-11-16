@@ -1,0 +1,9 @@
+{
+  "_comment": "Files the icon and emoji gate skips, each with a reason.",
+  "exempt": [
+    "js/xlsx.full.min.js"
+  ],
+  "reasons": {
+    "js/xlsx.full.min.js": "The bundled SheetJS library carries the legacy code page tables it needs to read old Excel files, and those tables hold box-drawing and block characters."
+  }
+}

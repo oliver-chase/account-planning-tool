@@ -1,0 +1,14 @@
+{
+  "_comment": "The owner-identifier gate's per-repo lists: config files to read for account names, and local-data files allowed to hold an identifier, each with a reason.",
+  "configGlobs": [],
+  "localData": [
+    "LICENSE",
+    "README.md",
+    "index.html"
+  ],
+  "localDataReasons": {
+    "LICENSE": "The copyright line names the product, Account Planning Tool, which is also the neutral author name on every commit, so the gate reads it as an owner identifier.",
+    "README.md": "It names the product, Account Planning Tool, which is also the neutral author name on every commit, so the gate reads the product name as an owner identifier.",
+    "index.html": "It names the product, Account Planning Tool, which is also the neutral author name on every commit, so the gate reads the product name as an owner identifier."
+  }
+}
