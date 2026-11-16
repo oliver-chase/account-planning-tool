@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Repo-local gate: the fleet pre-commit runs this after its own gates, so every commit also passes
+# scripts/validate.sh, the repo's one validation command.
+set -euo pipefail
+
+# The archived-content gate asks about a path it is about to block. This repo exempts none.
+[ "${1:-}" = archive-exempt ] && exit 1
+cat >/dev/null
+# validate.sh runs the fleet gates itself with OLIVERCODE_SCAN_TREE=1, so it is already running.
+[ "${OLIVERCODE_SCAN_TREE:-}" = 1 ] && exit 0
+exec bash "$(git rev-parse --show-toplevel)/scripts/validate.sh"
