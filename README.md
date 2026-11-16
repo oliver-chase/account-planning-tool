@@ -4,7 +4,7 @@ One HTML file for running a recurring account call. It shows who is who, what is
 
 ## Get it and open it
 
-Download `account-planning-tool.html` from the repository: open the file on GitHub and choose Download raw file, or clone the repository. It is one self-contained file with nothing to install, so it can be moved, renamed or emailed. Open it in Chrome or Edge. A new account offers three ways in: start a new account, open an Excel file, or try a sample account. Everything you type saves in the browser as you go.
+Download [account-planning-tool.html](../../releases/latest/download/account-planning-tool.html) from the latest release, which is rebuilt from the source on every change. It is one self-contained file with nothing to install, so it can be moved, renamed or emailed. Open it in Chrome or Edge. A new account offers three ways in: start a new account, open an Excel file, or try a sample account. Everything you type saves in the browser as you go.
 
 ## How a call goes
 
@@ -29,15 +29,15 @@ Chrome and Edge give the full experience: Update Excel writes into your workbook
 
 ## Working on the source
 
-You need Node and Python 3, and the WebKit run also needs macOS with the Xcode command-line tools. Run `npm install` once, then `scripts/validate.sh` to run every test and the build check. `python3 scripts/build-single-file.py` rebuilds `account-planning-tool.html`, which is tracked so the repo holds the file people open. `bash tests/webkit/run.sh` loads the built page in WebKit, the engine Safari uses, at six widths from 390 to 1280 px on a Mac. `DESIGN_SYSTEM.md` lists the components and tokens. Run `git config core.hooksPath .githooks` once per clone so each commit runs the validation first.
+You need Node and Python 3, and the WebKit run also needs macOS with the Xcode command-line tools. Run `npm install` once, then `scripts/validate.sh` to run every test and the build check. `python3 scripts/build-single-file.py` builds `account-planning-tool.html`, which git ignores. The release workflow builds it on every push to main and puts it on the latest release. `bash tests/webkit/run.sh` loads the built page in WebKit, the engine Safari uses, at six widths from 390 to 1280 px on a Mac. `DESIGN_SYSTEM.md` lists the components and tokens. Run `git config core.hooksPath .githooks` once per clone so each commit runs the validation first.
 
 ## Where things are
 
 | Path | What it holds |
 |---|---|
 | `index.html`, `js/`, `css/` | The source: the page, the scripts and the styles |
-| `account-planning-tool.html` | The built single file people open |
-| `scripts/build-single-file.py` | Builds the single file from the source, and checks it is current with `--check` |
+| `scripts/build-single-file.py` | Builds `account-planning-tool.html`, the single file people open, from the source |
+| `.github/workflows/release.yml` | Builds the single file on every push to main and replaces it on the latest release |
 | `tests/` | The Node tests, the simulated-browser test (`dom.js`) and the WebKit run (`webkit/`) |
 | `tests/fixtures/` | A workbook that stores dates the way Excel does, and the script that writes it |
 | `tests/banned-words.local.txt` | Your own list of names that must never ship, one per line, kept out of git. Without the file the test reads a comma-separated `BANNED_WORDS` variable, and with neither it skips that check |

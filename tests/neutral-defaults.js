@@ -4,8 +4,8 @@
 const fs = require('fs'), path = require('path'), assert = require('assert')
 const root = path.join(__dirname, '..')
 
-// Every tracked text file is checked, including the built page people download, except the vendored
-// library and the binary fixture.
+// Every tracked text file is checked except the vendored library and the binary fixture. The page people
+// download is built from these files alone.
 const shipped = require('child_process').execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).split('\n').filter(f => f && f !== 'js/xlsx.full.min.js' && !f.endsWith('.xlsx'))
 // Words that identify a person or company are not stored in this repo. List them, one per line, in
 // tests/banned-words.local.txt (untracked), or in the BANNED_WORDS variable when that file is missing,

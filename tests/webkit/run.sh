@@ -7,6 +7,7 @@
 set -e
 here="$(cd "$(dirname "$0")" && pwd)"
 page="$here/../../account-planning-tool.html"
+python3 "$here/../../scripts/build-single-file.py" >/dev/null # the page is not tracked, so build it from the source
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 swiftc -swift-version 5 -o "$tmp/harness" "$here/harness.swift" -framework AppKit -framework WebKit

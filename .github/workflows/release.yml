@@ -1,0 +1,19 @@
+# Builds account-planning-tool.html on every push to main and replaces it on the one rolling release.
+# The download link releases/latest/download/account-planning-tool.html then serves the current page.
+name: Release the built page
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/build-single-file.py
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view latest >/dev/null 2>&1 || gh release create latest --title "Latest build" --notes "Rebuilt from main on every push."
+          gh release upload latest account-planning-tool.html --clobber

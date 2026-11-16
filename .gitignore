@@ -6,3 +6,4 @@ docs/backlog-config.json
 package-lock.json
 *.xlsx
 !tests/fixtures/*.xlsx
+account-planning-tool.html

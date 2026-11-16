@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """Bundles index.html, css/*.css and js/*.js into account-planning-tool.html, one self-contained
-file that can be downloaded and opened on its own. Run it after any change to the source.
+file that can be downloaded and opened on its own. Git ignores the file: validation builds it for the
+tests, and the release workflow builds it for the download.
 
-    python3 scripts/build-single-file.py          # rebuild the file
-    python3 scripts/build-single-file.py --check  # fail if the tracked file is out of date
+    python3 scripts/build-single-file.py
 """
 import re
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -29,11 +28,5 @@ def build():
     return html
 
 if __name__ == '__main__':
-    html = build()
-    if '--check' in sys.argv:
-        if not OUTPUT.exists() or OUTPUT.read_text(encoding='utf-8') != html:
-            raise SystemExit('account-planning-tool.html is out of date: run python3 scripts/build-single-file.py')
-        print('built page is up to date')
-    else:
-        OUTPUT.write_text(html, encoding='utf-8')
-        print(f'wrote {OUTPUT.name} ({OUTPUT.stat().st_size:,} bytes)')
+    OUTPUT.write_text(build(), encoding='utf-8')
+    print(f'wrote {OUTPUT.name} ({OUTPUT.stat().st_size:,} bytes)')
