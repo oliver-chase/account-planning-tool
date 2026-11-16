@@ -106,14 +106,13 @@ function makeNoteCard(note, teamNames) {
   card.title = 'Last updated: ' + (note.last_updated || '')
 
   const btns = el('div', 'note-card-btns', null)
-  const copyBtn = el('button', 'note-copy-btn', 'Copy')
-  copyBtn.type = 'button'; copyBtn.title = 'Copy to clipboard'
-  copyBtn.addEventListener('click', async e => {
+  const copyBtn = buttonEl('note-copy-btn', 'Copy', async e => {
     e.stopPropagation()
     flushPendingSaves() // text typed a moment ago is in the copy
     const ok = await copyToClipboard(noteToMarkdown(currentNote(note)))
     showToast(ok ? 'Copied to clipboard' : 'Copy failed. Select the text and copy it.')
   })
+  copyBtn.title = 'Copy to clipboard'
   btns.appendChild(copyBtn)
   btns.appendChild(compactRemoveButton('Delete note', () => {
     showModal({ title: 'Delete this note?', message: 'This removes its title, date, attendees, and body. This cannot be undone.', confirmLabel: 'Delete', dangerConfirm: true }).then(r => {

@@ -13,10 +13,8 @@ function renderHelpBanner() {
   const headerRow = el('div', 'flexRow help-header', null)
   headerRow.appendChild(el('span', 'app-card-label', 'How-to guide'))
 
-  const closeBtn = el('button', 'app-modal-close help-close', '×')
-  closeBtn.type = 'button'
+  const closeBtn = buttonEl('app-modal-close help-close', '×', () => { helpForcedOpen = false; renderHelpBanner() })
   closeBtn.setAttribute('aria-label', 'Dismiss instructions')
-  closeBtn.addEventListener('click', () => { helpForcedOpen = false; renderHelpBanner() })
   headerRow.appendChild(closeBtn)
   card.appendChild(headerRow)
 

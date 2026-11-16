@@ -87,10 +87,7 @@ function renderOverviewBody() {
   card1.appendChild(personSelectEl(b.account_manager || '', v => saveBg({ account_manager: v }), 'card-owner-btn'))
   card1.appendChild(el('div', 'app-card-label overview-label-top', 'Account team'))
   card1.appendChild(multiPicker(teamNames, teamMembers, next => saveBg({ account_team: next.join('; ') }), 'Add person'))
-  const rosterLink = el('button', 'card-action-link', 'Manage roster')
-  rosterLink.type = 'button'
-  rosterLink.addEventListener('click', () => openRosterModal(state.background, name => saveBg(removeTeamMember(state.background, name))))
-  card1.appendChild(rosterLink)
+  card1.appendChild(buttonEl('card-action-link', 'Manage roster', () => openRosterModal(state.background, name => saveBg(removeTeamMember(state.background, name)))))
   row1.appendChild(card1)
 
   // Card 2: meeting cadence
@@ -128,9 +125,8 @@ function renderOverviewBody() {
       const chipRow = el('div', 'overview-chip-row overview-chip-row-top', null)
       chipRow.appendChild(el('span', 'overview-cadence-on-label', 'On'))
       DAY_LABELS.forEach(([val, label]) => {
-        const btn = el('button', 'overview-day-btn' + (b.meeting_day === val ? ' is-selected' : ''), label)
-        btn.type = 'button'; btn.title = val; btn.dataset.fk = 'day-' + val; btn.setAttribute('aria-label', DAY_FULL[val]); btn.setAttribute('aria-pressed', b.meeting_day === val ? 'true' : 'false')
-        btn.addEventListener('click', () => saveBg({ meeting_day: val }))
+        const btn = buttonEl('overview-day-btn' + (b.meeting_day === val ? ' is-selected' : ''), label, () => saveBg({ meeting_day: val }))
+        btn.title = val; btn.dataset.fk = 'day-' + val; btn.setAttribute('aria-label', DAY_FULL[val]); btn.setAttribute('aria-pressed', b.meeting_day === val ? 'true' : 'false')
         chipRow.appendChild(btn)
       })
       panel.appendChild(chipRow)
@@ -165,9 +161,7 @@ function renderOverviewBody() {
   if (override) {
     s1.appendChild(el('div', 'overview-stat-date', fmtDate(override)))
     const sub = el('div', 'overview-stat-sublabel', 'Override ')
-    const clearBtn = el('button', 'overview-clear-btn', 'Clear')
-    clearBtn.type = 'button'; clearBtn.addEventListener('click', () => saveBg({ next_meeting_override: '' }))
-    sub.appendChild(clearBtn); s1.appendChild(sub)
+    sub.appendChild(buttonEl('overview-clear-btn', 'Clear', () => saveBg({ next_meeting_override: '' }))); s1.appendChild(sub)
   } else if (computed) {
     s1.appendChild(el('div', 'overview-stat-date', fmtDate(computed)))
     s1.appendChild(el('div', 'overview-stat-sublabel', 'Projected'))
@@ -269,12 +263,8 @@ function historicalYearForm(bg, onSave, onCancel) {
   const first = bg.revenue[selectedYear] || {}
   projInput.value = first.projected || ''; closedInput.value = first.closed || ''
   renderYearSel()
-  const saveBtn = el('button', 'btn btn-primary btn--compact overview-hist-btn', 'Save')
-  saveBtn.type = 'button'
-  saveBtn.addEventListener('click', () => onSave(Number(selectedYear), projInput.value.trim(), closedInput.value.trim()))
-  const cancelBtn = el('button', 'btn btn-ghost btn--compact overview-hist-btn', 'Cancel')
-  cancelBtn.type = 'button'
-  cancelBtn.addEventListener('click', onCancel)
+  const saveBtn = buttonEl('btn btn-primary btn--compact overview-hist-btn', 'Save', () => onSave(Number(selectedYear), projInput.value.trim(), closedInput.value.trim()))
+  const cancelBtn = buttonEl('btn btn-ghost btn--compact overview-hist-btn', 'Cancel', onCancel)
   row.appendChild(yearSelSlot); row.appendChild(projInput); row.appendChild(closedInput); row.appendChild(saveBtn); row.appendChild(cancelBtn)
   wrap.appendChild(row)
   return wrap

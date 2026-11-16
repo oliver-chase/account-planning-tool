@@ -16,13 +16,18 @@ function showToast(msg, actionLabel, actionFn) {
   t.appendChild(el('span', null, msg))
   let timer
   if (actionLabel && actionFn) {
-    const btn = el('button', 'app-toast-undo', actionLabel)
-    btn.type = 'button'
-    btn.addEventListener('click', () => { clearTimeout(timer); t.remove(); actionFn() })
-    t.appendChild(btn)
+    t.appendChild(buttonEl('app-toast-undo', actionLabel, () => { clearTimeout(timer); t.remove(); actionFn() }))
   }
   container.appendChild(t)
   timer = setTimeout(() => t.remove(), actionLabel ? 6000 : 3000)
+}
+
+// A button that never submits a form, with an optional click handler.
+function buttonEl(className, text, onClick) {
+  const b = el('button', className, text)
+  b.type = 'button'
+  if (onClick) b.addEventListener('click', onClick)
+  return b
 }
 
 function emptyResultsBox(text) {
@@ -30,30 +35,24 @@ function emptyResultsBox(text) {
 }
 
 function inlineActionButton(label, onClick, opts) {
-  const b = el('button', 'inline-action-button btn-link', null)
-  b.type = 'button'
+  const b = buttonEl('inline-action-button btn-link', null, onClick)
   b.appendChild(el('span', 'inline-action-button-label', label))
   if (opts && opts.id) b.id = opts.id
-  b.addEventListener('click', onClick)
   return b
 }
 
 function compactRemoveButton(title, onClick, extraClass) {
-  const b = el('button', 'account-card-remove-btn' + (extraClass ? ' ' + extraClass : ''), '×')
-  b.type = 'button'
+  const b = buttonEl('account-card-remove-btn' + (extraClass ? ' ' + extraClass : ''), '×', e => { e.stopPropagation(); onClick(e) })
   b.title = title
   b.setAttribute('aria-label', title)
-  b.addEventListener('click', e => { e.stopPropagation(); onClick(e) })
   return b
 }
 
 function appChip(label, onRemove) {
   const chip = el('span', 'app-chip', null)
   chip.appendChild(el('span', null, label))
-  const rm = el('button', 'app-chip-remove', '×')
-  rm.type = 'button'
+  const rm = buttonEl('app-chip-remove', '×', onRemove)
   rm.setAttribute('aria-label', 'Remove ' + label)
-  rm.addEventListener('click', onRemove)
   chip.appendChild(rm)
   return chip
 }
@@ -203,19 +202,14 @@ function showModal(opts) {
       resolve({ buttonValue })
     }
     if (opts.bodyBuilder) opts.bodyBuilder(body, () => close('confirm'))
-    const closeBtn = el('button', 'app-modal-close', '×')
-    closeBtn.type = 'button'; closeBtn.setAttribute('aria-label', 'Close')
-    closeBtn.addEventListener('click', () => close('cancel'))
+    const closeBtn = buttonEl('app-modal-close', '×', () => close('cancel'))
+    closeBtn.setAttribute('aria-label', 'Close')
     modal.appendChild(closeBtn)
     let confirmBtn, cancelBtn
     if (!opts.hideActions) {
       const actions = el('div', 'app-modal-actions', null)
-      cancelBtn = el('button', 'btn btn-ghost', 'Cancel')
-      cancelBtn.type = 'button'
-      confirmBtn = el('button', 'btn ' + (opts.dangerConfirm ? 'btn-danger' : 'btn-primary'), opts.confirmLabel || 'OK')
-      confirmBtn.type = 'button'
-      cancelBtn.addEventListener('click', () => close('cancel'))
-      confirmBtn.addEventListener('click', () => close('confirm'))
+      cancelBtn = buttonEl('btn btn-ghost', 'Cancel', () => close('cancel'))
+      confirmBtn = buttonEl('btn ' + (opts.dangerConfirm ? 'btn-danger' : 'btn-primary'), opts.confirmLabel || 'OK', () => close('confirm'))
       actions.appendChild(cancelBtn); actions.appendChild(confirmBtn)
       modal.appendChild(title); modal.appendChild(body); modal.appendChild(actions)
     } else {

@@ -72,8 +72,7 @@ function renderFileActionsBar() {
     ['btn-show-help', 'How-to guide'],
   ]
   buttons.forEach(([id, label]) => {
-    const b = el('button', 'app-sidebar-item', label)
-    b.type = 'button'
+    const b = buttonEl('app-sidebar-item', label)
     b.id = id
     bar.appendChild(b)
   })

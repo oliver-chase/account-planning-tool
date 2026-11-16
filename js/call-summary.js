@@ -70,12 +70,8 @@ function openCallSummary() {
     pre.value = s.text; pre.readOnly = true; pre.rows = 14; pre.setAttribute('aria-label', 'Call summary text')
     body.appendChild(pre)
     const row = el('div', 'call-summary-actions', null)
-    const copy = el('button', 'btn btn-primary', 'Copy text'); copy.type = 'button'
-    copy.addEventListener('click', async () => { showToast((await copyToClipboard(s.text)) ? 'Call summary copied' : 'Could not copy. Select the text and copy it.') })
-    const dl = el('button', 'btn btn-ghost', 'Download page'); dl.type = 'button'
-    dl.addEventListener('click', () => {
-      downloadHtml(s.html, s.fileName)
-    })
+    const copy = buttonEl('btn btn-primary', 'Copy text', async () => { showToast((await copyToClipboard(s.text)) ? 'Call summary copied' : 'Could not copy. Select the text and copy it.') })
+    const dl = buttonEl('btn btn-ghost', 'Download page', () => downloadHtml(s.html, s.fileName))
     row.appendChild(copy); row.appendChild(dl)
     body.appendChild(row)
   } })

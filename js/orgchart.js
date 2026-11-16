@@ -185,14 +185,10 @@ function buildOrgChartOuter(staticMode) {
   const outer = el('div', 'org-chart-outer', null)
   if (!staticMode) {
     const zoomCtl = el('div', 'org-zoom-controls', null)
-    const outBtn = el('button', null, 'Zoom out'); outBtn.type = 'button'
-    const resetBtn = el('button', null, 'Reset'); resetBtn.type = 'button'
-    const inBtn = el('button', null, 'Zoom in'); inBtn.type = 'button'
     const zoomTo = z => { orgZoom = z; tree.style.transform = 'scale(' + z + ')'; drawOrgLines(outer, tree) }
-    outBtn.addEventListener('click', () => zoomTo(Math.max(0.4, +(orgZoom - 0.1).toFixed(1))))
-    resetBtn.addEventListener('click', () => zoomTo(1.0))
-    inBtn.addEventListener('click', () => zoomTo(Math.min(1.5, +(orgZoom + 0.1).toFixed(1))))
-    zoomCtl.appendChild(outBtn); zoomCtl.appendChild(resetBtn); zoomCtl.appendChild(inBtn)
+    zoomCtl.appendChild(buttonEl(null, 'Zoom out', () => zoomTo(Math.max(0.4, +(orgZoom - 0.1).toFixed(1)))))
+    zoomCtl.appendChild(buttonEl(null, 'Reset', () => zoomTo(1.0)))
+    zoomCtl.appendChild(buttonEl(null, 'Zoom in', () => zoomTo(Math.min(1.5, +(orgZoom + 0.1).toFixed(1)))))
     outer.appendChild(zoomCtl)
   }
   outer.appendChild(el('div', 'overview-stat-label org-section-title', 'Reporting structure'))

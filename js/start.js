@@ -85,16 +85,15 @@ function renderStartScreen() {
   card.appendChild(el('p', 'start-lead', 'Pick one way in. Your work saves in this browser as you type, and Update Excel keeps a workbook current.'))
 
   const options = el('div', 'start-options', null)
-  const newBtn = el('button', 'start-option', null); newBtn.type = 'button'
-  newBtn.appendChild(el('span', 'start-option-title', 'Start a new account'))
-  newBtn.appendChild(el('span', 'start-option-text', 'Name the account and add the first person.'))
-  const openBtn = el('button', 'start-option', null); openBtn.type = 'button'
-  openBtn.appendChild(el('span', 'start-option-title', 'Open an Excel file'))
-  openBtn.appendChild(el('span', 'start-option-text', 'Continue from a workbook you already keep.'))
-  const sampleBtn = el('button', 'start-option', null); sampleBtn.type = 'button'
-  sampleBtn.appendChild(el('span', 'start-option-title', 'Try a sample account'))
-  sampleBtn.appendChild(el('span', 'start-option-text', 'See a filled-in example you can edit and discard.'))
-  ;[newBtn, openBtn, sampleBtn].forEach(b => options.appendChild(b))
+  const [newBtn, openBtn, sampleBtn] = [
+    ['Start a new account', 'Name the account and add the first person.'],
+    ['Open an Excel file', 'Continue from a workbook you already keep.'],
+    ['Try a sample account', 'See a filled-in example you can edit and discard.'],
+  ].map(([title, text]) => {
+    const b = options.appendChild(buttonEl('start-option', null))
+    b.appendChild(el('span', 'start-option-title', title)); b.appendChild(el('span', 'start-option-text', text))
+    return b
+  })
   card.appendChild(options)
 
   const form = el('form', 'start-form', null); form.hidden = true
@@ -123,9 +122,7 @@ function renderStartScreen() {
 
   const links = el('p', 'start-links', null)
   const dl = (label, withSample, file) => {
-    const b = el('button', 'start-link', label); b.type = 'button'
-    b.addEventListener('click', () => XLSX.writeFile(starterWorkbook(withSample), file))
-    return b
+    return buttonEl('start-link', label, () => XLSX.writeFile(starterWorkbook(withSample), file))
   }
   links.appendChild(dl('Download a blank workbook', false, 'account-template.xlsx'))
   links.appendChild(dl('Download the sample workbook', true, 'account-sample.xlsx'))

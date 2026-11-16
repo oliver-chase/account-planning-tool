@@ -93,9 +93,8 @@ function renderPeopleBody() {
   const actionsWrap = el('div', 'module-section-actions module-section-actions-scroll', null)
   const filterWrap = el('div', 'people-filter-wrapper', null)
   const filtersOn = peopleFilters.exec || peopleFilters.incomplete || !!peopleFilters.ownerFilter
-  const filterBtn = el('button', 'module-filter-chip' + (filtersOn ? ' on' : ''), 'Filters'); filterBtn.dataset.fk = 'filters'
-  filterBtn.type = 'button'
-  filterBtn.addEventListener('click', () => { peopleFilterPanelOpen = !peopleFilterPanelOpen; renderPeople() })
+  const filterBtn = buttonEl('module-filter-chip' + (filtersOn ? ' on' : ''), 'Filters', () => { peopleFilterPanelOpen = !peopleFilterPanelOpen; renderPeople() })
+  filterBtn.dataset.fk = 'filters'
   filterWrap.appendChild(filterBtn)
   if (peopleFilterPanelOpen) {
     const pop = el('div', 'app-popover people-filter-panel', null)
@@ -136,11 +135,11 @@ function renderPeopleBody() {
   actionsWrap.appendChild(singleSelectEl([['name', 'Name A–Z'], ['seniority', 'Seniority'], ['department', 'Department']], peopleSort, v => { peopleSort = v; peoplePage = 0; renderPeople() }, 'sort-select'))
 
   const toggle = el('div', 'app-view-toggle', null)
-  const cardsBtn = el('button', 'app-view-toggle-btn' + (peopleView === 'cards' ? ' active' : ''), 'Cards')
-  cardsBtn.type = 'button'; cardsBtn.setAttribute('aria-pressed', String(peopleView === 'cards')); cardsBtn.dataset.fk = 'view-cards'; cardsBtn.addEventListener('click', () => { peopleView = 'cards'; renderPeople() })
-  const orgBtn = el('button', 'app-view-toggle-btn' + (peopleView === 'orgchart' ? ' active' : ''), 'Org')
-  orgBtn.type = 'button'; orgBtn.setAttribute('aria-pressed', String(peopleView === 'orgchart')); orgBtn.dataset.fk = 'view-org'; orgBtn.addEventListener('click', () => { peopleView = 'orgchart'; renderPeople() })
-  toggle.appendChild(cardsBtn); toggle.appendChild(orgBtn)
+  ;[['cards', 'Cards', 'view-cards'], ['orgchart', 'Org', 'view-org']].forEach(([view, label, fk]) => {
+    const b = buttonEl('app-view-toggle-btn' + (peopleView === view ? ' active' : ''), label, () => { peopleView = view; renderPeople() })
+    b.setAttribute('aria-pressed', String(peopleView === view)); b.dataset.fk = fk
+    toggle.appendChild(b)
+  })
   actionsWrap.appendChild(toggle)
   row2.appendChild(actionsWrap)
   header.appendChild(row2)
@@ -171,8 +170,7 @@ function renderPeopleBody() {
 function paginationRow(page, total, onChange) {
   const row = el('div', 'pagination-row', null)
   function btn(label, disabled, target) {
-    const b = el('button', 'btn btn--compact', label); b.type = 'button'; b.disabled = disabled; b.dataset.fk = 'pg-' + label
-    b.addEventListener('click', () => onChange(target))
+    const b = buttonEl('btn btn--compact', label, () => onChange(target)); b.disabled = disabled; b.dataset.fk = 'pg-' + label
     return b
   }
   row.appendChild(btn('First', page === 0, 0))
@@ -255,10 +253,9 @@ function makePersonCard(person) {
   card.appendChild(bodyWrap)
 
   const moreOpen = peopleMoreOpen.has(person.id)
-  const moreToggle = el('button', 'person-more-toggle', (moreOpen ? 'Fewer fields' : 'More fields') + (!moreOpen && hasExtraPersonFields(person) ? ' •' : ''))
-  moreToggle.type = 'button'
+  const moreToggle = buttonEl('person-more-toggle', (moreOpen ? 'Fewer fields' : 'More fields') + (!moreOpen && hasExtraPersonFields(person) ? ' •' : ''),
+    () => { if (moreOpen) peopleMoreOpen.delete(person.id); else peopleMoreOpen.add(person.id); renderPeople(); refreshPersonPanel(person.id) })
   moreToggle.setAttribute('aria-expanded', moreOpen ? 'true' : 'false')
-  moreToggle.addEventListener('click', () => { if (moreOpen) peopleMoreOpen.delete(person.id); else peopleMoreOpen.add(person.id); renderPeople(); refreshPersonPanel(person.id) })
   card.appendChild(moreToggle)
   if (moreOpen) card.appendChild(more)
 

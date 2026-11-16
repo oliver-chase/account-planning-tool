@@ -1331,10 +1331,8 @@ function renderHelpBanner() {
   const headerRow = el('div', 'flexRow help-header', null)
   headerRow.appendChild(el('span', 'app-card-label', 'How-to guide'))
 
-  const closeBtn = el('button', 'app-modal-close help-close', '×')
-  closeBtn.type = 'button'
+  const closeBtn = buttonEl('app-modal-close help-close', '×', () => { helpForcedOpen = false; renderHelpBanner() })
   closeBtn.setAttribute('aria-label', 'Dismiss instructions')
-  closeBtn.addEventListener('click', () => { helpForcedOpen = false; renderHelpBanner() })
   headerRow.appendChild(closeBtn)
   card.appendChild(headerRow)
 
@@ -1384,13 +1382,18 @@ function showToast(msg, actionLabel, actionFn) {
   t.appendChild(el('span', null, msg))
   let timer
   if (actionLabel && actionFn) {
-    const btn = el('button', 'app-toast-undo', actionLabel)
-    btn.type = 'button'
-    btn.addEventListener('click', () => { clearTimeout(timer); t.remove(); actionFn() })
-    t.appendChild(btn)
+    t.appendChild(buttonEl('app-toast-undo', actionLabel, () => { clearTimeout(timer); t.remove(); actionFn() }))
   }
   container.appendChild(t)
   timer = setTimeout(() => t.remove(), actionLabel ? 6000 : 3000)
+}
+
+// A button that never submits a form, with an optional click handler.
+function buttonEl(className, text, onClick) {
+  const b = el('button', className, text)
+  b.type = 'button'
+  if (onClick) b.addEventListener('click', onClick)
+  return b
 }
 
 function emptyResultsBox(text) {
@@ -1398,30 +1401,24 @@ function emptyResultsBox(text) {
 }
 
 function inlineActionButton(label, onClick, opts) {
-  const b = el('button', 'inline-action-button btn-link', null)
-  b.type = 'button'
+  const b = buttonEl('inline-action-button btn-link', null, onClick)
   b.appendChild(el('span', 'inline-action-button-label', label))
   if (opts && opts.id) b.id = opts.id
-  b.addEventListener('click', onClick)
   return b
 }
 
 function compactRemoveButton(title, onClick, extraClass) {
-  const b = el('button', 'account-card-remove-btn' + (extraClass ? ' ' + extraClass : ''), '×')
-  b.type = 'button'
+  const b = buttonEl('account-card-remove-btn' + (extraClass ? ' ' + extraClass : ''), '×', e => { e.stopPropagation(); onClick(e) })
   b.title = title
   b.setAttribute('aria-label', title)
-  b.addEventListener('click', e => { e.stopPropagation(); onClick(e) })
   return b
 }
 
 function appChip(label, onRemove) {
   const chip = el('span', 'app-chip', null)
   chip.appendChild(el('span', null, label))
-  const rm = el('button', 'app-chip-remove', '×')
-  rm.type = 'button'
+  const rm = buttonEl('app-chip-remove', '×', onRemove)
   rm.setAttribute('aria-label', 'Remove ' + label)
-  rm.addEventListener('click', onRemove)
   chip.appendChild(rm)
   return chip
 }
@@ -1571,19 +1568,14 @@ function showModal(opts) {
       resolve({ buttonValue })
     }
     if (opts.bodyBuilder) opts.bodyBuilder(body, () => close('confirm'))
-    const closeBtn = el('button', 'app-modal-close', '×')
-    closeBtn.type = 'button'; closeBtn.setAttribute('aria-label', 'Close')
-    closeBtn.addEventListener('click', () => close('cancel'))
+    const closeBtn = buttonEl('app-modal-close', '×', () => close('cancel'))
+    closeBtn.setAttribute('aria-label', 'Close')
     modal.appendChild(closeBtn)
     let confirmBtn, cancelBtn
     if (!opts.hideActions) {
       const actions = el('div', 'app-modal-actions', null)
-      cancelBtn = el('button', 'btn btn-ghost', 'Cancel')
-      cancelBtn.type = 'button'
-      confirmBtn = el('button', 'btn ' + (opts.dangerConfirm ? 'btn-danger' : 'btn-primary'), opts.confirmLabel || 'OK')
-      confirmBtn.type = 'button'
-      cancelBtn.addEventListener('click', () => close('cancel'))
-      confirmBtn.addEventListener('click', () => close('confirm'))
+      cancelBtn = buttonEl('btn btn-ghost', 'Cancel', () => close('cancel'))
+      confirmBtn = buttonEl('btn ' + (opts.dangerConfirm ? 'btn-danger' : 'btn-primary'), opts.confirmLabel || 'OK', () => close('confirm'))
       actions.appendChild(cancelBtn); actions.appendChild(confirmBtn)
       modal.appendChild(title); modal.appendChild(body); modal.appendChild(actions)
     } else {
@@ -1733,8 +1725,7 @@ function multiPicker(allNames, selectedNames, onChange, placeholder) {
     selectedNames.forEach(n => wrap.appendChild(appChip(n, () => {
       onChange(selectedNames.filter(x => x !== n))
     })))
-    const trigger = el('button', 'card-owner-btn popover-trigger', '+ ' + (placeholder || 'Add…'))
-    trigger.type = 'button'
+    const trigger = buttonEl('card-owner-btn popover-trigger', '+ ' + (placeholder || 'Add…'))
     trigger.addEventListener('click', () => {
       openPopover(trigger, (pop, close) => {
         const remaining = allNames.filter(n => !selectedNames.includes(n))
@@ -1772,8 +1763,7 @@ function openRosterModal(bg, onRemove) {
 // Single-select person picker with an inline "+ Add new…" row. A new name is also written into
 // account_team, so every other picker sourced from the same pool offers it at once.
 function personSelectEl(value, onChange, className) {
-  const trigger = el('button', (className || 'card-owner-btn') + ' popover-trigger', value || 'Select person…')
-  trigger.type = 'button'
+  const trigger = buttonEl((className || 'card-owner-btn') + ' popover-trigger', value || 'Select person…')
   let selected = value // a new-record row never re-renders, so the picker keeps its own selection
   trigger.addEventListener('click', () => {
     openPopover(trigger, (pop, close) => {
@@ -1813,8 +1803,7 @@ function singleSelectEl(options, selected, onChange, className) {
     const found = options.find(([val]) => val === v)
     return found ? found[1] : (v || (options[0] ? options[0][1] : ''))
   }
-  const trigger = el('button', className || 'card-owner-btn popover-trigger', labelFor(selected))
-  trigger.type = 'button'
+  const trigger = buttonEl(className || 'card-owner-btn popover-trigger', labelFor(selected))
   trigger.addEventListener('click', () => {
     openPopover(trigger, (pop, close) => {
       const list = el('div', 'app-popover-list', null)
@@ -1980,10 +1969,7 @@ function renderOverviewBody() {
   card1.appendChild(personSelectEl(b.account_manager || '', v => saveBg({ account_manager: v }), 'card-owner-btn'))
   card1.appendChild(el('div', 'app-card-label overview-label-top', 'Account team'))
   card1.appendChild(multiPicker(teamNames, teamMembers, next => saveBg({ account_team: next.join('; ') }), 'Add person'))
-  const rosterLink = el('button', 'card-action-link', 'Manage roster')
-  rosterLink.type = 'button'
-  rosterLink.addEventListener('click', () => openRosterModal(state.background, name => saveBg(removeTeamMember(state.background, name))))
-  card1.appendChild(rosterLink)
+  card1.appendChild(buttonEl('card-action-link', 'Manage roster', () => openRosterModal(state.background, name => saveBg(removeTeamMember(state.background, name)))))
   row1.appendChild(card1)
 
   // Card 2: meeting cadence
@@ -2021,9 +2007,8 @@ function renderOverviewBody() {
       const chipRow = el('div', 'overview-chip-row overview-chip-row-top', null)
       chipRow.appendChild(el('span', 'overview-cadence-on-label', 'On'))
       DAY_LABELS.forEach(([val, label]) => {
-        const btn = el('button', 'overview-day-btn' + (b.meeting_day === val ? ' is-selected' : ''), label)
-        btn.type = 'button'; btn.title = val; btn.dataset.fk = 'day-' + val; btn.setAttribute('aria-label', DAY_FULL[val]); btn.setAttribute('aria-pressed', b.meeting_day === val ? 'true' : 'false')
-        btn.addEventListener('click', () => saveBg({ meeting_day: val }))
+        const btn = buttonEl('overview-day-btn' + (b.meeting_day === val ? ' is-selected' : ''), label, () => saveBg({ meeting_day: val }))
+        btn.title = val; btn.dataset.fk = 'day-' + val; btn.setAttribute('aria-label', DAY_FULL[val]); btn.setAttribute('aria-pressed', b.meeting_day === val ? 'true' : 'false')
         chipRow.appendChild(btn)
       })
       panel.appendChild(chipRow)
@@ -2058,9 +2043,7 @@ function renderOverviewBody() {
   if (override) {
     s1.appendChild(el('div', 'overview-stat-date', fmtDate(override)))
     const sub = el('div', 'overview-stat-sublabel', 'Override ')
-    const clearBtn = el('button', 'overview-clear-btn', 'Clear')
-    clearBtn.type = 'button'; clearBtn.addEventListener('click', () => saveBg({ next_meeting_override: '' }))
-    sub.appendChild(clearBtn); s1.appendChild(sub)
+    sub.appendChild(buttonEl('overview-clear-btn', 'Clear', () => saveBg({ next_meeting_override: '' }))); s1.appendChild(sub)
   } else if (computed) {
     s1.appendChild(el('div', 'overview-stat-date', fmtDate(computed)))
     s1.appendChild(el('div', 'overview-stat-sublabel', 'Projected'))
@@ -2162,12 +2145,8 @@ function historicalYearForm(bg, onSave, onCancel) {
   const first = bg.revenue[selectedYear] || {}
   projInput.value = first.projected || ''; closedInput.value = first.closed || ''
   renderYearSel()
-  const saveBtn = el('button', 'btn btn-primary btn--compact overview-hist-btn', 'Save')
-  saveBtn.type = 'button'
-  saveBtn.addEventListener('click', () => onSave(Number(selectedYear), projInput.value.trim(), closedInput.value.trim()))
-  const cancelBtn = el('button', 'btn btn-ghost btn--compact overview-hist-btn', 'Cancel')
-  cancelBtn.type = 'button'
-  cancelBtn.addEventListener('click', onCancel)
+  const saveBtn = buttonEl('btn btn-primary btn--compact overview-hist-btn', 'Save', () => onSave(Number(selectedYear), projInput.value.trim(), closedInput.value.trim()))
+  const cancelBtn = buttonEl('btn btn-ghost btn--compact overview-hist-btn', 'Cancel', onCancel)
   row.appendChild(yearSelSlot); row.appendChild(projInput); row.appendChild(closedInput); row.appendChild(saveBtn); row.appendChild(cancelBtn)
   wrap.appendChild(row)
   return wrap
@@ -2481,14 +2460,10 @@ function buildOrgChartOuter(staticMode) {
   const outer = el('div', 'org-chart-outer', null)
   if (!staticMode) {
     const zoomCtl = el('div', 'org-zoom-controls', null)
-    const outBtn = el('button', null, 'Zoom out'); outBtn.type = 'button'
-    const resetBtn = el('button', null, 'Reset'); resetBtn.type = 'button'
-    const inBtn = el('button', null, 'Zoom in'); inBtn.type = 'button'
     const zoomTo = z => { orgZoom = z; tree.style.transform = 'scale(' + z + ')'; drawOrgLines(outer, tree) }
-    outBtn.addEventListener('click', () => zoomTo(Math.max(0.4, +(orgZoom - 0.1).toFixed(1))))
-    resetBtn.addEventListener('click', () => zoomTo(1.0))
-    inBtn.addEventListener('click', () => zoomTo(Math.min(1.5, +(orgZoom + 0.1).toFixed(1))))
-    zoomCtl.appendChild(outBtn); zoomCtl.appendChild(resetBtn); zoomCtl.appendChild(inBtn)
+    zoomCtl.appendChild(buttonEl(null, 'Zoom out', () => zoomTo(Math.max(0.4, +(orgZoom - 0.1).toFixed(1)))))
+    zoomCtl.appendChild(buttonEl(null, 'Reset', () => zoomTo(1.0)))
+    zoomCtl.appendChild(buttonEl(null, 'Zoom in', () => zoomTo(Math.min(1.5, +(orgZoom + 0.1).toFixed(1)))))
     outer.appendChild(zoomCtl)
   }
   outer.appendChild(el('div', 'overview-stat-label org-section-title', 'Reporting structure'))
@@ -2641,9 +2616,8 @@ function renderPeopleBody() {
   const actionsWrap = el('div', 'module-section-actions module-section-actions-scroll', null)
   const filterWrap = el('div', 'people-filter-wrapper', null)
   const filtersOn = peopleFilters.exec || peopleFilters.incomplete || !!peopleFilters.ownerFilter
-  const filterBtn = el('button', 'module-filter-chip' + (filtersOn ? ' on' : ''), 'Filters'); filterBtn.dataset.fk = 'filters'
-  filterBtn.type = 'button'
-  filterBtn.addEventListener('click', () => { peopleFilterPanelOpen = !peopleFilterPanelOpen; renderPeople() })
+  const filterBtn = buttonEl('module-filter-chip' + (filtersOn ? ' on' : ''), 'Filters', () => { peopleFilterPanelOpen = !peopleFilterPanelOpen; renderPeople() })
+  filterBtn.dataset.fk = 'filters'
   filterWrap.appendChild(filterBtn)
   if (peopleFilterPanelOpen) {
     const pop = el('div', 'app-popover people-filter-panel', null)
@@ -2684,11 +2658,11 @@ function renderPeopleBody() {
   actionsWrap.appendChild(singleSelectEl([['name', 'Name A–Z'], ['seniority', 'Seniority'], ['department', 'Department']], peopleSort, v => { peopleSort = v; peoplePage = 0; renderPeople() }, 'sort-select'))
 
   const toggle = el('div', 'app-view-toggle', null)
-  const cardsBtn = el('button', 'app-view-toggle-btn' + (peopleView === 'cards' ? ' active' : ''), 'Cards')
-  cardsBtn.type = 'button'; cardsBtn.setAttribute('aria-pressed', String(peopleView === 'cards')); cardsBtn.dataset.fk = 'view-cards'; cardsBtn.addEventListener('click', () => { peopleView = 'cards'; renderPeople() })
-  const orgBtn = el('button', 'app-view-toggle-btn' + (peopleView === 'orgchart' ? ' active' : ''), 'Org')
-  orgBtn.type = 'button'; orgBtn.setAttribute('aria-pressed', String(peopleView === 'orgchart')); orgBtn.dataset.fk = 'view-org'; orgBtn.addEventListener('click', () => { peopleView = 'orgchart'; renderPeople() })
-  toggle.appendChild(cardsBtn); toggle.appendChild(orgBtn)
+  ;[['cards', 'Cards', 'view-cards'], ['orgchart', 'Org', 'view-org']].forEach(([view, label, fk]) => {
+    const b = buttonEl('app-view-toggle-btn' + (peopleView === view ? ' active' : ''), label, () => { peopleView = view; renderPeople() })
+    b.setAttribute('aria-pressed', String(peopleView === view)); b.dataset.fk = fk
+    toggle.appendChild(b)
+  })
   actionsWrap.appendChild(toggle)
   row2.appendChild(actionsWrap)
   header.appendChild(row2)
@@ -2719,8 +2693,7 @@ function renderPeopleBody() {
 function paginationRow(page, total, onChange) {
   const row = el('div', 'pagination-row', null)
   function btn(label, disabled, target) {
-    const b = el('button', 'btn btn--compact', label); b.type = 'button'; b.disabled = disabled; b.dataset.fk = 'pg-' + label
-    b.addEventListener('click', () => onChange(target))
+    const b = buttonEl('btn btn--compact', label, () => onChange(target)); b.disabled = disabled; b.dataset.fk = 'pg-' + label
     return b
   }
   row.appendChild(btn('First', page === 0, 0))
@@ -2803,10 +2776,9 @@ function makePersonCard(person) {
   card.appendChild(bodyWrap)
 
   const moreOpen = peopleMoreOpen.has(person.id)
-  const moreToggle = el('button', 'person-more-toggle', (moreOpen ? 'Fewer fields' : 'More fields') + (!moreOpen && hasExtraPersonFields(person) ? ' •' : ''))
-  moreToggle.type = 'button'
+  const moreToggle = buttonEl('person-more-toggle', (moreOpen ? 'Fewer fields' : 'More fields') + (!moreOpen && hasExtraPersonFields(person) ? ' •' : ''),
+    () => { if (moreOpen) peopleMoreOpen.delete(person.id); else peopleMoreOpen.add(person.id); renderPeople(); refreshPersonPanel(person.id) })
   moreToggle.setAttribute('aria-expanded', moreOpen ? 'true' : 'false')
-  moreToggle.addEventListener('click', () => { if (moreOpen) peopleMoreOpen.delete(person.id); else peopleMoreOpen.add(person.id); renderPeople(); refreshPersonPanel(person.id) })
   card.appendChild(moreToggle)
   if (moreOpen) card.appendChild(more)
 
@@ -3187,14 +3159,13 @@ function makeNoteCard(note, teamNames) {
   card.title = 'Last updated: ' + (note.last_updated || '')
 
   const btns = el('div', 'note-card-btns', null)
-  const copyBtn = el('button', 'note-copy-btn', 'Copy')
-  copyBtn.type = 'button'; copyBtn.title = 'Copy to clipboard'
-  copyBtn.addEventListener('click', async e => {
+  const copyBtn = buttonEl('note-copy-btn', 'Copy', async e => {
     e.stopPropagation()
     flushPendingSaves() // text typed a moment ago is in the copy
     const ok = await copyToClipboard(noteToMarkdown(currentNote(note)))
     showToast(ok ? 'Copied to clipboard' : 'Copy failed. Select the text and copy it.')
   })
+  copyBtn.title = 'Copy to clipboard'
   btns.appendChild(copyBtn)
   btns.appendChild(compactRemoveButton('Delete note', () => {
     showModal({ title: 'Delete this note?', message: 'This removes its title, date, attendees, and body. This cannot be undone.', confirmLabel: 'Delete', dangerConfirm: true }).then(r => {
@@ -3330,9 +3301,8 @@ function exportMenuEntries() {
 function openExportMenu() {
   showModal({ title: 'Export', hideActions: true, bodyBuilder: (body, close) => {
     exportMenuEntries().forEach(({ label, text, open }) => {
-      const b = el('button', 'export-menu-item', null); b.type = 'button'
+      const b = buttonEl('export-menu-item', null, () => { close(); setTimeout(open, 0) })
       b.appendChild(el('span', 'export-menu-title', label)); b.appendChild(el('span', 'export-menu-text', text))
-      b.addEventListener('click', () => { close(); setTimeout(open, 0) })
       body.appendChild(b)
     })
   } })
@@ -3412,12 +3382,8 @@ function openCallSummary() {
     pre.value = s.text; pre.readOnly = true; pre.rows = 14; pre.setAttribute('aria-label', 'Call summary text')
     body.appendChild(pre)
     const row = el('div', 'call-summary-actions', null)
-    const copy = el('button', 'btn btn-primary', 'Copy text'); copy.type = 'button'
-    copy.addEventListener('click', async () => { showToast((await copyToClipboard(s.text)) ? 'Call summary copied' : 'Could not copy. Select the text and copy it.') })
-    const dl = el('button', 'btn btn-ghost', 'Download page'); dl.type = 'button'
-    dl.addEventListener('click', () => {
-      downloadHtml(s.html, s.fileName)
-    })
+    const copy = buttonEl('btn btn-primary', 'Copy text', async () => { showToast((await copyToClipboard(s.text)) ? 'Call summary copied' : 'Could not copy. Select the text and copy it.') })
+    const dl = buttonEl('btn btn-ghost', 'Download page', () => downloadHtml(s.html, s.fileName))
     row.appendChild(copy); row.appendChild(dl)
     body.appendChild(row)
   } })
@@ -3572,16 +3538,15 @@ function renderStartScreen() {
   card.appendChild(el('p', 'start-lead', 'Pick one way in. Your work saves in this browser as you type, and Update Excel keeps a workbook current.'))
 
   const options = el('div', 'start-options', null)
-  const newBtn = el('button', 'start-option', null); newBtn.type = 'button'
-  newBtn.appendChild(el('span', 'start-option-title', 'Start a new account'))
-  newBtn.appendChild(el('span', 'start-option-text', 'Name the account and add the first person.'))
-  const openBtn = el('button', 'start-option', null); openBtn.type = 'button'
-  openBtn.appendChild(el('span', 'start-option-title', 'Open an Excel file'))
-  openBtn.appendChild(el('span', 'start-option-text', 'Continue from a workbook you already keep.'))
-  const sampleBtn = el('button', 'start-option', null); sampleBtn.type = 'button'
-  sampleBtn.appendChild(el('span', 'start-option-title', 'Try a sample account'))
-  sampleBtn.appendChild(el('span', 'start-option-text', 'See a filled-in example you can edit and discard.'))
-  ;[newBtn, openBtn, sampleBtn].forEach(b => options.appendChild(b))
+  const [newBtn, openBtn, sampleBtn] = [
+    ['Start a new account', 'Name the account and add the first person.'],
+    ['Open an Excel file', 'Continue from a workbook you already keep.'],
+    ['Try a sample account', 'See a filled-in example you can edit and discard.'],
+  ].map(([title, text]) => {
+    const b = options.appendChild(buttonEl('start-option', null))
+    b.appendChild(el('span', 'start-option-title', title)); b.appendChild(el('span', 'start-option-text', text))
+    return b
+  })
   card.appendChild(options)
 
   const form = el('form', 'start-form', null); form.hidden = true
@@ -3610,9 +3575,7 @@ function renderStartScreen() {
 
   const links = el('p', 'start-links', null)
   const dl = (label, withSample, file) => {
-    const b = el('button', 'start-link', label); b.type = 'button'
-    b.addEventListener('click', () => XLSX.writeFile(starterWorkbook(withSample), file))
-    return b
+    return buttonEl('start-link', label, () => XLSX.writeFile(starterWorkbook(withSample), file))
   }
   links.appendChild(dl('Download a blank workbook', false, 'account-template.xlsx'))
   links.appendChild(dl('Download the sample workbook', true, 'account-sample.xlsx'))
@@ -3720,8 +3683,7 @@ function renderFileActionsBar() {
     ['btn-show-help', 'How-to guide'],
   ]
   buttons.forEach(([id, label]) => {
-    const b = el('button', 'app-sidebar-item', label)
-    b.type = 'button'
+    const b = buttonEl('app-sidebar-item', label)
     b.id = id
     bar.appendChild(b)
   })

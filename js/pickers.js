@@ -122,8 +122,7 @@ function multiPicker(allNames, selectedNames, onChange, placeholder) {
     selectedNames.forEach(n => wrap.appendChild(appChip(n, () => {
       onChange(selectedNames.filter(x => x !== n))
     })))
-    const trigger = el('button', 'card-owner-btn popover-trigger', '+ ' + (placeholder || 'Add…'))
-    trigger.type = 'button'
+    const trigger = buttonEl('card-owner-btn popover-trigger', '+ ' + (placeholder || 'Add…'))
     trigger.addEventListener('click', () => {
       openPopover(trigger, (pop, close) => {
         const remaining = allNames.filter(n => !selectedNames.includes(n))
@@ -161,8 +160,7 @@ function openRosterModal(bg, onRemove) {
 // Single-select person picker with an inline "+ Add new…" row. A new name is also written into
 // account_team, so every other picker sourced from the same pool offers it at once.
 function personSelectEl(value, onChange, className) {
-  const trigger = el('button', (className || 'card-owner-btn') + ' popover-trigger', value || 'Select person…')
-  trigger.type = 'button'
+  const trigger = buttonEl((className || 'card-owner-btn') + ' popover-trigger', value || 'Select person…')
   let selected = value // a new-record row never re-renders, so the picker keeps its own selection
   trigger.addEventListener('click', () => {
     openPopover(trigger, (pop, close) => {
@@ -202,8 +200,7 @@ function singleSelectEl(options, selected, onChange, className) {
     const found = options.find(([val]) => val === v)
     return found ? found[1] : (v || (options[0] ? options[0][1] : ''))
   }
-  const trigger = el('button', className || 'card-owner-btn popover-trigger', labelFor(selected))
-  trigger.type = 'button'
+  const trigger = buttonEl(className || 'card-owner-btn popover-trigger', labelFor(selected))
   trigger.addEventListener('click', () => {
     openPopover(trigger, (pop, close) => {
       const list = el('div', 'app-popover-list', null)
