@@ -318,10 +318,9 @@ function openPersonDetail(person) {
   const header = el('div', 'person-detail-header', null)
   const titleEl = el('span', 'person-detail-title', person.name || 'Person'); titleEl.id = 'org-person-title'
   header.appendChild(titleEl)
-  const closeBtn = el('button', 'app-modal-close person-detail-close', '×')
-  closeBtn.type = 'button'; closeBtn.setAttribute('aria-label', 'Close panel')
   const closePanel = () => { panel.remove(); document.removeEventListener('keydown', onKey) }
-  closeBtn.addEventListener('click', closePanel)
+  const closeBtn = buttonEl('app-modal-close person-detail-close', '×', closePanel)
+  closeBtn.setAttribute('aria-label', 'Close panel')
   header.appendChild(closeBtn)
   panel.appendChild(header)
   const content = el('div', 'person-detail-content', null)

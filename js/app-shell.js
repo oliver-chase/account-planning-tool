@@ -170,13 +170,7 @@ renderAll()
 ;(async () => {
   if (unreadableAutosave) {
     const kept = unreadableAutosaveKept ? ' A copy is kept in this browser.' : ''
-    showToast('Your last autosave could not be read, so the tool started empty.' + kept, 'Download it', () => {
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(new Blob([unreadableAutosave], { type: 'application/json' }))
-      a.download = 'unreadable-autosave.json'
-      a.click()
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000)
-    })
+    showToast('Your last autosave could not be read, so the tool started empty.' + kept, 'Download it', () => downloadText(unreadableAutosave, 'unreadable-autosave.json', 'application/json'))
   }
   const result = await reacquireRememberedFile(false)
   if (result === 'ok') { showToast('Reconnected to your account file'); return }

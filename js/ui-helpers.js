@@ -65,14 +65,15 @@ function appChip(label, onRemove) {
   return chip
 }
 
-// Saves an HTML string as a file through a temporary link.
-function downloadHtml(html, fileName) {
-  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+// Saves text as a file through a temporary link.
+function downloadText(text, fileName, type) {
+  const url = URL.createObjectURL(new Blob([text], { type }))
   const a = document.createElement('a')
   a.href = url; a.download = fileName
   document.body.appendChild(a); a.click(); document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
+function downloadHtml(html, fileName) { downloadText(html, fileName, 'text/html') }
 
 // Makes a clickable element reachable and operable from the keyboard: it joins the tab
 // order and Enter or Space does what a click does. Only the element's own key presses count,
