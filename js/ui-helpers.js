@@ -1,5 +1,5 @@
 'use strict';
-// Small DOM helpers: element builder, buttons, chips, toasts, modals and the popover pickers.
+// Small DOM helpers: element, button and SVG builders, chips, toasts, modals, downloads and the editable field.
 
 function el(tag, className, text) {
   const e = document.createElement(tag)

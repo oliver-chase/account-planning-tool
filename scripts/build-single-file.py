@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-INDEX, OUTPUT = ROOT / 'index.html', ROOT / 'account-planning-tool.html'
+OUTPUT = ROOT / 'account-planning-tool.html'
 
 def read(name):
     return (ROOT / name).read_text(encoding='utf-8')
