@@ -30,7 +30,7 @@ This repo works on `main`.
 1. `bash scripts/validate.sh` runs OliverCode's commit gates over every tracked file, `scripts/check-structure-contract.mjs` and every Node test in `tests/`
 2. `.githooks/pre-commit` is the fleet hook that `olivercode sync-hooks` installs. It runs the gates over the staged files, then `.githooks/pre-commit.local`, which runs `scripts/validate.sh`
 3. `.githooks/commit-msg` requires a story number, and `.githooks/pre-push` refuses a history rewrite and scans pushed commits for secrets
-4. `docs/SIZE-BASELINE.json` holds the size ratchet's baseline, and `docs/IDENTIFIER-GATE.json` lists the files the owner-identifier gate skips, each with a reason
+4. `docs/SIZE-BASELINE.json` holds the size ratchet's baseline, and `docs/EMOJI-GATE.json` and `docs/IDENTIFIER-GATE.json` list the files the icon and owner-identifier gates skip, each with a reason
 
 ## Contract exceptions
 
