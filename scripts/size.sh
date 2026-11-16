@@ -20,10 +20,22 @@ for arg in "$@"; do
 done
 cd "$target"
 
+# The strict copies `olivercode bootstrap` stamps into a repo (the "strict" targets in OliverCode's
+# shared/project-bootstrap-manifest.json). OliverCode owns them and conform fails any drift, so a repo's
+# count leaves them out. This file is one of those copies and has no manifest to read, so it carries the
+# list, and a test keeps it equal to the manifest. OliverCode keeps its originals at other paths, so they count.
+MANAGED="QUALITY_BASELINE.md
+scripts/check-structure-contract.mjs
+.githooks/pre-commit
+.githooks/commit-msg
+scripts/size.sh
+scripts/duplication_check.py"
+export MANAGED
+
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  list() { git ls-files; }
+  list() { git ls-files | grep -vxF "$MANAGED" || true; }
 else
-  list() { find . -type f -not -path '*/.git/*' -not -name '.DS_Store' -not -path '*/__pycache__/*' | sed 's|^\./||'; }
+  list() { find . -type f -not -path '*/.git/*' -not -name '.DS_Store' -not -path '*/__pycache__/*' | sed 's|^\./||' | grep -vxF "$MANAGED" || true; }
 fi
 
 # The line count of one tracked file: the working copy, or the index copy under --staged.
@@ -49,6 +61,7 @@ if [ "$mode" = total ] && git rev-parse --is-inside-work-tree >/dev/null 2>&1; t
   STAGED="$staged" python3 - <<'PY'
 import os, subprocess, sys
 staged = os.environ["STAGED"] == "1"
+managed = set(os.environ["MANAGED"].split("\n"))
 entries = subprocess.run(["git", "ls-files", "-s", "-z"], capture_output=True, check=True).stdout.split(b"\0")
 files = []
 for entry in entries:
@@ -57,6 +70,8 @@ for entry in entries:
     meta, _, path = entry.partition(b"\t")
     mode, sha, _stage = meta.split()
     path = os.fsdecode(path)
+    if path in managed:
+        continue
     # A symlink holds no lines of its own, and following it counted its target twice in the working tree.
     # Under --staged the index copy counts, even when the working file was deleted after staging.
     if (staged and mode != b"120000") or (os.path.isfile(path) and not os.path.islink(path)):
