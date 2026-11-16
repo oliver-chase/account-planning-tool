@@ -1,5 +1,5 @@
 'use strict'
-// Loads the built page in a simulated browser (jsdom) and walks the main features:
+// Builds the page from the source, loads it in a simulated browser (jsdom) and walks the main features:
 // the sample account, Plan edits, the historical-year form, keyboard access, the org chart and its
 // download, and empty lists. Needs `npm install`; without it the test says so and
 // fails. Run: node tests/dom.js
@@ -9,7 +9,9 @@ try { ({ JSDOM, VirtualConsole } = require('jsdom')) } catch (e) {
   console.log('dom: jsdom is installed but cannot load on Node ' + process.version + ': ' + e.message.split('\n')[0]); process.exit(1)
 }
 const fs = require('fs'), assert = require('assert')
-const html = fs.readFileSync(require('path').join(__dirname, '..', 'account-planning-tool.html'), 'utf8')
+const root = require('path').join(__dirname, '..')
+require('child_process').execFileSync('python3', [require('path').join(root, 'scripts/build-single-file.py')]) // git does not track the page, so every run builds it
+const html = fs.readFileSync(require('path').join(root, 'account-planning-tool.html'), 'utf8')
 const errors = []
 const vc = new VirtualConsole(); vc.on('jsdomError', e => errors.push(String(e.detail || e.message || e).slice(0, 200)))
 const dom = new JSDOM(html, { url: 'http://localhost/', runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc,
