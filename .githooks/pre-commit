@@ -200,7 +200,10 @@ EMOJI_EXEMPT="$(gate_list docs/EMOJI-GATE.json exempt)"
 if [ -n "$STAGED_FILES" ]; then
   while IFS= read -r file; do
     matches_glob "$file" "$EMOJI_EXEMPT" && continue
-    EMOJI_HITS=$(staged_content "$file" 2>/dev/null | perl -CSD -ne 'print "$.: $_" if /'"$EMOJI_PATTERN"'/' || true)
+    # perl -CSD dies on the first malformed byte, which let an emoji later in the file through. The file is
+    # read as bytes, a binary file (a NUL in its first 8000 bytes, git's own test) is skipped, and a bad byte
+    # decodes to U+FFFD so every line after it is still scanned.
+    EMOJI_HITS=$(staged_content "$file" 2>/dev/null | perl -0777 -ne 'use Encode; exit if substr($_, 0, 8000) =~ /\0/; binmode STDOUT, ":utf8"; my $n = 0; for my $l (split /\n/, Encode::decode("UTF-8", $_)) { $n++; print "$n: $l\n" if $l =~ /'"$EMOJI_PATTERN"'/ }' || true)
     if [ -n "$EMOJI_HITS" ]; then
       echo "$EMOJI_HITS"
       echo "  BLOCKED: $file contains emojis or icons."
@@ -509,13 +512,15 @@ esac
 if [ ! -s "$ID_LIST" ]; then
   echo "  Gate 8 skipped (no owner identifier can be derived from git or docs/IDENTIFIER-GATE.json)."
 else
-  # A project names itself: its origin path, its repo name and its package name are not owner data, so a
+  # A project names itself: its origin path, its repo name (also spaced) and its package name are not owner data, so a
   # line is matched after those strings are removed. A bare author name in prose still blocks.
   ID_SELF="$(mktemp "${TMPDIR:-/tmp}/oc-identifier-self.XXXXXX")"
   trap 'rc=$?; rm -f "$ID_LIST" "$ID_SELF"; log_failure $rc' EXIT
   {
     id_self_path="${ID_ORIGIN%.git}"
     printf '%s\n' "$id_self_path" "${id_self_path##*/}"
+    # Prose writes the repo name with spaces ("account planning tool" for account-planning-tool).
+    printf '%s\n' "${id_self_path##*/}" | tr '_-' '  '
     git show ":package.json" 2>/dev/null | python3 -c 'import json,sys
 try: print(json.load(sys.stdin).get("name",""))
 except Exception: pass' || true
