@@ -145,16 +145,10 @@ function drawOrgLines(outer, tree) {
     if (pb && pb.classList.contains('org-branch')) parents.push(pb)
   })
   if (!parents.length) return
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-  svg.setAttribute('class', 'org-lines')
+  const svg = svgEl('svg', { class: 'org-lines' })
   svg.style.width = outer.scrollWidth + 'px'; svg.style.height = outer.scrollHeight + 'px'
   const scrollX = outer.scrollLeft, scrollY = outer.scrollTop
-  function path(d) {
-    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-    p.setAttribute('d', d); p.setAttribute('stroke', 'var(--color-border)'); p.setAttribute('stroke-width', '2')
-    p.setAttribute('fill', 'none'); p.setAttribute('stroke-linecap', 'round')
-    svg.appendChild(p)
-  }
+  const path = d => svg.appendChild(svgEl('path', { d, stroke: 'var(--color-border)', 'stroke-width': 2, fill: 'none', 'stroke-linecap': 'round' }))
   parents.forEach(pb => {
     const parentCard = pb.querySelector(':scope > .org-node-card')
     const childrenRow = pb.querySelector(':scope > .org-children')

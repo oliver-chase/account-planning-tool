@@ -30,6 +30,14 @@ function buttonEl(className, text, onClick) {
   return b
 }
 
+// An SVG element with its attributes and optional text.
+function svgEl(tag, attrs, text) {
+  const n = document.createElementNS('http://www.w3.org/2000/svg', tag)
+  Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, String(v)))
+  if (text != null) n.textContent = text
+  return n
+}
+
 function emptyResultsBox(text) {
   return el('div', 'module-empty-state', text)
 }

@@ -282,32 +282,19 @@ function renderRevenueChart(bg, container, onSave) {
   const minYear = Math.min(...dataYears)
   const years = []
   for (let y = minYear; y <= curYear; y++) years.push(y)
-  let hasData = false
-  years.forEach(y => {
-    const r = bg.revenue[y] || {}
-    const p = parseMoney(r.projected)
-    const c = parseMoney(r.closed)
-    if (p || c) hasData = true
-  })
+  // The tallest bar sets the scale. With no figure at all the chart shows only the years and a hint.
+  const maxVal = Math.max(0, ...years.flatMap(y => { const r = bg.revenue[y] || {}; return [parseMoney(r.projected), parseMoney(r.closed)] }))
   container.setAttribute('role', 'img')
   container.setAttribute('aria-label', 'Revenue by year. ' + years.map(y => { const r = bg.revenue[y] || {}; return y + ': projected ' + (r.projected || 'none') + ', closed ' + (r.closed || 'none') }).join('. '))
   const W = container.clientWidth || 600
-  const NS = 'http://www.w3.org/2000/svg'
-  if (!hasData) {
+  const yearLabel = (x, year, H) => svgEl('text', { x, y: H - 8, 'text-anchor': 'middle', 'font-size': 10, fill: 'var(--color-text-secondary)' }, String(year))
+  if (!maxVal) {
     const H = 90, ML = 8, colW = Math.floor((W - ML) / Math.max(years.length, 1))
-    const svg = document.createElementNS(NS, 'svg')
-    svg.setAttribute('width', String(W)); svg.setAttribute('height', String(H))
+    const svg = svgEl('svg', { width: W, height: H })
     svg.style.cssText = 'display:block;width:100%;height:' + H + 'px;'
-    years.forEach((y, i) => {
-      const xMid = ML + i * colW + colW / 2
-      const xt = document.createElementNS(NS, 'text')
-      xt.setAttribute('x', String(xMid)); xt.setAttribute('y', String(H - 8)); xt.setAttribute('text-anchor', 'middle'); xt.setAttribute('font-size', '10'); xt.setAttribute('fill', 'var(--color-text-secondary)'); xt.textContent = String(y)
-      svg.appendChild(xt)
-    })
-    const msg = document.createElementNS(NS, 'text')
-    msg.setAttribute('x', String(W / 2)); msg.setAttribute('y', String((H - 28) / 2 + 10)); msg.setAttribute('text-anchor', 'middle'); msg.setAttribute('font-size', '11'); msg.setAttribute('fill', 'var(--color-text-secondary)'); msg.setAttribute('font-style', 'italic')
-    msg.textContent = 'No revenue yet. Use Add historical year to enter it.'
-    svg.appendChild(msg)
+    years.forEach((y, i) => svg.appendChild(yearLabel(ML + i * colW + colW / 2, y, H)))
+    svg.appendChild(svgEl('text', { x: W / 2, y: (H - 28) / 2 + 10, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--color-text-secondary)', 'font-style': 'italic' },
+      'No revenue yet. Use Add historical year to enter it.'))
     container.appendChild(svg); return
   }
   const H = 110, BP = 22, ML = 44
@@ -315,31 +302,16 @@ function renderRevenueChart(bg, container, onSave) {
   const barW = Math.max(2, Math.min(32, Math.floor((W - ML - years.length * 16) / (years.length * 2))))
   const gap = 4, colW = barW * 2 + gap + 12
   const chartW = Math.max(W, ML + years.length * colW)
-  let maxVal = 0
-  years.forEach(y => {
-    const r = bg.revenue[y] || {}
-    const p = parseMoney(r.projected)
-    const c = parseMoney(r.closed)
-    if (p > maxVal) maxVal = p; if (c > maxVal) maxVal = c
-  })
-  if (maxVal === 0) maxVal = 100000
   const chartH = H - BP
   const yScale = v => chartH - Math.round((v / maxVal) * chartH)
   const axisLabel = v => v >= 1000000 ? '$' + (v / 1000000).toFixed(v % 1000000 === 0 ? 0 : 1) + 'M' : v >= 1000 ? '$' + (v / 1000).toFixed(0) + 'k' : '$' + Math.round(v)
-  const svg = document.createElementNS(NS, 'svg')
-  svg.setAttribute('width', String(chartW)); svg.setAttribute('height', String(H))
+  const svg = svgEl('svg', { width: chartW, height: H })
   svg.style.cssText = 'display:block;width:100%;height:' + H + 'px;overflow:visible'
   const ticks = 4
   for (let i = 0; i <= ticks; i++) {
     const v = (maxVal / ticks) * i, y = yScale(v) + 10
-    const line = document.createElementNS(NS, 'line')
-    line.setAttribute('x1', String(ML - 4)); line.setAttribute('y1', String(y)); line.setAttribute('x2', String(chartW)); line.setAttribute('y2', String(y))
-    line.setAttribute('stroke', 'var(--color-border)'); line.setAttribute('stroke-width', '1')
-    svg.appendChild(line)
-    const txt = document.createElementNS(NS, 'text')
-    txt.setAttribute('x', String(ML - 6)); txt.setAttribute('y', String(y + 4)); txt.setAttribute('text-anchor', 'end'); txt.setAttribute('font-size', '9'); txt.setAttribute('fill', 'var(--color-text-secondary)')
-    txt.textContent = axisLabel(v)
-    svg.appendChild(txt)
+    svg.appendChild(svgEl('line', { x1: ML - 4, y1: y, x2: chartW, y2: y, stroke: 'var(--color-border)', 'stroke-width': 1 }))
+    svg.appendChild(svgEl('text', { x: ML - 6, y: y + 4, 'text-anchor': 'end', 'font-size': 9, fill: 'var(--color-text-secondary)' }, axisLabel(v)))
   }
   const tooltip = el('div', 'overview-chart-tooltip', null)
   container.appendChild(tooltip)
@@ -350,19 +322,15 @@ function renderRevenueChart(bg, container, onSave) {
       const val = parseMoney(rev[type])
       if (!(val > 0)) return
       const bh = chartH - yScale(val), by = yScale(val) + 10
-      const rect = document.createElementNS(NS, 'rect')
-      rect.setAttribute('x', String(xBase + dx)); rect.setAttribute('y', String(by)); rect.setAttribute('width', String(barW)); rect.setAttribute('height', String(bh))
-      rect.setAttribute('fill', fill); rect.setAttribute('rx', '3'); rect.style.cursor = 'pointer'
+      const rect = svgEl('rect', { x: xBase + dx, y: by, width: barW, height: bh, fill, rx: 3 })
+      rect.style.cursor = 'pointer'
       rect.addEventListener('mouseenter', () => { tooltip.style.display = 'block'; tooltip.textContent = y + ' ' + label + ': ' + (rev[type] || String(val)) })
       rect.addEventListener('mousemove', e => { tooltip.style.left = (e.clientX + 10) + 'px'; tooltip.style.top = (e.clientY - 28) + 'px' })
       rect.addEventListener('mouseleave', () => { tooltip.style.display = 'none' })
       rect.addEventListener('click', () => openBarEdit(y, type, bg, container, xBase + dx, by, onSave))
       svg.appendChild(rect)
     })
-    const xt = document.createElementNS(NS, 'text')
-    xt.setAttribute('x', String(xBase + barW + gap / 2)); xt.setAttribute('y', String(H - 8)); xt.setAttribute('text-anchor', 'middle'); xt.setAttribute('font-size', '10'); xt.setAttribute('fill', 'var(--color-text-secondary)')
-    xt.textContent = String(y)
-    svg.appendChild(xt)
+    svg.appendChild(yearLabel(xBase + barW + gap / 2, y, H))
   })
   container.appendChild(svg)
 }
