@@ -96,8 +96,9 @@ function deleteWithUndo(listKey, item, label, rerender) {
   if (idx < 0) return
   state[listKey].splice(idx, 1)
   persist(); rerender()
+  const owner = state // loading another workbook replaces state, and Undo must not put the item into it
   showToast(label + ' deleted', 'Undo', () => {
-    if (state[listKey].some(x => x.id === item.id)) return
+    if (state !== owner || state[listKey].some(x => x.id === item.id)) return
     state[listKey].splice(Math.min(idx, state[listKey].length), 0, item)
     persist(); renderAll()
   })
@@ -137,7 +138,7 @@ function renderKeepingFocus(rootId, body) {
 // browsers do not reliably fire blur on close and the field queues its save on blur.
 window.addEventListener('pagehide', () => {
   const active = document.activeElement
-  if (active && active.getAttribute && active.getAttribute('role') === 'textbox') active.blur()
+  if (active && active !== document.body && active.blur) active.blur()
   flushPendingSaves()
   if (persistTimer) { clearTimeout(persistTimer); persistTimer = null; writeLocalNow() }
 })

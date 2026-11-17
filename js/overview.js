@@ -51,7 +51,8 @@ let overviewCadenceOpen = null
 
 // Hook excel.js's importWorkbook() calls after loading a different account's data, so this
 // panel's open/closed state doesn't carry over from whatever account was open before.
-function resetOverviewCadenceUI() { overviewCadenceOpen = null }
+let overviewHistOpen = false // module-level, so a rebuild from a waiting save keeps the Add historical year form open
+function resetOverviewCadenceUI() { overviewCadenceOpen = null; overviewHistOpen = false }
 
 // Patches one year's revenue from the stored record, so an edit from an older render never undoes another.
 function revenuePatch(year, fields) { const rev = state.background.revenue || {}; return { revenue: { ...rev, [year]: { ...(rev[year] || {}), ...fields } } } }
@@ -109,7 +110,7 @@ function renderOverviewBody() {
       // The save waits a moment so a click on the next control lands before the section rebuilds. Update Excel
       // and closing the page run a waiting save first. Enter saves at once and keeps focus in the box.
       const intSaver = queuedSaver(250)
-      const commitInterval = () => saveBg({ meeting_interval: String(Math.max(1, parseInt(intInput.value || '1') || 1)) })
+      const commitInterval = () => { const v = String(Math.max(1, parseInt(intInput.value || '1') || 1)); if (v !== (state.background.meeting_interval || '1')) saveBg({ meeting_interval: v }) }
       intInput.addEventListener('blur', () => intSaver.queue(commitInterval))
       intInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); commitInterval() } })
       everyRow.appendChild(intInput)
@@ -200,20 +201,19 @@ function renderOverviewBody() {
   chartCard.appendChild(legendRow)
   const canvas = el('div', 'overview-chart-canvas', null)
   chartCard.appendChild(canvas)
-  let histOpen = false
-  const histBtn = inlineActionButton('Add historical year', () => { histOpen = !histOpen; renderHistForm() }, { id: 'btn-add-hist-year' })
+  const histBtn = inlineActionButton('Add historical year', () => { overviewHistOpen = !overviewHistOpen; renderHistForm() }, { id: 'btn-add-hist-year' })
   histBtn.classList.add('overview-link-btn-top')
   chartCard.appendChild(histBtn)
   const histSlot = el('div', null, null)
   chartCard.appendChild(histSlot)
   function renderHistForm() {
     histSlot.innerHTML = ''
-    if (!histOpen) return
+    if (!overviewHistOpen) return
     histSlot.appendChild(historicalYearForm(b, (year, proj, closed) => {
-      saveBg(revenuePatch(year, { projected: proj, closed }))
-      histOpen = false; renderHistForm() // saving re-renders the page, so the rebuilt button takes focus
+      overviewHistOpen = false
+      saveBg(revenuePatch(year, { projected: proj, closed })) // saving re-renders the page, so the rebuilt button takes focus
       requestAnimationFrame(() => document.getElementById('btn-add-hist-year')?.focus())
-    }, () => { histOpen = false; renderHistForm(); histBtn.focus() }))
+    }, () => { overviewHistOpen = false; renderHistForm(); histBtn.focus() }))
   }
   renderHistForm()
   row2.appendChild(chartCard)
@@ -345,7 +345,7 @@ function openBarEdit(year, type, bg, container, svgX, svgY, onSave) {
     if (done) return
     done = true
     const v = inp.value.trim()
-    inp.remove(); onSave(revenuePatch(year, { [type]: v }))
+    inp.remove(); if (v !== ((bg.revenue[year] || {})[type] || '')) onSave(revenuePatch(year, { [type]: v }))
   }
   inp.addEventListener('blur', commit)
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); commit() } if (e.key === 'Escape') { done = true; inp.remove() } })

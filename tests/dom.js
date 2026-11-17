@@ -115,6 +115,10 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   const field = d.querySelector('.plan-header-card [role="textbox"]'); field.focus(); field.textContent = 'Typed before closing'
   w.dispatchEvent(new w.Event('pagehide'))
   check('closing the page saves the focused field', w.localStorage.getItem('accountPlanningTool.state.v2').includes('Typed before closing'))
+  // An Undo for a deleted item does nothing once another workbook has replaced the state.
+  w.eval("state.stakeholders.push({ id: 'undo-x', name: 'Undo X' }); deleteWithUndo('stakeholders', state.stakeholders[state.stakeholders.length - 1], 'Person', () => {}); state = JSON.parse(JSON.stringify(state)); state.stakeholders = []")
+  d.querySelector('.app-toast-undo').click()
+  check('Undo leaves a replaced workbook alone', w.eval("state.stakeholders.length") === 0)
   // A comma in a new person's name becomes a space, so the name is one person in every list.
   w.eval("peopleView = 'cards'; peopleFilterPanelOpen = false; peopleFilters.exec = false; peopleAdding = true; renderPeople()")
   await until(() => d.querySelector('.person-card [aria-label="Name"]'))
