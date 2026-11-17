@@ -19,14 +19,12 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
 .page-last-updated{font-size:var(--font-size-xs);color:var(--color-text-secondary);font-style:italic}
 .notes-search{font-size:var(--font-size-sm);padding:var(--spacing-5) var(--spacing-10);border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-bg-card);color:var(--color-text-primary);outline:none;width:180px;flex-shrink:0;font-family:var(--font-family-base)}
 [contenteditable]{outline:none;border-radius:var(--radius-sm);padding:var(--editable-padding);transition:.15s;font-family:var(--font-family-base);font-size:var(--font-size-sm)}
-[contenteditable]:hover{background:var(--color-brand-accent-light)}
-[contenteditable]:focus{background:var(--color-brand-accent-light);box-shadow:0 0 0 2px var(--color-pink-overlay-sm)}
+[contenteditable]:hover,.overview-stat-val:hover{background:var(--color-brand-accent-light)}
+[contenteditable]:focus,.overview-stat-val:focus{background:var(--color-brand-accent-light);box-shadow:0 0 0 2px var(--color-pink-overlay-sm)}
 .overview-stats{display:flex;gap:var(--spacing-10);margin-bottom:var(--spacing-md);flex-wrap:wrap}
 .overview-stat{background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--spacing-12) var(--spacing-md);flex:1;min-width:160px}
 .overview-stat-label{font-size:var(--font-size-xs);font-weight:var(--font-weight-bold);letter-spacing:.04em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:var(--spacing-xs);font-family:var(--font-family-base)}
 .overview-stat-val{font-size:var(--font-size-sm);font-weight:var(--font-weight-semibold);color:var(--color-text-primary);min-height:var(--spacing-20);outline:none;border-radius:var(--radius-sm);padding:var(--editable-padding);transition:.15s;font-family:var(--font-family-base)}
-.overview-stat-val:hover{background:var(--color-brand-accent-light)}
-.overview-stat-val:focus{background:var(--color-brand-accent-light);box-shadow:0 0 0 2px var(--color-pink-overlay-sm)}
 .people-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--spacing-md)}
 .person-card,.note-card{background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg);position:relative}
 .person-card{padding:var(--spacing-md)}
