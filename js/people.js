@@ -20,8 +20,7 @@ let peopleFilterPanelOpen = false
 
 // Asks, deletes, and closes the side panel, which would otherwise show a person who is gone.
 function confirmDeletePerson(person) {
-  showModal({ title: 'Delete ' + (person.name || 'person') + '?', confirmLabel: 'Delete', dangerConfirm: true }).then(r => {
-    if (r.buttonValue !== 'confirm') return
+  confirmDelete('Delete ' + (person.name || 'person') + '?', undefined, () => {
     deletePerson(person)
     document.querySelectorAll('.person-detail-panel').forEach(p => p.remove())
     if (personPanelOnKey) document.removeEventListener('keydown', personPanelOnKey)
@@ -32,7 +31,8 @@ function confirmDeletePerson(person) {
 function savePerson(p) {
   const title = document.querySelector('#org-person-panel[data-person-id="' + p.id + '"] .person-detail-title')
   if (title) title.textContent = p.name || 'Person'
-  p.last_updated = today(); const i = state.stakeholders.findIndex(x => x.id === p.id); if (i >= 0) state.stakeholders[i] = p; persist() }
+  saveRecord('stakeholders', p)
+}
 function deletePerson(p) {
   state.stakeholders = state.stakeholders.filter(x => x.id !== p.id)
   state.stakeholders.forEach(x => { if (x.reports_to === p.id) x.reports_to = '' })
@@ -241,7 +241,7 @@ function makePersonCard(person) {
   rtoRow.appendChild(el('span', 'card-meta-label', 'Reports to:'))
   const others = state.stakeholders.filter(s => s.id !== person.id)
   rtoRow.appendChild(singleSelectEl([['', 'Select person…'], ...others.map(o => [o.id, o.name])], person.reports_to || '', v => {
-    if (v && isDescendantOf(v, person.id, state.stakeholders)) { showToast('Cannot create circular reporting relationship'); renderPeople(); return }
+    if (reportsToCycle(v, person.id)) { renderPeople(); return }
     savePerson({ ...current(), reports_to: v }); renderPeople()
   }, 'card-owner-btn popover-trigger'))
   bodyWrap.appendChild(rtoRow)

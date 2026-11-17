@@ -3,6 +3,16 @@
 //
 // Engagement links are stored as plain text labels ("Account-wide" or a name).
 
+// The columns of each sheet, shared by the export and the starter workbook. Import reads columns by name.
+// ReportsTo is the name people edit; ReportsToID tells two people with one name apart (see parseStateFromRows).
+const SHEET_HEADERS = {
+  People: ['ID', 'Name', 'Title', 'Department', 'Organization', 'IsExecutive', 'Sentiment', 'WorkerType', 'PrimaryOwner', 'SecondaryOwner', 'ReportsTo', 'ReportsToID', 'Engagement', 'Notes'],
+  Actions: ['ID', 'Description', 'Owner', 'Engagement', 'Status', 'DueDate', 'ClosedDate', 'CreatedDate'],
+  Notes: ['ID', 'Date', 'Type', 'Title', 'Attendees', 'Body', 'TranscriptLink', 'CreatedDate'],
+  Plans: ['ID', 'Year', 'Objective', 'RevenueTarget', 'Strategy', 'RisksSummary', 'LastReviewedAt', 'NextReviewAt'],
+}
+// One sheet row from an object keyed by column name.
+const sheetRow = (sheet, values) => SHEET_HEADERS[sheet].map(h => values[h] || '')
 const SHEET_BASES = ['Overview', 'Revenue', 'People', 'Actions', 'Notes', 'Plans']
 
 // Excel date cells arrive as Date objects when the workbook is read with cellDates. Turn each
@@ -197,20 +207,19 @@ function buildAoasFromState() {
   aoas.Revenue = [['Year', 'Projected', 'Closed']]
   Object.keys(b.revenue).sort().forEach(y => aoas.Revenue.push([y, b.revenue[y].projected || '', b.revenue[y].closed || '']))
 
-  // ReportsTo is the name people edit; ReportsToID tells two people with one name apart (see parseStateFromRows).
-  aoas.People = [['ID', 'Name', 'Title', 'Department', 'Organization', 'IsExecutive', 'Sentiment', 'WorkerType', 'PrimaryOwner', 'SecondaryOwner', 'ReportsTo', 'ReportsToID', 'Engagement', 'Notes']]
+  aoas.People = [SHEET_HEADERS.People]
   state.stakeholders.forEach(p => {
     const mgr = p.reports_to ? (state.stakeholders.find(x => x.id === p.reports_to) || {}).name || '' : ''
     aoas.People.push([p.id, p.name, p.title, p.department, p.organization, p.is_executive, p.sentiment, p.worker_type, p.primary_owner, p.secondary_owner, mgr, p.reports_to || '', p.engagement, p.notes])
   })
 
-  aoas.Actions = [['ID', 'Description', 'Owner', 'Engagement', 'Status', 'DueDate', 'ClosedDate', 'CreatedDate']]
+  aoas.Actions = [SHEET_HEADERS.Actions]
   state.actions.forEach(x => aoas.Actions.push([x.id, x.description, x.owner, x.engagement, x.status, x.due_date || '', x.closed_date, x.created_date]))
 
-  aoas.Notes = [['ID', 'Date', 'Type', 'Title', 'Attendees', 'Body', 'TranscriptLink', 'CreatedDate']]
+  aoas.Notes = [SHEET_HEADERS.Notes]
   state.notes.forEach(x => aoas.Notes.push([x.id, x.date, x.type, x.title, (x.attendees || []).join('; '), x.body, x.transcript_link, x.created_date]))
 
-  aoas.Plans = [['ID', 'Year', 'Objective', 'RevenueTarget', 'Strategy', 'RisksSummary', 'LastReviewedAt', 'NextReviewAt']]
+  aoas.Plans = [SHEET_HEADERS.Plans]
   state.plans.forEach(p => {
     aoas.Plans.push([p.id, p.year, p.objective, p.revenue_target, p.strategy, p.risks_summary, p.last_reviewed_at, p.next_review_at])
   })

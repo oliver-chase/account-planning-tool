@@ -23,39 +23,49 @@ function callSummaryData() {
 
 function dueLabel(x) { return x.due ? (x.overdue ? ' (overdue, was due ' : ' (due ') + fmtDate(x.due) + ')' : '' }
 
+// The sections both outputs print, in order: plan rows, the last call, open actions by owner and the finished list.
+function callSummarySections(d) {
+  const sections = []
+  if (d.planRows.length) sections.push({ title: 'Plan', rows: d.planRows })
+  if (d.note) {
+    const n = d.note
+    sections.push({ title: 'Last call', lead: fmtDate(n.date) + (n.title ? ' — ' + n.title : ''),
+      meta: (n.attendees || []).length ? 'Attendees: ' + n.attendees.join(', ') : '', body: n.body || '' })
+  }
+  sections.push({ title: 'Open actions', empty: !d.owners.length, groups: d.owners.map(o => [o, d.groups[o]]) })
+  if (d.done.length) sections.push({ title: 'Finished this week', items: d.done })
+  return sections
+}
+
 function buildCallSummary() {
   const d = callSummaryData()
-  const lines = [d.name + ' — call summary, ' + fmtDate(d.today), '']
-  if (d.planRows.length) { d.planRows.forEach(r => lines.push(r[0] + ': ' + r[1])); lines.push('') }
-  if (d.note) {
-    lines.push('Last call: ' + fmtDate(d.note.date) + (d.note.title ? ' — ' + d.note.title : ''))
-    if ((d.note.attendees || []).length) lines.push('Attendees: ' + d.note.attendees.join(', '))
-    if (d.note.body) lines.push('', d.note.body)
+  const sections = callSummarySections(d)
+  const lines = [d.name + ' — call summary, ' + fmtDate(d.today)]
+  sections.forEach(s => {
     lines.push('')
-  }
-  lines.push('Open actions')
-  if (!d.owners.length) lines.push('None.')
-  d.owners.forEach(o => { lines.push(o); d.groups[o].forEach(x => lines.push('- ' + x.text + dueLabel(x))) })
-  if (d.done.length) { lines.push('', 'Finished this week'); d.done.forEach(x => lines.push('- ' + x)) }
+    if (s.lead) lines.push(s.title + ': ' + s.lead); else if (!s.rows) lines.push(s.title)
+    ;(s.rows || []).forEach(r => lines.push(r[0] + ': ' + r[1]))
+    if (s.meta) lines.push(s.meta)
+    if (s.body) lines.push('', s.body)
+    if (s.empty) lines.push('None.')
+    ;(s.groups || []).forEach(([o, xs]) => { lines.push(o); xs.forEach(x => lines.push('- ' + x.text + dueLabel(x))) })
+    ;(s.items || []).forEach(x => lines.push('- ' + x))
+  })
   const text = lines.join('\n')
 
-  const h = []
-  h.push('<h1>' + escHtml(d.name) + '</h1>')
-  h.push('<p class="meta">Call summary, ' + escHtml(fmtDate(d.today)) + '</p>')
-  if (d.planRows.length) h.push('<h2>Plan</h2>' + d.planRows.map(r => '<p><strong>' + escHtml(r[0]) + ':</strong> ' + escHtml(r[1]).replace(/\n/g, '<br>') + '</p>').join(''))
-  if (d.note) {
-    h.push('<h2>Last call</h2><p><strong>' + escHtml(fmtDate(d.note.date)) + (d.note.title ? ' — ' + escHtml(d.note.title) : '') + '</strong></p>')
-    if ((d.note.attendees || []).length) h.push('<p>Attendees: ' + d.note.attendees.map(escHtml).join(', ') + '</p>')
-    if (d.note.body) h.push('<p>' + escHtml(d.note.body).replace(/\n/g, '<br>') + '</p>')
-  }
-  h.push('<h2>Open actions</h2>')
-  if (!d.owners.length) h.push('<p>None.</p>')
-  d.owners.forEach(o => {
-    h.push('<div class="owner-group"><div class="owner-name">' + escHtml(o) + '</div><ul>')
-    d.groups[o].forEach(x => h.push('<li>' + escHtml(x.text) + escHtml(dueLabel(x)) + '</li>'))
-    h.push('</ul></div>')
+  const h = ['<h1>' + escHtml(d.name) + '</h1>', '<p class="meta">Call summary, ' + escHtml(fmtDate(d.today)) + '</p>']
+  const paragraph = t => '<p>' + escHtml(t).replace(/\n/g, '<br>') + '</p>'
+  sections.forEach(s => {
+    h.push('<h2>' + escHtml(s.title) + '</h2>')
+    if (s.lead) h.push('<p><strong>' + escHtml(s.lead) + '</strong></p>')
+    ;(s.rows || []).forEach(r => h.push('<p><strong>' + escHtml(r[0]) + ':</strong> ' + escHtml(r[1]).replace(/\n/g, '<br>') + '</p>'))
+    if (s.meta) h.push(paragraph(s.meta))
+    if (s.body) h.push(paragraph(s.body))
+    if (s.empty) h.push('<p>None.</p>')
+    ;(s.groups || []).forEach(([o, xs]) => h.push('<div class="owner-group"><div class="owner-name">' + escHtml(o) + '</div><ul>' +
+      xs.map(x => '<li>' + escHtml(x.text) + escHtml(dueLabel(x)) + '</li>').join('') + '</ul></div>'))
+    if (s.items) h.push('<ul>' + s.items.map(x => '<li>' + escHtml(x) + '</li>').join('') + '</ul>')
   })
-  if (d.done.length) { h.push('<h2>Finished this week</h2><ul>'); d.done.forEach(x => h.push('<li>' + escHtml(x) + '</li>')); h.push('</ul>') }
   const style = 'body{font-family:' + BRAND.fontFamily + ';font-size:13px;color:#1a1a1a;max-width:640px;margin:0 auto;padding:32px}h1{font-size:22px;margin-bottom:4px}h2{font-size:15px;border-bottom:1px solid #ddd;padding-bottom:4px;margin-top:24px}.meta{color:#4a4a4e}.owner-name{font-weight:bold;margin:8px 0 4px}ul{margin:0;padding-left:18px}'
   const title = d.name + ' call summary'
   const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + escHtml(title) + '</title><style>' + style + '</style></head><body>' + h.join('') + '</body></html>'

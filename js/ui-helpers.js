@@ -89,6 +89,11 @@ function makeActivatable(node, label, onActivate) {
   return node
 }
 
+// Asks first, with the Delete button styled as dangerous, and runs onConfirm only on a yes.
+function confirmDelete(title, message, onConfirm) {
+  showModal({ title, message, confirmLabel: 'Delete', dangerConfirm: true }).then(r => { if (r.buttonValue === 'confirm') onConfirm() })
+}
+
 // Removes an item from state[listKey] straight away and offers Undo, so a stray tap on a
 // live call costs nothing. Undo puts the item back where it was.
 function deleteWithUndo(listKey, item, label, rerender) {

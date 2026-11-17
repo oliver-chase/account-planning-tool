@@ -137,6 +137,19 @@ function queuedSaver(ms) {
   const queue = fn => { cancel(); run = () => { cancel(); fn() }; pendingEditSaves.add(run); timer = setTimeout(run, ms) }
   return { queue, cancel, pending: () => pendingEditSaves.has(run) }
 }
+// Stamps a record, puts it back in state[listKey] by id and saves.
+function saveRecord(listKey, rec) {
+  rec.last_updated = today()
+  const i = state[listKey].findIndex(x => x.id === rec.id)
+  if (i >= 0) state[listKey][i] = rec
+  persist()
+}
+// True, with a toast, when making parentId the manager of personId would loop.
+function reportsToCycle(parentId, personId) {
+  if (!parentId || !isDescendantOf(parentId, personId, state.stakeholders)) return false
+  showToast('Cannot create circular reporting relationship')
+  return true
+}
 let persistTimer = null
 let changeCount = 0 // counts persist() calls so a save can tell whether anything changed while it ran
 function persist() {

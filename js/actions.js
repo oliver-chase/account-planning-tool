@@ -24,7 +24,7 @@ function actionStatusBadgeClass(s) { if (s === 'Done') return 'app-badge-complet
 
 // Edits read the stored record, so two saves close together both keep their change.
 const currentAction = a => state.actions.find(x => x.id === a.id) || a
-function saveAction(a) { a.last_updated = today(); const i = state.actions.findIndex(x => x.id === a.id); if (i >= 0) state.actions[i] = a; persist() }
+function saveAction(a) { saveRecord('actions', a) }
 function deleteAction(a, rerender) { deleteWithUndo('actions', a, 'Action', rerender) }
 
 // Sorts by a column. Actions with no due date always come last, whichever way the sort runs.

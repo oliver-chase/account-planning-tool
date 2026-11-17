@@ -131,7 +131,7 @@ function renderOverviewBody() {
   renderCadencePanel()
   const toggleCadence = () => { overviewCadenceOpen = !overviewCadenceOpen; summaryRow.setAttribute('aria-expanded', overviewCadenceOpen ? 'true' : 'false'); renderCadencePanel() }
   summaryRow.addEventListener('click', toggleCadence)
-  makeActivatable(summaryRow, 'Meeting cadence', toggleCadence)
+  makeActivatable(summaryRow, null, toggleCadence)
   summaryRow.setAttribute('role', 'button'); summaryRow.setAttribute('aria-expanded', overviewCadenceOpen ? 'true' : 'false')
   card2.appendChild(summaryRow)
   card2.appendChild(panel)

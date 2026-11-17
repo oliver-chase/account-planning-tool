@@ -95,6 +95,15 @@ function popoverAddNewRow(onSubmit) {
   return row
 }
 
+// Fills a popover list with one focusable row per [value, label] entry.
+function appendOptionRows(list, entries, isSelected, onPick) {
+  entries.forEach(([value, label]) => {
+    const item = el('div', 'app-popover-item' + (isSelected(value) ? ' selected' : ''), label)
+    focusableRow(item, () => onPick(value, label))
+    list.appendChild(item)
+  })
+}
+
 function popoverOptionsList(names, isSelected, onPick) {
   const search = el('input', 'app-popover-search', null)
   search.placeholder = 'Search…'
@@ -104,12 +113,7 @@ function popoverOptionsList(names, isSelected, onPick) {
     const q = search.value.trim().toLowerCase()
     const filtered = q ? names.filter(n => n.toLowerCase().includes(q)) : names
     if (!filtered.length) { list.appendChild(el('div', 'app-popover-empty', 'No matches')); return }
-    filtered.forEach(n => {
-      const item = el('div', 'app-popover-item' + (isSelected(n) ? ' selected' : ''), n)
-      const pick = () => onPick(n)
-      focusableRow(item, pick)
-      list.appendChild(item)
-    })
+    appendOptionRows(list, filtered.map(n => [n, n]), isSelected, onPick)
   }
   search.addEventListener('input', renderList)
   renderList()
@@ -202,18 +206,13 @@ function singleSelectEl(options, selected, onChange, className) {
   trigger.addEventListener('click', () => {
     openPopover(trigger, (pop, close) => {
       const list = el('div', 'app-popover-list', null)
-      options.forEach(([value, label]) => {
-        const item = el('div', 'app-popover-item' + (value === selected ? ' selected' : ''), label)
-        const pick = () => {
-          // A button does not show the picked option by itself. Update the label and the selected
-          // state here, because an unsaved inline new-record row never re-renders on its own.
-          selected = value
-          trigger.textContent = label
-          close()
-          onChange(value)
-        }
-        focusableRow(item, pick)
-        list.appendChild(item)
+      // A button does not show the picked option by itself. Update the label and the selected
+      // state here, because an unsaved inline new-record row never re-renders on its own.
+      appendOptionRows(list, options, v => v === selected, (value, label) => {
+        selected = value
+        trigger.textContent = label
+        close()
+        onChange(value)
       })
       pop.appendChild(list)
     })

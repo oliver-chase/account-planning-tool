@@ -95,7 +95,7 @@ function orgMakeCard(person, isUnassigned, onOpenDetail, staticMode) {
       const dragId = e.dataTransfer.getData('text/plain') || orgDraggedId
       orgDraggedId = null
       if (!dragId || dragId === person.id) return
-      if (isDescendantOf(person.id, dragId, state.stakeholders)) { showToast('Cannot create circular reporting relationship'); return }
+      if (reportsToCycle(person.id, dragId)) return
       orgSetReportsTo(dragId, person.id)
     })
   }
@@ -104,7 +104,7 @@ function orgMakeCard(person, isUnassigned, onOpenDetail, staticMode) {
     if (e.target.closest('button')) return
     if (orgPickedId && orgPickedId !== person.id && !isUnassigned) {
       const moved = orgPickedId; orgPickedId = null // cleared first, so the one render below drops the picked outline
-      if (isDescendantOf(person.id, moved, state.stakeholders)) { showToast('Cannot create circular reporting relationship'); renderOrgChart(moved) }
+      if (reportsToCycle(person.id, moved)) renderOrgChart(moved)
       else orgSetReportsTo(moved, person.id)
       return
     }

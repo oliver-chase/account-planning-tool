@@ -3,13 +3,6 @@
 // The blank template and the sample use the plain Overview, Plans, People, Actions and Notes
 // sheets, which import and export like any other workbook.
 
-const STARTER_HEADERS = {
-  People: ['ID', 'Name', 'Title', 'Department', 'ReportsTo', 'Notes'],
-  Actions: ['ID', 'Description', 'Owner', 'Status', 'DueDate'],
-  Notes: ['ID', 'Date', 'Type', 'Title', 'Attendees', 'Body'],
-  Plans: ['ID', 'Year', 'Objective', 'RevenueTarget', 'Strategy', 'RisksSummary', 'LastReviewedAt', 'NextReviewAt'],
-}
-
 // Sheets as arrays of rows. With sample data it describes an invented account; without,
 // only the headers and the Overview labels.
 function starterAoas(withSample) {
@@ -18,25 +11,24 @@ function starterAoas(withSample) {
     : { name: '', company: '', objective: '', strategy: '', target: '', risks: '', last: '', next: '' }
   const aoas = {
     Overview: [['Field', 'Value'], ['Account Name', o.name], ['Client Company', o.company]],
-    Plans: [STARTER_HEADERS.Plans],
-    People: [STARTER_HEADERS.People],
-    Actions: [STARTER_HEADERS.Actions],
-    Notes: [STARTER_HEADERS.Notes],
+    Plans: [SHEET_HEADERS.Plans], People: [SHEET_HEADERS.People], Actions: [SHEET_HEADERS.Actions], Notes: [SHEET_HEADERS.Notes],
   }
   if (withSample) {
-    aoas.Plans.push(['plan1', String(new Date().getFullYear()), o.objective, o.target, o.strategy, o.risks, o.last, o.next])
-    aoas.People.push(
-      ['s1', 'Dana Reyes', 'Chief Executive', 'Executive', '', 'Final sign-off'],
-      ['s2', 'Sam Ortiz', 'Chief Financial Officer', 'Finance', 'Dana Reyes', ''],
-      ['s3', 'Priya Shah', 'VP Operations', 'Operations', 'Dana Reyes', 'Our sponsor'],
-      ['s4', 'Marco Lee', 'IT Director', 'IT', 'Priya Shah', 'New in role'],
-      ['s5', 'Jo Park', 'Business Analyst', 'IT', 'Marco Lee', ''],
-      ['s6', 'Tess Wu', 'Procurement Lead', 'Finance', '', 'Not yet placed on the chart'])
-    aoas.Actions.push(
-      ['a1', 'Send the regional rollout proposal', 'Priya Shah', 'In Progress', isoPlusDays(today(), 3)],
-      ['a2', 'Book the IT security review', 'Marco Lee', 'Open', isoPlusDays(today(), 10)],
-      ['a3', 'Confirm the Q1 budget window', 'Sam Ortiz', 'Open', isoPlusDays(today(), -2)])
-    aoas.Notes.push(['n1', isoPlusDays(today(), -14), 'Meeting', 'Quarterly check-in', 'Priya Shah; Marco Lee', 'Priya wants a rollout plan by month end. Marco asked for the security checklist first.'])
+    const rows = (sheet, list) => list.forEach(v => aoas[sheet].push(sheetRow(sheet, v)))
+    const due = n => isoPlusDays(today(), n)
+    rows('Plans', [{ ID: 'plan1', Year: String(new Date().getFullYear()), Objective: o.objective, RevenueTarget: o.target, Strategy: o.strategy, RisksSummary: o.risks, LastReviewedAt: o.last, NextReviewAt: o.next }])
+    rows('People', [
+      { ID: 's1', Name: 'Dana Reyes', Title: 'Chief Executive', Department: 'Executive', Notes: 'Final sign-off' },
+      { ID: 's2', Name: 'Sam Ortiz', Title: 'Chief Financial Officer', Department: 'Finance', ReportsTo: 'Dana Reyes' },
+      { ID: 's3', Name: 'Priya Shah', Title: 'VP Operations', Department: 'Operations', ReportsTo: 'Dana Reyes', Notes: 'Our sponsor' },
+      { ID: 's4', Name: 'Marco Lee', Title: 'IT Director', Department: 'IT', ReportsTo: 'Priya Shah', Notes: 'New in role' },
+      { ID: 's5', Name: 'Jo Park', Title: 'Business Analyst', Department: 'IT', ReportsTo: 'Marco Lee' },
+      { ID: 's6', Name: 'Tess Wu', Title: 'Procurement Lead', Department: 'Finance', Notes: 'Not yet placed on the chart' }])
+    rows('Actions', [
+      { ID: 'a1', Description: 'Send the regional rollout proposal', Owner: 'Priya Shah', Status: 'In Progress', DueDate: due(3) },
+      { ID: 'a2', Description: 'Book the IT security review', Owner: 'Marco Lee', Status: 'Open', DueDate: due(10) },
+      { ID: 'a3', Description: 'Confirm the Q1 budget window', Owner: 'Sam Ortiz', Status: 'Open', DueDate: due(-2) }])
+    rows('Notes', [{ ID: 'n1', Date: due(-14), Type: 'Meeting', Title: 'Quarterly check-in', Attendees: 'Priya Shah; Marco Lee', Body: 'Priya wants a rollout plan by month end. Marco asked for the security checklist first.' }])
   }
   return aoas
 }

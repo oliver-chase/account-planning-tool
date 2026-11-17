@@ -40,7 +40,7 @@ assert.strictEqual(unsavedEdits, false)
 // The blank workbook has the right sheets and headers, and importing it leaves a blank account.
 const blank = starterWorkbook(false)
 assert.strictEqual(blank.SheetNames.join(), 'Overview,Plans,People,Actions,Notes')
-assert.strictEqual(XLSX.utils.sheet_to_json(blank.Sheets.People, { header: 1 })[0].join(), 'ID,Name,Title,Department,ReportsTo,Notes')
+assert.strictEqual(XLSX.utils.sheet_to_json(blank.Sheets.People, { header: 1 })[0].join(), SHEET_HEADERS.People.join())
 state = emptyState()
 importWorkbook(blank, 'account-template.xlsx')
 assert.strictEqual(state.stakeholders.length, 0)

@@ -31,7 +31,7 @@ function noteToMarkdown(note) {
 
 // Edits read the stored record, so two saves close together both keep their change.
 const currentNote = n => state.notes.find(x => x.id === n.id) || n
-function saveNote(n) { n.last_updated = today(); const i = state.notes.findIndex(x => x.id === n.id); if (i >= 0) state.notes[i] = n; persist() }
+function saveNote(n) { saveRecord('notes', n) }
 function deleteNote(n) { state.notes = state.notes.filter(x => x.id !== n.id); persist() }
 
 function createNote() {
@@ -115,10 +115,8 @@ function makeNoteCard(note, teamNames) {
   copyBtn.title = 'Copy to clipboard'
   btns.appendChild(copyBtn)
   btns.appendChild(compactRemoveButton('Delete note', () => {
-    showModal({ title: 'Delete this note?', message: 'This removes its title, date, attendees, and body. This cannot be undone.', confirmLabel: 'Delete', dangerConfirm: true }).then(r => {
-      if (r.buttonValue !== 'confirm') return
-      notesExpanded.delete(note.id); deleteNote(note); renderNotes()
-    })
+    confirmDelete('Delete this note?', 'This removes its title, date, attendees, and body. This cannot be undone.',
+      () => { notesExpanded.delete(note.id); deleteNote(note); renderNotes() })
   }, 'note-delete-btn'))
   card.appendChild(btns)
 
