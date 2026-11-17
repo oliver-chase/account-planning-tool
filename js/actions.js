@@ -19,7 +19,8 @@ function actionMatchesFilter(a, filter, t) {
   return a.status === filter
 }
 
-function dayAge(dateStr) { if (!dateStr) return 0; return Math.floor((Date.now() - new Date(dateStr + 'T00:00:00').getTime()) / 86400000) }
+// Whole calendar days since a date. A day that gains or loses an hour at a clock change still counts as one.
+function dayAge(dateStr) { return dateStr ? Math.round((new Date(today() + 'T00:00:00') - new Date(dateStr + 'T00:00:00')) / 86400000) || 0 : 0 }
 function actionStatusBadgeClass(s) { if (s === 'Done') return 'app-badge-complete'; if (s === 'In Progress') return 'app-badge-progress'; return 'app-badge-open' }
 
 // Edits read the stored record, so two saves close together both keep their change.

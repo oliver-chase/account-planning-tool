@@ -17,7 +17,7 @@ if (process.argv[2] !== '--child') {
 const store = {}
 const sandbox = { assert, console, localStorage: { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v) } },
   document: { getElementById: () => null }, window: { addEventListener() {} }, setTimeout, clearTimeout }
-const src = ['js/state.js', 'js/overview.js'].map(read).join('\n') + `
+const src = ['js/state.js', 'js/overview.js', 'js/actions.js'].map(read).join('\n') + `
 // Dates are local calendar days.
 assert.strictEqual(localISO(new Date(2026, 10, 11, 23, 30)), '2026-11-11')
 assert.strictEqual(localISO(new Date(2026, 10, 11, 0, 10)), '2026-11-11')
@@ -56,5 +56,14 @@ state.background.revenue = { 2026: { projected: '1', closed: '' } }
 const first = revenuePatch('2026', { projected: '2' }); state.background = { ...state.background, ...first }
 state.background = { ...state.background, ...revenuePatch('2026', { closed: '3' }) }
 assert.deepStrictEqual(JSON.parse(JSON.stringify(state.background.revenue['2026'])), { projected: '2', closed: '3' })
+
+// An action's age counts calendar days, also across the day a clock change makes 23 or 25 hours long.
+const RealDate = Date
+let fixedNow = null
+Date = class extends RealDate { constructor(...a) { super(...(a.length ? a : [fixedNow])) } static now() { return fixedNow } }
+;[[new RealDate(2026, 2, 9, 0, 30), '2026-03-08', 1], [new RealDate(2026, 2, 30, 0, 30), '2026-03-29', 1],
+  [new RealDate(2026, 10, 2, 23, 30), '2026-11-01', 1], [new RealDate(2026, 9, 26, 23, 30), '2026-10-25', 1], [new RealDate(2026, 10, 16, 12, 0), '2026-11-09', 7]]
+  .forEach(([now, created, days]) => { fixedNow = now; assert.strictEqual(dayAge(created), days, created + ' seen from ' + now.toString()) })
+assert.strictEqual(dayAge(''), 0)
 `
 vm.runInNewContext(src, sandbox)
