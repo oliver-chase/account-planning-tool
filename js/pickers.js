@@ -21,6 +21,7 @@ function closeOpenPopover() {
 // reach all of them. A plain clickable div with no tabindex is invisible to a keyboard user.
 function focusableRow(rowEl, onActivate) {
   rowEl.setAttribute('role', 'option')
+  rowEl.addEventListener('click', onActivate)
   rowEl.setAttribute('aria-selected', String(rowEl.classList.contains('selected')))
   return makeActivatable(rowEl, null, onActivate)
 }
@@ -67,7 +68,6 @@ function openPopover(anchor, buildContent) {
 function popoverAddNewRow(onSubmit) {
   let adding = false
   const row = el('div', 'app-popover-add-new', null)
-  row.tabIndex = 0
   row.addEventListener('keydown', e => { if (!adding && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); adding = true; render() } })
   function render() {
     row.innerHTML = ''
@@ -84,7 +84,7 @@ function popoverAddNewRow(onSubmit) {
       input.placeholder = 'Full name'
       input.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); const name = sanitizeName(input.value); if (name) onSubmit(name); else showToast('Type a name first.') }
-        if (e.key === 'Escape') { e.stopPropagation(); adding = false; render() }
+        if (e.key === 'Escape') { e.stopPropagation(); adding = false; render(); row.focus() }
       })
       input.addEventListener('blur', () => { adding = false; render() })
       row.appendChild(input)
@@ -107,7 +107,6 @@ function popoverOptionsList(names, isSelected, onPick) {
     filtered.forEach(n => {
       const item = el('div', 'app-popover-item' + (isSelected(n) ? ' selected' : ''), n)
       const pick = () => onPick(n)
-      item.addEventListener('click', pick)
       focusableRow(item, pick)
       list.appendChild(item)
     })
@@ -121,24 +120,20 @@ function popoverOptionsList(names, isSelected, onPick) {
 // names typed fresh, so a first-use account has something to pick.
 function multiPicker(allNames, selectedNames, onChange, placeholder) {
   const wrap = el('div', 'overview-chip-row', null)
-  function render() {
-    wrap.innerHTML = ''
-    selectedNames.forEach(n => wrap.appendChild(appChip(n, () => {
-      onChange(selectedNames.filter(x => x !== n))
-    })))
-    const trigger = buttonEl('card-owner-btn popover-trigger', '+ ' + (placeholder || 'Add…'))
-    trigger.addEventListener('click', () => {
-      openPopover(trigger, (pop, close) => {
-        const remaining = allNames.filter(n => !selectedNames.includes(n))
-        const { search, list } = popoverOptionsList(remaining, () => false, n => { close(); onChange([...selectedNames, n]) })
-        pop.appendChild(search)
-        pop.appendChild(list)
-        pop.appendChild(popoverAddNewRow(name => { close(); if (!selectedNames.includes(name)) onChange([...selectedNames, name]) }))
-      })
+  selectedNames.forEach(n => wrap.appendChild(appChip(n, () => {
+    onChange(selectedNames.filter(x => x !== n))
+  })))
+  const trigger = buttonEl('card-owner-btn popover-trigger', '+ ' + (placeholder || 'Add…'))
+  trigger.addEventListener('click', () => {
+    openPopover(trigger, (pop, close) => {
+      const remaining = allNames.filter(n => !selectedNames.includes(n))
+      const { search, list } = popoverOptionsList(remaining, () => false, n => { close(); onChange([...selectedNames, n]) })
+      pop.appendChild(search)
+      pop.appendChild(list)
+      pop.appendChild(popoverAddNewRow(name => { close(); if (!selectedNames.includes(name)) onChange([...selectedNames, name]) }))
     })
-    wrap.appendChild(trigger)
-  }
-  render()
+  })
+  wrap.appendChild(trigger)
   return wrap
 }
 
@@ -174,7 +169,6 @@ function personSelectEl(value, onChange, className) {
         clearRow.style.color = 'var(--color-text-secondary)'
         clearRow.style.fontStyle = 'italic'
         const clear = () => { selected = ''; trigger.textContent = 'Select person…'; close(); onChange('') }
-        clearRow.addEventListener('click', clear)
         focusableRow(clearRow, clear)
         pop.appendChild(clearRow)
       }
@@ -218,7 +212,6 @@ function singleSelectEl(options, selected, onChange, className) {
           close()
           onChange(value)
         }
-        item.addEventListener('click', pick)
         focusableRow(item, pick)
         list.appendChild(item)
       })

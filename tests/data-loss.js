@@ -100,6 +100,8 @@ const src = ['js/state.js', 'js/excel.js'].map(f => fs.readFileSync(path.join(ro
   fileHandle = { createWritable: async () => ({ write: async () => {}, close: async () => {} }) }
   await updateExcel()
   assert.ok(ranFirst, 'a waiting save runs before the workbook is built')
+  state.stakeholders = [{ id: 'c1', name: 'Smith, John' }]
+  assert.ok(allKnownNames(state.background).includes('Smith John'), 'an imported name with a comma is one name')
   // A field's second edit replaces its first waiting save, and a flush runs only the newer one, once.
   const saves = [], saver = queuedSaver(10000)
   saver.queue(() => saves.push('first')); saver.queue(() => saves.push('second'))

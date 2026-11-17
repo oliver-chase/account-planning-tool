@@ -151,7 +151,6 @@ function markSynced() {
   try { localStorage.setItem(UNSYNCED_KEY, '0') } catch (e) { /* non-fatal */ }
 }
 
-
 function setSyncState(kind, text) {
   const dot = document.getElementById('sync-dot')
   const label = document.getElementById('sync-text')
@@ -177,7 +176,6 @@ function toArray(val) {
   if (!val) return []
   if (Array.isArray(val)) return val
   const text = String(val)
-  // A cell that uses semicolons keeps commas inside names ("Smith, John; Ann").
   return text.split(text.includes(';') ? /[;\n]/ : LIST_DELIM_RE).map(s => s.trim()).filter(Boolean)
 }
 
@@ -200,7 +198,7 @@ function removeTeamMember(bg, name) {
 // Attendees can be internal team members or People records, so suggestions include both.
 function allKnownNames(bg) {
   const set = new Set(getTeamNames(bg))
-  state.stakeholders.forEach(s => { if (s.name) set.add(s.name) })
+  state.stakeholders.forEach(s => { const n = sanitizeName(s.name); if (n) set.add(n) })
   return Array.from(set)
 }
 

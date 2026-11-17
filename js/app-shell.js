@@ -26,7 +26,7 @@ function renderAccountHeader() {
   if (!tierSlot) return
   tierSlot.innerHTML = ''
   tierSlot.appendChild(singleSelectEl(TIER_OPTS, state.background.account_tier || 'Growth', v => {
-    state.background.account_tier = v; state.background.last_updated = today(); persist(); renderAccountHeader()
+    state.background.account_tier = v; state.background.last_updated = today(); persist()
   }, 'card-owner-btn popover-trigger'))
 }
 

@@ -86,6 +86,9 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   w.eval("state.background.meeting_frequency = 'weekly'; renderOverview()"); await until(() => d.querySelector('[data-fk="day-Wed"]'))
   const chip = d.querySelector('[data-fk="day-Wed"]'); chip.focus(); chip.click()
   await checkSoon('a weekday chip keeps focus after the overview rebuilds', () => d.activeElement !== chip && d.activeElement && d.activeElement.dataset && d.activeElement.dataset.fk === 'day-Wed')
+  // Escape in the add-new box keeps focus on the add-new row.
+  w.eval("document.body.appendChild(popoverAddNewRow(() => {}))"); const addRow = [...d.querySelectorAll('.app-popover-add-new')].pop(); addRow.click(); await until(() => addRow.querySelector('input')); ev(addRow.querySelector('input'), 'keydown', { key: 'Escape' })
+  check('Escape in the add-new box keeps focus on its row', d.activeElement === addRow); addRow.remove()
   // 8c2. a dropdown pick that rebuilds its section leaves focus on the rebuilt dropdown
   w.eval("renderNotes()")
   const sortBtn = [...d.querySelectorAll('#notes-body-wrap .sort-select')].find(b => /first/.test(b.textContent)); sortBtn.focus(); sortBtn.click()
