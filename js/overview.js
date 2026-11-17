@@ -99,7 +99,7 @@ function renderOverviewBody() {
   const panel = el('div', 'overview-cadence-panel', null)
   function renderCadencePanel() {
     panel.innerHTML = ''
-    panel.style.display = overviewCadenceOpen ? '' : 'none'
+    panel.hidden = !overviewCadenceOpen
     panel.appendChild(singleSelectEl(FREQ_OPTS, b.meeting_frequency || '', v => saveBg({ meeting_frequency: v, meeting_day: v === 'weekly' ? b.meeting_day : '' }), 'card-owner-btn popover-trigger'))
     if (b.meeting_frequency) {
       const everyRow = el('div', 'overview-cadence-every-row', null)
@@ -164,8 +164,8 @@ function renderOverviewBody() {
     s1.appendChild(el('div', 'overview-empty-italic', 'Not scheduled'))
   }
   const dateCtl = el('div', 'overview-date-controls', null)
-  const dateInput = el('input', 'overview-date-input', null); dateInput.type = 'date'; dateInput.setAttribute('aria-label', 'Next meeting date'); dateInput.style.display = 'none'
-  const setDateBtn = inlineActionButton('Set date', () => { dateInput.style.display = ''; dateInput.focus() })
+  const dateInput = el('input', 'overview-date-input', null); dateInput.type = 'date'; dateInput.setAttribute('aria-label', 'Next meeting date'); dateInput.hidden = true
+  const setDateBtn = inlineActionButton('Set date', () => { dateInput.hidden = false; dateInput.focus() })
   dateInput.addEventListener('change', () => { if (!dateInput.value) return; if (dateInput.value < today()) { showToast('Pick today or a later date.'); return } saveBg({ next_meeting_override: dateInput.value }) })
   dateCtl.appendChild(setDateBtn); dateCtl.appendChild(dateInput)
   s1.appendChild(dateCtl)
@@ -267,7 +267,6 @@ function historicalYearForm(bg, onSave, onCancel) {
 // Revenue chart: projected and closed bars per year, edited by clicking a bar.
 function renderRevenueChart(bg, container, onSave) {
   while (container.firstChild) container.removeChild(container.firstChild)
-  container.style.maxWidth = '640px'
   const curYear = new Date().getFullYear()
   const dataYears = new Set()
   // Only plain years chart. A key like FY24 stays in the file but cannot be placed on a year axis.
@@ -285,7 +284,7 @@ function renderRevenueChart(bg, container, onSave) {
   if (!maxVal) {
     const H = 90, ML = 8, colW = Math.floor((W - ML) / Math.max(years.length, 1))
     const svg = svgEl('svg', { width: W, height: H })
-    svg.style.cssText = 'display:block;width:100%;height:' + H + 'px;'
+    svg.setAttribute('class', 'overview-chart-svg')
     years.forEach((y, i) => svg.appendChild(yearLabel(ML + i * colW + colW / 2, y, H)))
     svg.appendChild(svgEl('text', { x: W / 2, y: (H - 28) / 2 + 10, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--color-text-secondary)', 'font-style': 'italic' },
       'No revenue yet. Use Add historical year to enter it.'))
@@ -300,7 +299,7 @@ function renderRevenueChart(bg, container, onSave) {
   const yScale = v => chartH - Math.round((v / maxVal) * chartH)
   const axisLabel = v => v >= 1000000 ? '$' + (v / 1000000).toFixed(v % 1000000 === 0 ? 0 : 1) + 'M' : v >= 1000 ? '$' + (v / 1000).toFixed(0) + 'k' : '$' + Math.round(v)
   const svg = svgEl('svg', { width: chartW, height: H })
-  svg.style.cssText = 'display:block;width:100%;height:' + H + 'px;overflow:visible'
+  svg.setAttribute('class', 'overview-chart-svg')
   const ticks = 4
   for (let i = 0; i <= ticks; i++) {
     const v = (maxVal / ticks) * i, y = yScale(v) + 10
@@ -317,10 +316,9 @@ function renderRevenueChart(bg, container, onSave) {
       if (!(val > 0)) return
       const bh = chartH - yScale(val), by = yScale(val) + 10
       const rect = svgEl('rect', { x: xBase + dx, y: by, width: barW, height: bh, fill, rx: 3 })
-      rect.style.cursor = 'pointer'
-      rect.addEventListener('mouseenter', () => { tooltip.style.display = 'block'; tooltip.textContent = y + ' ' + label + ': ' + (rev[type] || String(val)) })
+      rect.addEventListener('mouseenter', () => { tooltip.classList.add('show'); tooltip.textContent = y + ' ' + label + ': ' + (rev[type] || String(val)) })
       rect.addEventListener('mousemove', e => { tooltip.style.left = (e.clientX + 10) + 'px'; tooltip.style.top = (e.clientY - 28) + 'px' })
-      rect.addEventListener('mouseleave', () => { tooltip.style.display = 'none' })
+      rect.addEventListener('mouseleave', () => { tooltip.classList.remove('show') })
       rect.addEventListener('click', () => openBarEdit(y, type, bg, container, xBase + dx, by, onSave))
       svg.appendChild(rect)
     })

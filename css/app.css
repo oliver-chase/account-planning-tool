@@ -14,6 +14,7 @@
 .app-card:hover{box-shadow:var(--shadow-card)}
 .app-card-label{font-size:var(--font-size-xs);font-weight:var(--font-weight-bold);letter-spacing:0.05em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:var(--spacing-xs)}
 .card-meta-row{display:flex;align-items:center;gap:var(--spacing-xs);margin-top:var(--spacing-xs)}
+label.card-meta-label{cursor:pointer}
 .card-meta-label{color:var(--color-text-secondary);font-size:var(--font-size-sm);flex-shrink:0}
 .card-section-label{font-size:var(--font-size-xs);color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.05em;font-weight:var(--font-weight-bold);margin-top:var(--spacing-sm);margin-bottom:var(--spacing-xs)}
 .card-body-text{font-size:var(--font-size-sm);color:var(--color-text-secondary);min-height:var(--font-size-lg);padding-bottom:var(--spacing-sm)}
@@ -45,13 +46,16 @@
 .app-popover-item.selected{background:var(--color-brand-accent-light);font-weight:var(--font-weight-bold)}
 .app-popover-add-new{display:flex;align-items:center;gap:var(--spacing-xs);padding:var(--spacing-xs) var(--spacing-sm);font-family:var(--font-family-base);font-size:var(--font-size-xs);font-weight:var(--font-weight-bold);color:var(--color-brand-accent);border-top:1px solid var(--color-border);cursor:pointer;user-select:none}
 .app-popover-add-new:hover{background:var(--color-bg-hover)}
+.app-modal-message{white-space:pre-wrap}
+.clipboard-scratch{position:fixed;opacity:0}
+.org-export-host{position:fixed;left:-99999px;top:0;width:1200px}
 .app-popover-item.active{background:var(--color-bg-hover)}
+.app-popover-float{position:fixed}
+.app-popover-clear{color:var(--color-text-secondary);font-style:italic}
 .app-popover-empty{padding:var(--spacing-xs) var(--spacing-sm);font-size:var(--font-size-xs);color:var(--color-text-secondary);font-style:italic}
 .app-modal-overlay{position:fixed;inset:0;z-index:var(--z-modal-backdrop);display:flex;align-items:center;justify-content:center;padding:80px var(--spacing-lg) var(--spacing-lg);background:var(--color-modal-overlay)}
 .app-modal{background:var(--color-bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-modal);max-width:var(--modal-max-w);width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;position:relative}
 .app-modal-title{padding:var(--spacing-md) var(--spacing-lg);margin:0;font-family:var(--font-family-base);font-size:var(--font-size-lg);font-weight:var(--font-weight-bold);color:var(--color-text-primary);border-bottom:1px solid var(--color-border)}
-.app-popover-float{position:fixed}
-.app-popover-clear{color:var(--color-text-secondary);font-style:italic}
 .app-modal-body{padding:var(--spacing-md) var(--spacing-lg);overflow-y:auto;font-size:var(--font-size-base);line-height:var(--line-height-base);color:var(--color-text-primary)}
 .app-modal-actions{padding:var(--spacing-md) var(--spacing-lg);display:flex;gap:var(--spacing-sm);justify-content:flex-end;border-top:1px solid var(--color-border)}
 .app-toast-container{position:fixed;bottom:var(--spacing-md);right:var(--spacing-md);z-index:var(--z-toast);display:flex;flex-direction:column-reverse;gap:var(--spacing-sm);max-width:var(--toast-max-w);pointer-events:none}
@@ -112,7 +116,7 @@
 .module-table-wrap{background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow-x:auto}
 .module-data-table{width:100%;border-collapse:collapse}
 .module-data-table th{text-align:left;font-size:var(--font-size-xs);font-weight:var(--font-weight-bold);letter-spacing:var(--letter-spacing-caps);text-transform:uppercase;color:var(--color-text-secondary);padding:var(--spacing-10) var(--spacing-14);border-bottom:1px solid var(--color-border);background:var(--color-bg-page);white-space:nowrap;user-select:none;font-family:var(--font-family-base)}
-.module-data-table th[role="button"]{cursor:pointer}
+.module-data-table th[data-col]{cursor:pointer}
 .module-data-table th:hover{color:var(--color-text-primary)}
 .module-data-table td{padding:var(--spacing-10) var(--spacing-14);border-bottom:1px solid var(--color-border);font-size:var(--font-size-sm);color:var(--color-text-primary);vertical-align:middle;font-family:var(--font-family-base)}
 .module-data-table tr:last-child td{border-bottom:none}

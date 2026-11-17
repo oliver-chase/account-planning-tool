@@ -34,10 +34,7 @@ h1{font-size:22px;margin:0 0 4px}
 // of fixed width so the layout is the same every time.
 function downloadOrgChart() {
   const host = document.createElement('div')
-  host.style.position = 'fixed'
-  host.style.left = '-99999px'
-  host.style.top = '0'
-  host.style.width = '1200px'
+  host.className = 'org-export-host'
   document.body.appendChild(host)
 
   const { outer, tree } = buildOrgChartOuter(true)

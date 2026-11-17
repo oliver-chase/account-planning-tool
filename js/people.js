@@ -98,7 +98,6 @@ function renderPeopleBody() {
   filterWrap.appendChild(filterBtn)
   if (peopleFilterPanelOpen) {
     const pop = el('div', 'app-popover people-filter-panel', null)
-    pop.style.position = 'absolute'
     pop.addEventListener('keydown', e => { if (e.key === 'Escape') { peopleFilterPanelOpen = false; renderPeople(); const fb = document.querySelector('#people-body [data-fk="filters"]'); if (fb) fb.focus() } })
     const group = el('div', 'filter-checkbox-group', null)
     const execLbl = el('label', null, null)
@@ -221,7 +220,6 @@ function makePersonCard(person) {
   execRow.appendChild(execCb)
   const execLbl = el('label', 'card-meta-label', 'Executive')
   execLbl.setAttribute('for', execId)
-  execLbl.style.cursor = 'pointer'
   execRow.appendChild(execLbl)
   more.appendChild(execRow)
 

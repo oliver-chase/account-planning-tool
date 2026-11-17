@@ -68,7 +68,6 @@ function renderActionsBody() {
   function th(label, col) {
     const t = el('th', col && actionsSortCol === col ? 'sorted' : '', label + ' ')
     if (col) {
-      t.style.cursor = 'pointer'
       t.appendChild(sortArrow(col))
       t.dataset.col = col
       // The table is rebuilt on every sort, so put keyboard focus back on the same header.

@@ -14,6 +14,11 @@ const hits = []
 for (const f of screens) read(f).split('\n').forEach((line, i) => { if (hex.test(line) && !/^\s*\/\//.test(line)) hits.push(f + ':' + (i + 1) + ': ' + line.trim().slice(0, 70)) })
 assert.deepStrictEqual(hits, [], 'a screen writes a hex color; use a token from css/tokens.css:\n' + hits.join('\n'))
 
+// Fixed looks live in the styles. A script sets a style only for a value it computes: a position, a size, a transform or a data color.
+const staticStyle = /\.style\.(cssText|display|cursor|position|opacity|whiteSpace|fontStyle|color|maxWidth)\b/
+const styled = screens.flatMap(f => read(f).split('\n').map((line, i) => staticStyle.test(line) ? f + ':' + (i + 1) : null).filter(Boolean))
+assert.deepStrictEqual(styled, [], 'a script sets a fixed style; move it to a class in css/: ' + styled.join(', '))
+
 // Every var(--name) in the styles and scripts has a definition.
 const all = [...fs.readdirSync(path.join(__dirname, '..', 'css')).map(f => 'css/' + f), ...fs.readdirSync(path.join(__dirname, '..', 'js')).filter(f => !/xlsx/.test(f)).map(f => 'js/' + f), 'index.html']
 const text = all.map(read).join('\n')

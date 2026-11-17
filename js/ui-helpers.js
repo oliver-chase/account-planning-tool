@@ -182,7 +182,7 @@ async function copyToClipboard(text) {
   } catch (e) { /* fall through */ }
   try {
     const ta = document.createElement('textarea')
-    ta.value = text; ta.setAttribute('readonly', 'true'); ta.style.position = 'fixed'; ta.style.opacity = '0'
+    ta.value = text; ta.setAttribute('readonly', 'true'); ta.className = 'clipboard-scratch'
     document.body.appendChild(ta); ta.focus(); ta.select()
     const ok = document.execCommand('copy')
     document.body.removeChild(ta)
@@ -205,7 +205,7 @@ function showModal(opts) {
     modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true'); modal.setAttribute('aria-labelledby', title.id)
     const opener = document.activeElement // focus returns here when the dialog closes
     const body = el('div', 'app-modal-body', null)
-    if (opts.message) { const msgEl = el('p', null, opts.message); msgEl.style.whiteSpace = 'pre-wrap'; body.appendChild(msgEl) }
+    if (opts.message) { body.appendChild(el('p', 'app-modal-message', opts.message)) }
     function close(buttonValue) {
       overlay.remove()
       document.removeEventListener('keydown', onEsc)
