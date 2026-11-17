@@ -44,7 +44,6 @@ function renderNotes() { renderKeepingFocus('notes-body-wrap', renderNotesBody) 
 function renderNotesBody() {
   const root = document.getElementById('notes-body-wrap')
   root.innerHTML = ''
-  const teamNames = allKnownNames(state.background)
 
   const header = el('div', 'app-section-header', null)
   header.appendChild(el('div', 'app-section-title', 'Notes'))
@@ -83,11 +82,11 @@ function renderNotesBody() {
   if (!notes.length) root.appendChild(emptyResultsBox(state.notes.length ? 'No results' : 'No notes yet. Click Add note to start.'))
   const totalPages = Math.ceil(notes.length / NOTES_PAGE_SIZE)
   const safePage = Math.min(notesPage, Math.max(0, totalPages - 1))
-  notes.slice(safePage * NOTES_PAGE_SIZE, (safePage + 1) * NOTES_PAGE_SIZE).forEach(n => root.appendChild(makeNoteCard(n, teamNames)))
+  notes.slice(safePage * NOTES_PAGE_SIZE, (safePage + 1) * NOTES_PAGE_SIZE).forEach(n => root.appendChild(makeNoteCard(n)))
   if (totalPages > 1) root.appendChild(paginationRow(safePage, totalPages, p => { notesPage = p; renderNotes() }))
 }
 
-function makeNoteCard(note, teamNames) {
+function makeNoteCard(note) {
   let expanded = notesExpanded.has(note.id)
   const card = el('div', 'note-card', null)
   card.setAttribute('role', 'group') // a group carries the card's name and state without nesting fields inside a button
@@ -131,7 +130,7 @@ function makeNoteCard(note, teamNames) {
   const attRow = el('div', null, null)
   function renderAttendees() {
     attRow.innerHTML = ''
-    attRow.appendChild(multiPicker(teamNames, note.attendees || [], next => {
+    attRow.appendChild(multiPicker(() => allKnownNames(state.background), note.attendees || [], next => {
       saveNote({ ...currentNote(note), attendees: next }); note.attendees = next; renderAttendees()
     }, 'Add attendee'))
   }

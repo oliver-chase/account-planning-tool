@@ -24,6 +24,7 @@ function confirmDeletePerson(person) {
     deletePerson(person)
     document.querySelectorAll('.person-detail-panel').forEach(p => p.remove())
     if (personPanelOnKey) document.removeEventListener('keydown', personPanelOnKey)
+    personPanelOnKey = null
     renderPeople()
   })
 }
@@ -67,7 +68,7 @@ function filteredPeople() {
   people.sort((a, b) => {
     if (peopleSort === 'department') return (a.department || '').localeCompare(b.department || '')
     if (peopleSort === 'seniority') return titleRank(a.title) - titleRank(b.title) || (a.name || '').localeCompare(b.name || '')
-    return a.name.localeCompare(b.name)
+    return (a.name || '').localeCompare(b.name || '')
   })
   return people
 }
@@ -262,15 +263,17 @@ function makePersonCard(person) {
   const notesSlot = el('div', null, null)
   const toggleNotes = () => { notesOpen = !notesOpen; notesLabel.setAttribute('aria-expanded', String(notesOpen)); renderNotesSlot() }
   notesLabel.addEventListener('click', toggleNotes)
-  makeActivatable(notesLabel, 'Notes', toggleNotes); notesLabel.setAttribute('role', 'button'); notesLabel.setAttribute('aria-expanded', 'false')
+  makeActivatable(notesLabel, 'Notes' + (person.notes ? ', has content' : ''), toggleNotes); notesLabel.setAttribute('role', 'button'); notesLabel.setAttribute('aria-expanded', 'false')
   function renderNotesSlot() {
     notesSlot.innerHTML = ''
     if (!notesOpen) return
     const pop = el('div', 'app-popover card-notes-popup', null)
     // Escape closes the popup.
     pop.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); toggleNotes(); notesLabel.focus() } })
-    pop.appendChild(editable('div', 'card-body-text', person.notes, 'Add notes about this person', v => { savePerson({ ...current(), notes: v }); renderPeople() }, { multiline: true, ariaLabel: 'Notes' }))
+    const field = editable('div', 'card-body-text', person.notes, 'Add notes about this person', v => { savePerson({ ...current(), notes: v }); renderPeople() }, { multiline: true, ariaLabel: 'Notes' })
+    pop.appendChild(field)
     notesSlot.appendChild(pop)
+    field.focus() // Escape then reaches the popup and closes it
   }
   card.appendChild(notesLabel); card.appendChild(notesSlot)
 
@@ -308,6 +311,7 @@ function refreshPersonPanel(id) {
 let personPanelOnKey = null
 function openPersonDetail(person) {
   const existing = document.getElementById('org-person-panel')
+  const opener = document.activeElement // focus returns here when the panel closes
   if (existing) existing.remove()
   if (personPanelOnKey) document.removeEventListener('keydown', personPanelOnKey)
   const panel = el('div', 'person-detail-panel', null)
@@ -316,7 +320,10 @@ function openPersonDetail(person) {
   const header = el('div', 'person-detail-header', null)
   const titleEl = el('span', 'person-detail-title', person.name || 'Person'); titleEl.id = 'org-person-title'
   header.appendChild(titleEl)
-  const closePanel = () => { panel.remove(); document.removeEventListener('keydown', onKey) }
+  const closePanel = () => {
+    panel.remove(); document.removeEventListener('keydown', onKey); personPanelOnKey = null
+    if (opener && opener.focus && opener.isConnected) opener.focus()
+  }
   const closeBtn = buttonEl('app-modal-close person-detail-close', '×', closePanel)
   closeBtn.setAttribute('aria-label', 'Close panel')
   header.appendChild(closeBtn)

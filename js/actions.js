@@ -186,7 +186,7 @@ function makeInlineActionRow() {
   tr.appendChild(delTd)
   // Once focus has left the row for good, show the action as an ordinary row.
   tr.addEventListener('focusout', () => setTimeout(() => {
-    if (committed && !discarded && tr.isConnected && !tr.contains(document.activeElement) && !document.querySelector('.app-popover')) renderActions()
+    if (committed && !discarded && tr.isConnected && !tr.contains(document.activeElement) && !document.querySelector('.app-popover-float')) renderActions()
   }, 350))
   setTimeout(() => descEl.focus(), 0)
   return tr

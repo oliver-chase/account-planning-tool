@@ -37,11 +37,13 @@ function downloadOrgChart() {
   host.className = 'org-export-host'
   document.body.appendChild(host)
 
-  const { outer, tree } = buildOrgChartOuter(true)
-  host.appendChild(outer)
-  drawOrgLines(outer, tree)
-  const chartHtml = outer.outerHTML
-  document.body.removeChild(host)
+  let chartHtml
+  try {
+    const { outer, tree } = buildOrgChartOuter(true)
+    host.appendChild(outer)
+    drawOrgLines(outer, tree)
+    chartHtml = outer.outerHTML
+  } finally { document.body.removeChild(host) }
 
   const acctName = state.account.account_name || 'Account'
   const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + escHtml(acctName) + ' Org Chart</title><style>' + ORG_EXPORT_CSS +

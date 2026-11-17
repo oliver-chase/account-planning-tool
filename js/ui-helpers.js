@@ -112,7 +112,7 @@ function deleteWithUndo(listKey, item, label, rerender) {
 // A new-item card keeps itself alive while the user is still working in it: focus inside
 // the card, or a picker open, means a blur on the empty title is not a reason to throw it away.
 function newCardInUse(card) {
-  return card.contains(document.activeElement) || !!document.querySelector('.app-popover')
+  return card.contains(document.activeElement) || !!document.querySelector('.app-popover-float')
 }
 
 // Rebuilds a section and puts keyboard focus back on the control that had it, found by its data-fk key.
@@ -129,7 +129,7 @@ function renderKeepingFocus(rootId, body) {
   const after = document.getElementById(rootId)
   if (!after) return
   let n = key ? after.querySelector('[data-fk="' + key.replace(/(["\\])/g, '\\$1') + '"]') : index >= 0 ? after.querySelectorAll(FOCUSABLE)[index] : null
-  if (n && n.disabled) n = after.querySelector('[data-fk="pg-Previous"]') // a pager button that just disabled itself
+  if (n && n.disabled) n = after.querySelector('[data-fk^="pg-"]:not(:disabled)') // a pager button that just disabled itself
   if (!n || !n.focus) return
   if (live !== null && n.isContentEditable && (n.innerText !== undefined ? n.innerText : n.textContent) !== live) {
     n.textContent = live
@@ -158,7 +158,7 @@ function editable(tag, className, value, placeholder, onSave, opts) {
   // An empty field has no text to read, so fall back to its placeholder as the name.
   const accName = opts.ariaLabel || (placeholder || '').replace(/[….]+$/, '').replace(/^e\.g\. /, '')
   if (accName) node.setAttribute('aria-label', accName)
-  if (placeholder) { node.setAttribute('data-placeholder', placeholder); node.setAttribute('aria-placeholder', placeholder) }
+  if (placeholder) { node.setAttribute('data-placeholder', placeholder) }
   node.textContent = value || ''
   const saver = queuedSaver(300)
   node.addEventListener('blur', () => {

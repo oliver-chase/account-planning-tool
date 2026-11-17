@@ -121,7 +121,7 @@ function popoverOptionsList(names, isSelected, onPick) {
   return { search, list }
 }
 
-// Compact multi-select: chips plus a trigger that opens the popover. The popover also offers
+// Compact multi-select: chips plus a trigger that opens the popover. allNames is a list, or a function read each time the popover opens. The popover also offers
 // names typed fresh, so a first-use account has something to pick.
 function multiPicker(allNames, selectedNames, onChange, placeholder) {
   const wrap = el('div', 'overview-chip-row', null)
@@ -131,7 +131,7 @@ function multiPicker(allNames, selectedNames, onChange, placeholder) {
   const trigger = buttonEl('card-owner-btn popover-trigger', '+ ' + (placeholder || 'Add…'))
   trigger.addEventListener('click', () => {
     openPopover(trigger, (pop, close) => {
-      const remaining = allNames.filter(n => !selectedNames.includes(n))
+      const remaining = (typeof allNames === 'function' ? allNames() : allNames).filter(n => !selectedNames.includes(n))
       const { search, list } = popoverOptionsList(remaining, () => false, n => { close(); onChange([...selectedNames, n]) })
       pop.appendChild(search)
       pop.appendChild(list)
