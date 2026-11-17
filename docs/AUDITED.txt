@@ -15,7 +15,7 @@ ea4f76a9ae7167155214018138897f3f0b97aa58 README.md
 2eb1cc5fd55c6e28733cb8df33bdf0dba9e53c70 css/app.css
 5886b315b410d04552ae08f65c9f8406c11f01b4 css/local.css
 70c2cabc8383748e07b372505a55ba416bbffa3a css/tokens.css
-aae92662fc9c0f82fb82ac1ef09816157df8ac8a docs/AUDIT-ACCEPTED.md
+b6d3a6524b0a8445f51ae2bc45d6cac44a297dc1 docs/AUDIT-ACCEPTED.md
 b7cafa4ccd6b733029a9fcace497108fe1bb606c docs/EMOJI-GATE.json
 0d7aa8485c3ad4f71960a646916155ff895a33d6 docs/IDENTIFIER-GATE.json
 3422fbf084462b139b1281fe1fef04ffcedf07ca docs/SHARING.md
@@ -28,7 +28,7 @@ cd23ff3da89783d577af2f3a4667fadf8e2752f5 js/actions.js
 393e8336f2f4fd1d333ff24db241e7a516824127 js/app.js
 864ffa0b7d29b297211d80f484e4d5592df05e93 js/brand.js
 d53c542e1e11c929d8a5b1d6b89f682e5658a74c js/call-summary.js
-8edf708945ae69dbd64369a73bab856b0a54ad37 js/excel.js
+e95465c976fa626810d6135ed5c9d53c9db69165 js/excel.js
 98de20c1a7fd074d37169be37d56d3d5ad13f65d js/export.js
 529c3a4b93f2863ca4088cd2ceb5ae07ba6faedf js/filterbar.js
 27dc9f241e5c48a8b6edc5afb2bd6beb591ffaa5 js/help.js
@@ -40,7 +40,7 @@ c199069a713c5e4bdaf7ae57eb5011e5cfab0a05 js/people.js
 443305b582357296be686e6e6917b5b53ad0b5d7 js/pickers.js
 a1256923fcff05a8ef1b9c59f4998d25c9f17203 js/plan.js
 34bc388f7812363c5a263f475cf69ab405da16ae js/start.js
-6a139181a8af1a7050dbc46fca0379d0d0b98572 js/state.js
+7f22fc586ae241b5b554f6d93528647e5028c60e js/state.js
 5923e97d578812b70f3aaa6af27d45453c0ba382 js/ui-helpers.js
 21471af69ef0e4cda1613c2702c54101b92f48d2 js/xlsx.full.min.js
 8e37c16e2a3aa4f10cffcb11db3d4429ab4b6239 package.json
