@@ -50,6 +50,8 @@
 .app-modal-overlay{position:fixed;inset:0;z-index:var(--z-modal-backdrop);display:flex;align-items:center;justify-content:center;padding:80px var(--spacing-lg) var(--spacing-lg);background:var(--color-modal-overlay)}
 .app-modal{background:var(--color-bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-modal);max-width:var(--modal-max-w);width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;position:relative}
 .app-modal-title{padding:var(--spacing-md) var(--spacing-lg);margin:0;font-family:var(--font-family-base);font-size:var(--font-size-lg);font-weight:var(--font-weight-bold);color:var(--color-text-primary);border-bottom:1px solid var(--color-border)}
+.app-popover-float{position:fixed}
+.app-popover-clear{color:var(--color-text-secondary);font-style:italic}
 .app-modal-body{padding:var(--spacing-md) var(--spacing-lg);overflow-y:auto;font-size:var(--font-size-base);line-height:var(--line-height-base);color:var(--color-text-primary)}
 .app-modal-actions{padding:var(--spacing-md) var(--spacing-lg);display:flex;gap:var(--spacing-sm);justify-content:flex-end;border-top:1px solid var(--color-border)}
 .app-toast-container{position:fixed;bottom:var(--spacing-md);right:var(--spacing-md);z-index:var(--z-toast);display:flex;flex-direction:column-reverse;gap:var(--spacing-sm);max-width:var(--toast-max-w);pointer-events:none}

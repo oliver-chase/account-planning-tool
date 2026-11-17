@@ -32,6 +32,7 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   const sample = [...d.querySelectorAll('.start-option')].find(b => /sample/i.test(b.textContent)); assert.ok(sample, 'start screen has a sample option')
   sample.click()
   await checkSoon('sample account loads people, actions, a plan', () => w.eval('state.stakeholders.length >= 5 && state.actions.length >= 3 && state.plans.length === 1'))
+  w.eval('window.__realShowModal = showModal') // later steps stub showModal
   // 2. plan header edit raises no error
   const before = errors.length
   const objective = d.querySelector('.plan-header-card [contenteditable], .plan-header-card textarea, .plan-header-card input')
@@ -136,6 +137,7 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   w.eval('openPersonDetail(state.stakeholders[0])'); await until(() => d.querySelector('#org-person-panel .popover-trigger'))
   const trig = d.querySelector('#org-person-panel .popover-trigger'); trig.click()
   const opts = [...d.querySelectorAll('.app-popover [role="option"]')]
+  check('the options sit in a listbox and the popover itself is a dialog', !!d.querySelector('.app-popover') && d.querySelector('.app-popover').getAttribute('role') === 'dialog' && opts.length > 0 && opts.every(o => o.closest('[role="listbox"]')))
   check('picker options say which is selected', opts.some(o => o.getAttribute('aria-selected') === 'true') && opts.every(o => o.getAttribute('aria-selected') === String(o.classList.contains('selected'))))
   ev(d.body, 'keydown', { key: 'Escape' })
   check('Escape in a picker leaves the side panel open', !d.querySelector('.app-popover') && !!d.getElementById('org-person-panel'))
@@ -145,7 +147,12 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   const panelField = d.querySelector('#org-person-panel [contenteditable]'); assert.ok(panelField, 'the side panel has an editable field')
   panelField.focus(); ev(panelField, 'keydown', { key: 'Escape' })
   check('Escape in a panel field leaves the side panel open', !!d.getElementById('org-person-panel'))
+  // Escape while a confirm dialog is open closes the dialog and leaves the side panel.
+  w.eval('showModal = window.__realShowModal; confirmDeletePerson(state.stakeholders[0])'); await until(() => d.querySelector('.app-modal-overlay'))
+  ev(d.activeElement, 'keydown', { key: 'Escape' }); await wait(20)
+  check('Escape in a confirm dialog leaves the side panel open', !d.querySelector('.app-modal-overlay') && !!d.getElementById('org-person-panel'))
   ev(d.body, 'keydown', { key: 'Escape' })
+  check('Escape closes the side panel once no dialog is open', !d.getElementById('org-person-panel'))
   check('the page has one h1 and a skip link to the account', d.querySelectorAll('h1').length === 1 && d.querySelector('a.skip-link[href="#account-content"]') !== null)
   // 9. empty lists say so
   w.eval("state.notes = []; state.actions = []; persist(); renderNotes(); renderActions()")

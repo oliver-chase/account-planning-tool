@@ -30,11 +30,11 @@ function openPopover(anchor, buildContent) {
   // A second click on the same trigger closes its popover.
   if (openPopoverState && openPopoverState.anchor === anchor) { closeOpenPopover(); return }
   closeOpenPopover()
-  const pop = el('div', 'app-popover', null)
-  pop.setAttribute('role', 'listbox')
-  anchor.setAttribute('aria-haspopup', 'listbox'); anchor.setAttribute('aria-expanded', 'true')
+  const pop = el('div', 'app-popover app-popover-float', null)
+  // The popover can hold a search box and an add-new row beside its options, so it is a dialog and the option lists inside it are the listboxes.
+  pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', anchor.getAttribute('aria-label') || anchor.textContent || 'Options')
+  anchor.setAttribute('aria-haspopup', 'dialog'); anchor.setAttribute('aria-expanded', 'true')
   const rect = anchor.getBoundingClientRect()
-  pop.style.position = 'fixed'
   pop.style.top = Math.min(rect.bottom + 4, window.innerHeight - 120) + 'px'
   pop.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 260)) + 'px'
   document.body.appendChild(pop)
@@ -97,6 +97,7 @@ function popoverAddNewRow(onSubmit) {
 
 // Fills a popover list with one focusable row per [value, label] entry.
 function appendOptionRows(list, entries, isSelected, onPick) {
+  list.setAttribute('role', 'listbox')
   entries.forEach(([value, label]) => {
     const item = el('div', 'app-popover-item' + (isSelected(value) ? ' selected' : ''), label)
     focusableRow(item, () => onPick(value, label))
@@ -169,12 +170,12 @@ function personSelectEl(value, onChange, className) {
     openPopover(trigger, (pop, close) => {
       const names = getTeamNames(state.background)
       if (selected) {
-        const clearRow = el('div', 'app-popover-item', 'Clear selection')
-        clearRow.style.color = 'var(--color-text-secondary)'
-        clearRow.style.fontStyle = 'italic'
+        const clearRow = el('div', 'app-popover-item app-popover-clear', 'Clear selection')
         const clear = () => { selected = ''; trigger.textContent = 'Select person…'; close(); onChange('') }
         focusableRow(clearRow, clear)
-        pop.appendChild(clearRow)
+        const clearList = el('div', null, null); clearList.setAttribute('role', 'listbox')
+        clearList.appendChild(clearRow)
+        pop.appendChild(clearList)
       }
       const { search, list } = popoverOptionsList(names, n => n === selected, n => { selected = n; trigger.textContent = n; close(); onChange(n) })
       pop.appendChild(search)

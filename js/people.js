@@ -328,9 +328,9 @@ function openPersonDetail(person) {
   panel.appendChild(content)
   document.body.appendChild(panel)
   closeBtn.focus()
-  // Escape in a field reverts that field, so only Escape outside one closes the panel.
+  // Escape in a field reverts that field, and Escape in an open picker or dialog closes that, so only a bare Escape closes the panel.
   const inField = t => Boolean(t && t.closest && t.closest('[contenteditable], input, textarea, select'))
-  const onKey = e => { if (e.key === 'Escape' && !openPopoverState && !inField(e.target)) closePanel() }
+  const onKey = e => { if (e.key === 'Escape' && !openPopoverState && !document.querySelector('.app-modal-overlay') && !inField(e.target)) closePanel() }
   personPanelOnKey = onKey
   document.addEventListener('keydown', onKey)
 }
