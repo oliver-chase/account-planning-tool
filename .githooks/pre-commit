@@ -86,6 +86,12 @@ log_failure() {
 }
 trap 'log_failure $?' EXIT
 
+
+# baseline_field KEY JSON: the whole number that KEY holds in a docs/SIZE-BASELINE.json text, or nothing. Both the
+# size ratchet and the commit-msg hook read the baseline with this one function.
+baseline_field() {
+  printf '%s\n' "$2" | sed -n '/"'"$1"'"[[:space:]]*:/{s/.*"'"$1"'"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p;q;}'
+}
 # ─── Gate 1: Secrets ──────────────────────────────────────────────────────────
 GATE_NAME="Secrets"
 # Block commits containing API keys, tokens, JWTs, private keys.
@@ -117,15 +123,14 @@ SECRET_PATTERNS=(
 
 # secret_filter PATTERN: reads `grep -n` hits on stdin and prints those that hold a real secret.
 # The commit gate and the pre-push scan both call it, so a line one passes the other passes.
-# Exempt: the public supabase anon-key meta tag, a line marked "secret-scan: allow", and a hit
+# Exempt: a line marked "secret-scan: allow", and a hit
 # whose every matched value is a placeholder (EXAMPLE, placeholder, your_key, a run of x).
-SECRET_ANON_META='<meta name="supabase-anon-key" content="eyJ'
 SECRET_PLACEHOLDER='EXAMPLE|[Ee]xample|[Pp]laceholder|PLACEHOLDER|[Yy]our[_-]?([Aa]pi[_-]?)?([Kk]ey|[Tt]oken|[Ss]ecret)|YOUR_|(^|[^A-Za-z0-9])[xX]{8,}([^A-Za-z0-9]|$)'
 secret_filter() {
   local pattern="$1" hit
   while IFS= read -r hit; do
     [ -n "$hit" ] || continue
-    case "$hit" in *'secret-scan: allow'*|*"$SECRET_ANON_META"*) continue ;; esac
+    case "$hit" in *'secret-scan: allow'*) continue ;; esac
     if printf '%s\n' "$hit" | grep -oE -e "$pattern" | grep -vE -e "$SECRET_PLACEHOLDER" >/dev/null; then
       printf '%s\n' "$hit"
     fi
@@ -401,18 +406,15 @@ GATE_NAME="Size ratchet"
 #
 # A story that must grow the repo raises "lines" in the same commit. This gate prints the raise and
 # passes it, and the commit-msg hook holds the cap on it (SIZE-RAISE-1 there), since a pre-commit gate
-# cannot read the message.
+# cannot read the message. A baseline set for the first time, or from null, is a raise from zero and must equal the count.
 echo "[pre-commit] Gate 7/9: Size ratchet..."
 SIZE_JSON="$(git show ":docs/SIZE-BASELINE.json" 2>/dev/null || true)"
-size_field_of() {
-  printf '%s\n' "$2" | sed -n '/"'"$1"'"[[:space:]]*:/{s/.*"'"$1"'"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p;q;}'
-}
-size_field() { size_field_of "$1" "$SIZE_JSON"; }
+size_field() { baseline_field "$1" "$SIZE_JSON"; }
 SIZE_BASE="$(size_field lines)"
 SIZE_HEAD_JSON="$(git show "HEAD:docs/SIZE-BASELINE.json" 2>/dev/null || true)"
 # The allowance and the raise cap come from the committed baseline when there is one, so a commit
 # cannot widen its own limit. The staged file still sets the line count, under the raise cap.
-SIZE_PCT="$(size_field_of allowancePercent "$SIZE_HEAD_JSON")"
+SIZE_PCT="$(baseline_field allowancePercent "$SIZE_HEAD_JSON")"
 [ -n "$SIZE_PCT" ] || SIZE_PCT="$(size_field allowancePercent)"
 SIZE_COUNTER=""
 for candidate in scripts/size.sh skills/audit/scripts/size.sh; do
@@ -420,6 +422,10 @@ for candidate in scripts/size.sh skills/audit/scripts/size.sh; do
 done
 if [ -z "$SIZE_JSON" ]; then
   echo "  Gate 7 skipped (no docs/SIZE-BASELINE.json; bootstrap adds one)."
+elif [ -z "$SIZE_BASE" ] && [ -n "$(baseline_field lines "$SIZE_HEAD_JSON")" ]; then
+  echo "  BLOCKED: docs/SIZE-BASELINE.json had a line count at HEAD and this commit removes it, which would switch the gate off."
+  echo "  Keep \"lines\" a number, set to the counted total."
+  exit 1
 elif [ -z "$SIZE_BASE" ]; then
   echo "  Gate 7 skipped (docs/SIZE-BASELINE.json has no line count yet; run olivercode size --lower to set it)."
 elif [ -z "$SIZE_COUNTER" ]; then
@@ -428,13 +434,21 @@ elif [ -z "$SIZE_COUNTER" ]; then
   exit 1
 else
   SIZE_PCT="${SIZE_PCT:-5}"
-  SIZE_TOTAL="$(bash "$SIZE_COUNTER" --total --staged "$REPO_ROOT")"
+  # The counter committed at HEAD counts, so a commit that rewrites the counter is counted by the one it replaces.
+  SIZE_COUNTER_RUN="$SIZE_COUNTER"
+  if git cat-file -e "HEAD:$SIZE_COUNTER" 2>/dev/null; then
+    SIZE_COUNTER_RUN="$(mktemp "${TMPDIR:-/tmp}/oc-size-counter.XXXXXX")"
+    git show "HEAD:$SIZE_COUNTER" > "$SIZE_COUNTER_RUN"
+  fi
+  SIZE_TOTAL="$(bash "$SIZE_COUNTER_RUN" --total --staged "$REPO_ROOT")"
+  [ "$SIZE_COUNTER_RUN" = "$SIZE_COUNTER" ] || rm -f "$SIZE_COUNTER_RUN"
   SIZE_EXTRA=$(( SIZE_BASE * SIZE_PCT / 100 ))
   if [ -n "$(git diff --cached --name-only -- docs/SIZE-BASELINE.json)" ]; then
     echo "  docs/SIZE-BASELINE.json is part of this commit, so its baseline of $SIZE_BASE lines is trusted."
-    SIZE_HEAD_BASE="$(size_field_of lines "$SIZE_HEAD_JSON")"
-    if [ -n "$SIZE_HEAD_BASE" ] && [ "$SIZE_BASE" -gt "$SIZE_HEAD_BASE" ]; then
-      echo "  This commit raises the baseline by $(( SIZE_BASE - SIZE_HEAD_BASE )) lines; the commit-msg hook holds the cap and the Size line it needs."
+    SIZE_HEAD_BASE="$(baseline_field lines "$SIZE_HEAD_JSON")"
+    # A first or null baseline counts as a raise from zero, so it too must be the counted total.
+    if [ -z "$SIZE_HEAD_BASE" ] || [ "$SIZE_BASE" -gt "$SIZE_HEAD_BASE" ]; then
+      echo "  This commit raises the baseline by $(( SIZE_BASE - ${SIZE_HEAD_BASE:-0} )) lines; the commit-msg hook holds the cap and the Size line it needs."
       # A raised baseline is the counted total, never a hand-picked figure.
       if [ "$SIZE_BASE" -ne "$SIZE_TOTAL" ]; then
         echo "  BLOCKED: the raised baseline is $SIZE_BASE, but the staged tree counts $SIZE_TOTAL lines."
@@ -469,8 +483,8 @@ GATE_NAME="Owner identifiers"
 # inside a longer word. Generic authors (noreply addresses, bots, Claude, GitHub) are ignored.
 #
 # Every staged file is scanned, markdown and tests included, except local data: the built-in
-# paths below and the "localData" globs in docs/IDENTIFIER-GATE.json, each declared with a
-# reason. Fewer than one derivable identifier skips the gate.
+# paths below, which are fixed in this gate, and the "localData" globs in docs/IDENTIFIER-GATE.json,
+# whose reasons are recorded there for readers. Fewer than one derivable identifier skips the gate.
 echo "[pre-commit] Gate 8/9: Owner identifiers..."
 ID_LIST="$(mktemp "${TMPDIR:-/tmp}/oc-identifiers.XXXXXX")"
 trap 'rc=$?; rm -f "$ID_LIST"; log_failure $rc' EXIT
@@ -504,8 +518,8 @@ esac
     done
   done | tr 'A-Z' 'a-z' | tr ',{}' '\n\n\n' \
     | sed -nE 's/.*"[^"]*(account|shop|store|handle|username|owner|brand|seller)[^"]*"[[:space:]]*:[[:space:]]*"([^"]+)".*/\2/p'
-} | awk 'length($0) >= 5' \
-  | grep -vxE 'claude|github|anthropic|noreply|no-reply|copilot|dependabot|renovate|root|user|users|test|tests|admin|unknown|none|null|example|local|localhost|bot|runner' \
+} | awk 'length($0) >= 5' | grep '[a-z]' | grep -vxE '#[0-9a-f]+|[0-9]+' \
+  | grep -vxE 'claude|github|anthropic|noreply|no-reply|copilot|dependabot|renovate|root|user|users|test|tests|admin|unknown|none|null|example|local|localhost|bot|runner|support|hello|contact|office|sales|info|team|help|billing|mail|email|webmaster|postmaster|abuse|security|press|marketing|careers|jobs' \
   | sort -u > "$ID_LIST" || true
 if [ ! -s "$ID_LIST" ]; then
   echo "  Gate 8 skipped (no owner identifier can be derived from git or docs/IDENTIFIER-GATE.json)."
@@ -513,12 +527,19 @@ else
   # A project names itself: its origin path, its repo name (also spaced) and its package name are not owner data, so a
   # line is matched after those strings are removed. A bare author name in prose still blocks.
   ID_SELF="$(mktemp "${TMPDIR:-/tmp}/oc-identifier-self.XXXXXX")"
-  trap 'rc=$?; rm -f "$ID_LIST" "$ID_SELF"; log_failure $rc' EXIT
+  ID_RE="$(mktemp "${TMPDIR:-/tmp}/oc-identifier-re.XXXXXX")"
+  trap 'rc=$?; rm -f "$ID_LIST" "$ID_SELF" "$ID_RE"; log_failure $rc' EXIT
+  # A name is written with any punctuation between its words ("Kesh-Ulster", "O'Neill"), so the words join on non-alphanumerics.
+  sed -e 's/[][().*+?{}|^$\\]/\\&/g' -e 's/ /[^a-zA-Z0-9]+/g' "$ID_LIST" > "$ID_RE"
   {
     id_self_path="${ID_ORIGIN%.git}"
-    printf '%s\n' "$id_self_path" "${id_self_path##*/}"
-    # Prose writes the repo name with spaces ("account planning tool" for account-planning-tool).
-    printf '%s\n' "${id_self_path##*/}" | tr '_-' '  '
+    printf '%s\n' "$id_self_path"
+    # A repo named like its owner would strip the owner's own name from every line, so only its path is removed.
+    if [ "${id_self_path##*/}" != "${id_self_path%%/*}" ]; then
+      printf '%s\n' "${id_self_path##*/}"
+      # Prose writes the repo name with spaces ("account planning tool" for account-planning-tool).
+      printf '%s\n' "${id_self_path##*/}" | tr '_-' '  '
+    fi
     git show ":package.json" 2>/dev/null | python3 -c 'import json,sys
 try: print(json.load(sys.stdin).get("name",""))
 except Exception: pass' || true
@@ -526,7 +547,8 @@ except Exception: pass' || true
   ID_MATCHER='import re, sys
 words = [w.strip() for w in open(sys.argv[1]) if w.strip()]
 selfs = sorted((w.strip() for w in open(sys.argv[2]) if w.strip()), key=len, reverse=True)
-pattern = re.compile(r"(?<![A-Za-z0-9_])(?:" + "|".join(re.escape(w) for w in words) + r")(?![A-Za-z0-9_])", re.I) if words else None
+join = lambda w: r"[^A-Za-z0-9]+".join(re.escape(p) for p in w.split())
+pattern = re.compile(r"(?<![A-Za-z0-9_])(?:" + "|".join(join(w) for w in words) + r")(?![A-Za-z0-9_])", re.I) if words else None
 for number, line in enumerate(sys.stdin, 1):
     for own in selfs:
         line = re.sub(re.escape(own), " ", line, flags=re.I)
@@ -543,7 +565,7 @@ for number, line in enumerate(sys.stdin, 1):
     matches_glob "$id_file" "$ID_LOCAL" && continue
     # grep finds the candidates fast and reads the whole file, so the reader never gets SIGPIPE; python re-reads only a file
     # that has a candidate, with the project's own names removed.
-    id_found="$(staged_content "$id_file" 2>/dev/null | grep -iwF -f "$ID_LIST" >/dev/null && staged_content "$id_file" 2>/dev/null | python3 -c "$ID_MATCHER" "$ID_LIST" "$ID_SELF" || true)"
+    id_found="$(staged_content "$id_file" 2>/dev/null | grep -iwEf "$ID_RE" >/dev/null && staged_content "$id_file" 2>/dev/null | python3 -c "$ID_MATCHER" "$ID_LIST" "$ID_SELF" || true)"
     if [ -n "$id_found" ]; then
       while IFS= read -r id_line; do
         echo "  $id_file:${id_line%%:*} names the owner"

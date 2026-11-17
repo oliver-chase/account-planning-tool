@@ -37,6 +37,12 @@ log_failure() {
 }
 trap 'log_failure $?' EXIT
 
+
+# baseline_field KEY JSON: the whole number that KEY holds in a docs/SIZE-BASELINE.json text, or nothing. Both the
+# size ratchet and the commit-msg hook read the baseline with this one function.
+baseline_field() {
+  printf '%s\n' "$2" | sed -n '/"'"$1"'"[[:space:]]*:/{s/.*"'"$1"'"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p;q;}'
+}
 GATE_NAME="Commit message"
 # STORY-REF-1. Every commit names the story it serves, so the history shows who did what and why.
 # Git passes the message file as $1. Reading it can fail, and a hook that cannot read the
@@ -47,10 +53,12 @@ if [ -z "$MSG_FILE" ] || [ ! -r "$MSG_FILE" ]; then
   exit 1
 fi
 
-# An owner opts a repo out by creating .githooks/commit-msg.optout. The hook never creates it,
-# and every commit it lets through says so.
-if [ -e "$HOOK_DIR/commit-msg.optout" ]; then
-  echo "[commit-msg] Every commit-msg check is off (story, voice, test and size cap): $HOOK_DIR/commit-msg.optout exists."
+# An owner opts a repo out by committing .githooks/commit-msg.optout. The file counts only once HEAD holds it, so
+# the commit that adds it is checked like any other. The hook never creates it, and every commit it lets through says so.
+OPTOUT_REL="$(cd "$HOOK_DIR" && pwd -P)"
+OPTOUT_REL="${OPTOUT_REL#"$(git rev-parse --show-toplevel 2>/dev/null)"/}/commit-msg.optout"
+if git cat-file -e "HEAD:$OPTOUT_REL" 2>/dev/null; then
+  echo "[commit-msg] Every commit-msg check is off (story, voice, test and size cap): $OPTOUT_REL is committed."
   exit 0
 fi
 
@@ -78,9 +86,6 @@ SUBJECT="$(printf '%s\n' "$MESSAGE" | sed -n '/[^[:space:]]/{p;q;}' || true)"
 # read from HEAD so the same commit cannot change it, and the check runs before the merge, revert
 # and first-commit exits below so no message prefix skips it.
 if [ -n "$(git diff --cached --name-only -- docs/SIZE-BASELINE.json)" ]; then
-  baseline_field() {
-    printf '%s\n' "$2" | sed -n '/"'"$1"'"[[:space:]]*:/{s/.*"'"$1"'"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p;q;}'
-  }
   NEW_LINES="$(baseline_field lines "$(git show ":docs/SIZE-BASELINE.json" 2>/dev/null || true)")"
   OLD_JSON="$(git show "HEAD:docs/SIZE-BASELINE.json" 2>/dev/null || true)"
   CAP_PCT="$(baseline_field raiseCapPercent "$OLD_JSON")"
@@ -88,8 +93,30 @@ if [ -n "$(git diff --cached --name-only -- docs/SIZE-BASELINE.json)" ]; then
   # "Size: XL" line, and from the first baseline commit when none did, so small raises cannot stack past it.
   ANCHOR="$(git log -i -1 --format=%H -E --grep='^[[:space:]]*size:[[:space:]]*(L|XL)[[:space:]]*$' -- docs/SIZE-BASELINE.json 2>/dev/null || true)"
   [ -n "$ANCHOR" ] || ANCHOR="$(git log --format=%H --diff-filter=A -- docs/SIZE-BASELINE.json 2>/dev/null | tail -1)"
-  ANCHOR_JSON="$(git show "$ANCHOR:docs/SIZE-BASELINE.json" 2>/dev/null || printf '%s' "$OLD_JSON")"
+  ANCHOR_JSON=""
+  [ -z "$ANCHOR" ] || ANCHOR_JSON="$(git show "$ANCHOR:docs/SIZE-BASELINE.json" 2>/dev/null || true)"
   OLD_LINES="$(baseline_field lines "$ANCHOR_JSON")"
+  # With no committed baseline at all, the first number is a raise from zero.
+  if [ -z "$ANCHOR" ] && [ -z "$OLD_JSON" ]; then OLD_LINES=0; fi
+  # The two percentages that size the allowance and the cap are part of the baseline too, so changing either is a
+  # raise of the limit itself and needs the same Size line, or one commit would disarm the next.
+  for LIMIT_KEY in raiseCapPercent allowancePercent; do
+    OLD_LIMIT="$(baseline_field "$LIMIT_KEY" "$OLD_JSON")"
+    NEW_LIMIT="$(baseline_field "$LIMIT_KEY" "$(git show ":docs/SIZE-BASELINE.json" 2>/dev/null || true)")"
+    if [ -n "$OLD_JSON" ] && [ "$NEW_LIMIT" != "$OLD_LIMIT" ] \
+        && ! printf '%s\n' "$MESSAGE" | grep -Eiq '^[[:space:]]*size:[[:space:]]*(L|XL)[[:space:]]*$'; then
+      echo "[commit-msg] BLOCKED: this commit changes $LIMIT_KEY in docs/SIZE-BASELINE.json from $OLD_LIMIT to ${NEW_LIMIT:-nothing}."
+      echo "  A change to a size limit needs a story sized L or XL. Add a line \"Size: L\" or \"Size: XL\" copied from the story's Size field."
+      exit 1
+    fi
+  done
+  # Removing a committed line count switches the size gate off, so it is a change to a limit too.
+  if [ -z "$NEW_LINES" ] && [ -n "$(baseline_field lines "$OLD_JSON")" ] \
+      && ! printf '%s\n' "$MESSAGE" | grep -Eiq '^[[:space:]]*size:[[:space:]]*(L|XL)[[:space:]]*$'; then
+    echo "[commit-msg] BLOCKED: this commit removes the line count from docs/SIZE-BASELINE.json."
+    echo "  Removing it needs a story sized L or XL. Add a line \"Size: L\" or \"Size: XL\" copied from the story's Size field."
+    exit 1
+  fi
   # A baseline whose committed "lines" is null counts as 0, so the first real number is a raise.
   if [ -z "$OLD_LINES" ] && [ -n "$ANCHOR_JSON" ]; then OLD_LINES=0; fi
   if [ -n "$NEW_LINES" ] && [ -n "$OLD_LINES" ] && [ "$NEW_LINES" -gt "$OLD_LINES" ]; then
@@ -119,10 +146,10 @@ if [ -n "$BAD_COAUTHOR" ]; then
 fi
 
 # One definition of a test path and of a file that is not code, shared by the merge exemption and TEST-WITH-CODE-1.
-# Code is every staged file except documentation and data: anything under docs/, markup, styles, images, data and
+# Code is every staged file except documentation and data: markup, styles, images, data and
 # config formats, and the plain repo files such as LICENSE. A language the hook has never heard of counts as code.
 TEST_PATH='(^|/)tests?/|(^|/)test_[^/]*$|_test\.[^/]*$|\.test\.[^/]*$|^scripts/(live-check|check-)[^/]*$'
-NON_CODE='(^|/)docs/|\.(md|txt|json|jsonl|csv|tsv|ya?ml|toml|html?|css|svg|png|jpe?g|gif|ico|webp|pdf|lock|xml|ini|cfg|conf|example|sample)$|(^|/)(LICENSE|CODEOWNERS|\.gitignore|\.gitattributes|\.mailmap)$'
+NON_CODE='\.(md|txt|json|jsonl|csv|tsv|ya?ml|toml|html?|css|svg|png|jpe?g|gif|ico|webp|pdf|lock|xml|ini|cfg|conf|example|sample)$|(^|/)(LICENSE|CODEOWNERS|\.gitignore|\.gitattributes|\.mailmap)$'
 staged_code() { git diff --cached --name-only --no-renames "$@" | grep -vE "$NON_CODE" || true; }
 
 # A revert or autosquash commit carries the message of work that already has a reference, so it is exempt
@@ -136,12 +163,12 @@ names_a_commit() {
       "fixup! "*) target="${target#fixup! }" ;;
       "squash! "*) target="${target#squash! }" ;;
       "amend! "*) target="${target#amend! }" ;;
-      "Revert \""*) target="${target#Revert \"}"; target="${target%\"}"; break ;;
       *) break ;;
     esac
   done
-  [ "$target" != "$SUBJECT" ] || return 1
-  git log --format=%s 2>/dev/null | grep -qxF -- "$target" && return 0
+  case "$SUBJECT" in "Revert "*) ;; *) [ "$target" != "$SUBJECT" ] || return 1 ;; esac
+  # A fixup, squash or amend subject names its target by subject. A revert names its commit by hash, as git writes it.
+  case "$SUBJECT" in "Revert "*) ;; *) git log --format=%s 2>/dev/null | grep -qxF -- "$target" && return 0 ;; esac
   sha="$(printf '%s\n' "$MESSAGE" | sed -n 's/^This reverts commit \([0-9a-f]\{7,40\}\).*/\1/p' | head -1)"
   [ -n "$sha" ] && git cat-file -e "$sha^{commit}" 2>/dev/null
 }
@@ -179,7 +206,7 @@ if [ -z "${EXEMPT_STORY:-}" ] && ! printf '%s\n' "$MESSAGE" | grep -Eq "$STORY_R
   echo "[commit-msg] BLOCKED: the commit message names no story."
   echo "  Add the story number, for example \"Fix the sync (#53)\" or a line \"Story: #53\"."
   echo "  A revert or fixup/squash commit that names an existing commit, a merge that stages no code and a repo's first commit are exempt."
-  echo "  To turn the check off for a repo, the owner creates $HOOK_DIR/commit-msg.optout."
+  echo "  To turn the check off for a repo, the owner commits $OPTOUT_REL."
   exit 1
 fi
 
@@ -189,7 +216,7 @@ fi
 # scripts/ named check-* or live-check*, which is itself the test it runs. An .html page is markup and
 # does not count: script worth a test belongs in a .js file, which does.
 CODE_CHANGED="$(staged_code --diff-filter=AM | grep -vE "$TEST_PATH" || true)"
-TEST_CHANGED="$(git diff --cached --name-only --no-renames --diff-filter=AMD | grep -E "$TEST_PATH" || true)"
+TEST_CHANGED="$(git diff --cached --name-only --no-renames --diff-filter=AM | grep -E "$TEST_PATH" || true)"
 if [ -n "$CODE_CHANGED" ] && [ -z "$TEST_CHANGED" ] \
     && ! printf '%s\n' "$MESSAGE" | grep -Eiq '^[[:space:]]*no test:[[:space:]]*[^[:space:]]'; then
   echo "[commit-msg] BLOCKED: this commit changes code and no test:"
@@ -207,6 +234,8 @@ CONFIG_FILE="$(git rev-parse --show-toplevel 2>/dev/null || true)/docs/backlog-c
 if [ -r "$CONFIG_FILE" ] && grep -Eq '"repoOwner"[[:space:]]*:[[:space:]]*"your-' "$CONFIG_FILE"; then
   echo "[commit-msg] Note: docs/backlog-config.json still holds placeholders, so story numbers were not checked against GitHub."
   echo "  Fill it with the repo's real owner, name and Project IDs: run \`olivercode backlog-setup --apply\`, or copy them from \`gh project field-list <number> --owner <owner> --format json\`."
+elif [ -r "$CONFIG_FILE" ] && ! grep -Eq '"repoOwner"[[:space:]]*:[[:space:]]*"[^"]' "$CONFIG_FILE"; then
+  echo "[commit-msg] Note: docs/backlog-config.json names no repoOwner, so story numbers were not checked against GitHub."
 elif [ -r "$CONFIG_FILE" ]; then
   config_value() { sed -n 's/.*"'"$1"'"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$CONFIG_FILE" | head -1; }
   HOME_REPO="$(config_value repoOwner)/$(config_value repoName)"
