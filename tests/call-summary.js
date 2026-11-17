@@ -29,6 +29,15 @@ assert.ok(s.text.includes('\\nPlan\\nObjective: Win the renewal'), 'the text pri
 assert.ok(/Objective: Win the renewal/.test(s.text) && s.text.includes('Revenue target: $1M') && /Risks and watch items: Budget freeze/.test(s.text), 'the plan fields are in the text')
 assert.ok(!/Strategy:/.test(s.text), 'an empty plan field is left out')
 assert.ok(s.html.includes('<h2>Plan</h2>') && s.html.includes('Win the renewal'), 'and in the page')
+// A review date that has passed, or is near, is named in the Plan section, in the text and in the page.
+state.plans[0].next_review_at = iso(-4)
+const late = buildCallSummary()
+assert.ok(late.text.includes('Review: Overdue by 4 days') && late.html.includes('Overdue by 4 days'), 'an overdue review is named')
+state.plans[0].next_review_at = iso(3)
+assert.ok(buildCallSummary().text.includes('Review: Due in 3 days'), 'a review due soon is named')
+state.plans[0].next_review_at = iso(30)
+assert.ok(!/Review:/.test(buildCallSummary().text), 'a review a month out is not flagged')
+state.plans[0].next_review_at = '2026-12-01'
 assert.ok(s.text.includes('Quarterly check-in') && !s.text.includes('Ignore me'), 'only the latest call is included')
 assert.ok(s.text.includes('Attendees: Ada, Bo') && s.text.includes('Bo needs the checklist.'))
 const text = s.text

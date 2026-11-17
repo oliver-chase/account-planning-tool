@@ -19,6 +19,8 @@ function callSummaryData() {
   // Last reviewed stays out: the call needs what is planned, and the next review date says when it is looked at again.
   const nextReview = PLAN_HEADER_DATE_FIELDS.find(f => f[0] === 'next_review_at')
   const planRows = [...PLAN_HEADER_TEXT_FIELDS, nextReview].map(([k, label]) => [label, k === nextReview[0] && plan[k] ? fmtDate(String(plan[k]).slice(0, 10)) : plan[k]]).filter(r => r[1])
+  const review = planReviewStatus(plan, t)
+  if (review.text) planRows.push(['Review', review.text.replace(/^Review (\w)/, (m, c) => c.toUpperCase())]) // the label says Review, so the value drops the word
   return { today: t, name: state.account.account_name || 'Account', note, owners, groups, done, planRows }
 }
 

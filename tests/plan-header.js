@@ -21,6 +21,19 @@ assert.strictEqual(PLAN_HEADER_TEXT_FIELDS.concat(PLAN_HEADER_DATE_FIELDS).map(f
 // The plan with the latest year is current, wherever it sits in the list.
 state.plans = [{ id: 'older', year: '2025', objective: 'a' }, { id: 'newer', year: '2027', objective: 'b' }, { id: 'mid', year: '2026', objective: 'c' }]
 assert.strictEqual(currentPlan().id, 'newer')
+// The review flag: overdue, due soon, stale, or nothing.
+const rs = (plan, t) => planReviewStatus(plan, t || '2026-11-17')
+assert.deepStrictEqual(rs({ next_review_at: '2026-11-10' }), { level: 'overdue', text: 'Review overdue by 7 days' })
+assert.strictEqual(rs({ next_review_at: '2026-11-16' }).text, 'Review overdue by 1 day')
+assert.deepStrictEqual(rs({ next_review_at: '2026-11-17' }), { level: 'soon', text: 'Review due today' })
+assert.strictEqual(rs({ next_review_at: '2026-11-18' }).text, 'Review due in 1 day')
+assert.strictEqual(rs({ next_review_at: '2026-11-24' }).text, 'Review due in 7 days')
+assert.strictEqual(rs({ next_review_at: '2026-11-25' }).level, '', 'more than a week out says nothing')
+assert.strictEqual(rs({ next_review_at: '2026-11-10T00:00:00' }).level, 'overdue', 'a stored time of day is ignored')
+assert.strictEqual(rs({ last_reviewed_at: '2026-10-18' }).level, '', '30 days is not yet stale')
+assert.deepStrictEqual(rs({ last_reviewed_at: '2026-10-17' }), { level: 'stale', text: 'Not reviewed in 31 days' })
+assert.strictEqual(rs({ next_review_at: '2027-01-01', last_reviewed_at: '2026-01-01' }).level, '', 'a future review date wins over an old last-reviewed date')
+assert.strictEqual(rs({}).level, ''); assert.strictEqual(rs(null).level, '')
 console.log('plan-header: ok')
 `
 vm.runInNewContext(src, sandbox)
