@@ -85,12 +85,17 @@ if staged:
         end = out.index(b"\n", pos)
         header = out[pos:end].split()
         size = int(header[2]) if len(header) == 3 and header[1] == b"blob" else 0
-        total += out[end + 1:end + 1 + size].count(b"\n")
+        data = out[end + 1:end + 1 + size]
+        # A binary file (a NUL in its first 8000 bytes, git's own test) holds no lines: a GIF or font counted as thousands.
+        if b"\0" not in data[:8000]:
+            total += data.count(b"\n")
         pos = end + 1 + size + 1
 else:
     for _, _, path in files:
         with open(path, "rb") as handle:
-            total += handle.read().count(b"\n")
+            data = handle.read()
+        if b"\0" not in data[:8000]:
+            total += data.count(b"\n")
 print(total)
 PY
   exit 0
