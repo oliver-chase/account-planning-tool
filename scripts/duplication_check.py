@@ -71,7 +71,7 @@ def _tracked_md(repo_root: Path) -> list[str]:
         check=False,
     )
     if out.returncode != 0:
-        return []
+        raise RuntimeError("could not list tracked files")
     return [line for line in out.stdout.splitlines() if line.strip()]
 
 
@@ -177,7 +177,11 @@ def main(argv: list[str] | None = None) -> int:
                         help="report only passages that involve these files, such as the staged ones")
     args = parser.parse_args(argv)
     staged = None if args.staged_only is None else set(args.staged_only)
-    failures = check_all(Path(args.root).resolve(), staged)
+    try:
+        failures = check_all(Path(args.root).resolve(), staged)
+    except RuntimeError as exc:
+        print(f"duplication check: {exc}", file=sys.stderr)
+        return 2
     for failure in failures:
         print(failure)
     return 1 if failures else 0

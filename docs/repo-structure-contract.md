@@ -35,3 +35,4 @@ This repo works on `main`.
 ## Contract exceptions
 
 None.
+- learning: a single-file tool with no usage data. Expires 2027-02-01

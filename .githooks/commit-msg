@@ -41,7 +41,7 @@ trap 'log_failure $?' EXIT
 # baseline_field KEY JSON: the whole number that KEY holds in a docs/SIZE-BASELINE.json text, or nothing. Both the
 # size ratchet and the commit-msg hook read the baseline with this one function.
 baseline_field() {
-  printf '%s\n' "$2" | sed -n '/"'"$1"'"[[:space:]]*:/{s/.*"'"$1"'"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p;q;}'
+  printf '%s\n' "$2" | sed -n '/"'"$1"'"[[:space:]]*:/{s/.*"'"$1"'"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p;}' | sed -n 1p
 }
 GATE_NAME="Commit message"
 # STORY-REF-1. Every commit names the story it serves, so the history shows who did what and why.
