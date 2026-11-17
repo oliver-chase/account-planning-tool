@@ -11,13 +11,13 @@ function callSummaryData() {
     const owner = (a.owner || '').trim() || 'No owner'
     ;(groups[owner] = groups[owner] || []).push({ text: a.description, due: a.due_date || '', overdue: isPastDue(a, t) })
   })
-  const owners = Object.keys(groups).filter(o => o !== 'No owner').sort()
+  const owners = Object.keys(groups).filter(o => o !== 'No owner').sort((a, b) => a.localeCompare(b))
   if (groups['No owner']) owners.push('No owner')
   owners.forEach(o => groups[o].sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999')))
   const done = state.actions.filter(a => a.status === 'Done' && a.closed_date && a.closed_date > weekAgo).map(a => a.description)
   const plan = currentPlan() || {}
-  const planRows = [['Objective', plan.objective], ['Strategy', plan.strategy], ['Revenue target', plan.revenue_target], ['Risks and watch items', plan.risks_summary],
-    ['Next review', plan.next_review_at ? fmtDate(String(plan.next_review_at).slice(0, 10)) : '']].filter(r => r[1])
+  const nextReview = PLAN_HEADER_DATE_FIELDS.find(f => f[0] === 'next_review_at')
+  const planRows = [...PLAN_HEADER_TEXT_FIELDS, nextReview].map(([k, label]) => [label, k === nextReview[0] && plan[k] ? fmtDate(String(plan[k]).slice(0, 10)) : plan[k]]).filter(r => r[1])
   return { today: t, name: state.account.account_name || 'Account', note, owners, groups, done, planRows }
 }
 
@@ -29,7 +29,7 @@ function callSummarySections(d) {
   if (d.planRows.length) sections.push({ title: 'Plan', rows: d.planRows })
   if (d.note) {
     const n = d.note
-    sections.push({ title: 'Last call', lead: fmtDate(n.date) + (n.title ? ' — ' + n.title : ''),
+    sections.push({ title: 'Last call', lead: [fmtDate(n.date), n.title].filter(Boolean).join(' — '),
       meta: (n.attendees || []).length ? 'Attendees: ' + n.attendees.join(', ') : '', body: n.body || '' })
   }
   sections.push({ title: 'Open actions', empty: !d.owners.length, groups: d.owners.map(o => [o, d.groups[o]]) })
@@ -54,11 +54,12 @@ function buildCallSummary() {
   const text = lines.join('\n')
 
   const h = ['<h1>' + escHtml(d.name) + '</h1>', '<p class="meta">Call summary, ' + escHtml(fmtDate(d.today)) + '</p>']
-  const paragraph = t => '<p>' + escHtml(t).replace(/\n/g, '<br>') + '</p>'
+  const lineBreaks = t => escHtml(t).replace(/\n/g, '<br>')
+  const paragraph = t => '<p>' + lineBreaks(t) + '</p>'
   sections.forEach(s => {
     h.push('<h2>' + escHtml(s.title) + '</h2>')
     if (s.lead) h.push('<p><strong>' + escHtml(s.lead) + '</strong></p>')
-    ;(s.rows || []).forEach(r => h.push('<p><strong>' + escHtml(r[0]) + ':</strong> ' + escHtml(r[1]).replace(/\n/g, '<br>') + '</p>'))
+    ;(s.rows || []).forEach(r => h.push('<p><strong>' + escHtml(r[0]) + ':</strong> ' + lineBreaks(r[1]) + '</p>'))
     if (s.meta) h.push(paragraph(s.meta))
     if (s.body) h.push(paragraph(s.body))
     if (s.empty) h.push('<p>None.</p>')
@@ -74,7 +75,7 @@ function buildCallSummary() {
 
 function openCallSummary() {
   const s = buildCallSummary()
-  showModal({ title: 'Call summary', hideActions: true, bodyBuilder: (body, close) => {
+  showModal({ title: 'Call summary', hideActions: true, bodyBuilder: body => {
     body.appendChild(el('p', 'export-helper-text', 'Copy the text into an email, or download it as a page.'))
     const pre = el('textarea', 'call-summary-text', null)
     pre.value = s.text; pre.readOnly = true; pre.rows = 14; pre.setAttribute('aria-label', 'Call summary text')

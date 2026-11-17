@@ -57,6 +57,16 @@ const first = revenuePatch('2026', { projected: '2' }); state.background = { ...
 state.background = { ...state.background, ...revenuePatch('2026', { closed: '3' }) }
 assert.deepStrictEqual(JSON.parse(JSON.stringify(state.background.revenue['2026'])), { projected: '2', closed: '3' })
 
+// Director and Manager hold one name each, so a comma stays inside it, and removing the name clears the field.
+assert.deepStrictEqual(getTeamNames({ account_director: 'Smith, John', account_manager: '', account_team: 'Ann; Bo' }), ['Smith John', 'Ann', 'Bo'])
+assert.deepStrictEqual(removeTeamMember({ account_director: 'Smith, John', account_manager: '', account_team: '' }, 'Smith John'), { account_director: '' })
+assert.strictEqual(titleRank('Executive Assistant to the CEO'), 6)
+// A person cannot report to themselves, and saving a record that was removed marks nothing unsaved.
+function showToast() {}
+state.stakeholders = [{ id: 'x', reports_to: '' }]
+assert.strictEqual(reportsToCycle('x', 'x'), true)
+const before = changeCount; saveRecord('actions', { id: 'gone' }); assert.strictEqual(changeCount, before)
+
 // An action's age counts calendar days, also across the day a clock change makes 23 or 25 hours long.
 const RealDate = Date
 let fixedNow = null

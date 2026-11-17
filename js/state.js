@@ -52,6 +52,7 @@ function parseMoney(s) {
 function titleRank(title) {
   const t = (title || '').toLowerCase()
   if (/\b(evp|svp|executive vice president|(senior|sr\.?) vice president)\b/.test(t)) return 2
+  if (/\bassistant\b/.test(t)) return 6 // an assistant to an executive holds an assistant's role
   if (/\bvp\b|vice president/.test(t)) return 3
   if (/\b(ceo|cfo|cto|coo|cio|ciso|cmo|cro|president|founder|chief)\b|\bbusiness owner\b/.test(t)) return 1
   if (/\bdirector\b/.test(t)) return 4
@@ -157,12 +158,14 @@ const sheetRow = (sheet, values) => SHEET_HEADERS[sheet].map(h => values[h] || '
 function saveRecord(listKey, rec) {
   rec.last_updated = today()
   const i = state[listKey].findIndex(x => x.id === rec.id)
-  if (i >= 0) state[listKey][i] = rec
+  if (i < 0) return // the record was removed meanwhile, so there is nothing to save
+  state[listKey][i] = rec
   persist()
 }
 // True, with a toast, when making parentId the manager of personId would loop.
 function reportsToCycle(parentId, personId) {
-  if (!parentId || !isDescendantOf(parentId, personId, state.stakeholders)) return false
+  if (!parentId) return false
+  if (parentId !== personId && !isDescendantOf(parentId, personId, state.stakeholders)) return false
   showToast('Cannot create circular reporting relationship')
   return true
 }
@@ -210,15 +213,16 @@ function toArray(val) {
 }
 
 function getTeamNames(bg) {
-  return [...new Set(['account_director', 'account_manager', 'account_team'].flatMap(k => toArray(bg[k])))]
+  // Director and Manager each hold one name, which may contain a comma. The team list holds several.
+  return [...new Set([sanitizeName(bg.account_director), sanitizeName(bg.account_manager), ...toArray(bg.account_team)].filter(Boolean))]
 }
 
 // A name in the internal-team pool lives in Director, Manager and the Account team list. This clears
 // it from all three at once and returns a patch for saveBg(); it does not mutate bg.
 function removeTeamMember(bg, name) {
   const patch = {}
-  if (bg.account_director === name) patch.account_director = ''
-  if (bg.account_manager === name) patch.account_manager = ''
+  if (sanitizeName(bg.account_director) === name) patch.account_director = ''
+  if (sanitizeName(bg.account_manager) === name) patch.account_manager = ''
   const team = toArray(bg.account_team)
   const filtered = team.filter(n => n !== name)
   if (filtered.length !== team.length) patch.account_team = filtered.join('; ')

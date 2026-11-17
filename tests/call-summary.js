@@ -18,6 +18,8 @@ state.actions = [
   { id: 'a2', description: 'Book review', owner: 'Ada', status: 'Open', due_date: iso(-3) },
   { id: 'a3', description: 'Loose end', owner: '', status: 'Open', due_date: '' },
   { id: 'a4', description: 'Shipped deck', owner: 'Bo', status: 'Done', closed_date: iso(-1), due_date: '' },
+  { id: 'a6', description: 'Lower case owner', owner: 'amy', status: 'Open', due_date: '' },
+  { id: 'a7', description: 'Late alphabet', owner: 'Zed', status: 'Open', due_date: '' },
   { id: 'a5', description: 'Long ago', owner: 'Bo', status: 'Done', closed_date: iso(-40), due_date: '' },
 ]
 state.plans = [{ id: 'p', name: 'FY27', objective: 'Win the renewal', strategy: '', revenue_target: '$1M', risks_summary: 'Budget freeze', next_review_at: '2026-12-01' }]
@@ -32,11 +34,14 @@ assert.ok(s.text.includes('Attendees: Ada, Bo') && s.text.includes('Bo needs the
 const text = s.text
 assert.ok(text.indexOf('Book review') < text.indexOf('Send proposal'), 'earliest due date first within an owner')
 assert.ok(/Book review \\(overdue, was due/.test(text) && /Send proposal \\(due/.test(text))
-assert.ok(text.indexOf('Ada') < text.indexOf('No owner') && text.indexOf('Loose end') > text.indexOf('No owner'), 'unowned actions come last')
+assert.ok(text.indexOf('\\nAda\\n') < text.indexOf('\\nNo owner\\n') && text.indexOf('Loose end') > text.indexOf('\\nNo owner\\n'), 'unowned actions come last')
+assert.ok(text.indexOf('\\namy\\n') < text.indexOf('\\nZed\\n'), 'owners sort by name, ignoring case')
 assert.ok(text.includes('Shipped deck') && !text.includes('Long ago'), 'finished this week only')
 assert.ok(s.html.includes('Acme &lt;Co&gt;') && !s.html.includes('Acme <Co>'), 'html is escaped')
 assert.ok(/call-summary-\\d{4}-\\d{2}-\\d{2}\\.html$/.test(s.fileName))
 
+state.notes = [{ id: 'n3', date: '', title: 'Undated', attendees: [], body: '' }]
+assert.ok(buildCallSummary().text.includes('\\nLast call: Undated\\n'), 'a note with no date prints no stray dash')
 state.notes = []; state.actions = []
 assert.ok(buildCallSummary().text.includes('None.'), 'an empty account still produces a summary')
 

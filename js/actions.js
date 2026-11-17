@@ -4,7 +4,11 @@
 let actionsSortCol = 'due_date'
 let actionsSortDir = 'asc'
 let actionsAdding = false
+let actionsDraft = null // the new action being filled in, kept so a re-render of the table does not lose its owner, date or status
 let actionsStatusFilter = 'open-progress'
+const ACTION_STATUSES = [['Open', 'Open'], ['In Progress', 'In Progress'], ['Done', 'Done']]
+// What a status change sets: Done stamps the closing day, any other status clears it.
+const statusFields = v => ({ status: v, closed_date: v === 'Done' ? today() : '' })
 const ACT_FILTER_OPTS = [['open-progress', 'Open + in progress'], ['overdue', 'Overdue'], ['due-week', 'Due this week'], ['all', 'All statuses'], ['Open', 'Open only'], ['Done', 'Done only']]
 
 function isPastDue(a, t) { return a.status !== 'Done' && !!a.due_date && a.due_date < t }
@@ -28,7 +32,7 @@ const currentAction = a => state.actions.find(x => x.id === a.id) || a
 function saveAction(a) { saveRecord('actions', a) }
 function deleteAction(a, rerender) { deleteWithUndo('actions', a, 'Action', rerender) }
 
-// Sorts by a column. Actions with no due date always come last, whichever way the sort runs.
+// Sorts by a column. When sorting by due date, actions with no date come last, whichever way the sort runs.
 function sortActions(list, col, dir) {
   return [...list].sort((a, b) => {
     const av = a[col] || '', bv = b[col] || ''
@@ -130,7 +134,7 @@ function makeActionRow(action) {
   dueTd.appendChild(dueInput)
   tr.appendChild(dueTd)
   const statusTd = el('td', 'action-cell', null)
-  statusTd.appendChild(singleSelectEl([['Open', 'Open'], ['In Progress', 'In Progress'], ['Done', 'Done']], action.status, v => { saveAction({ ...currentAction(action), status: v, closed_date: v === 'Done' ? today() : '' }); renderActions() }, 'picker-btn-status ' + actionStatusBadgeClass(action.status)))
+  statusTd.appendChild(singleSelectEl(ACTION_STATUSES, action.status, v => { saveAction({ ...currentAction(action), ...statusFields(v) }); renderActions() }, 'picker-btn-status ' + actionStatusBadgeClass(action.status)))
   tr.appendChild(statusTd)
   const delTd = el('td', 'action-cell action-cell-compact', null)
   const delBtn = compactRemoveButton('Delete action', () => { deleteAction(action, renderActions) }, 'action-cell-delete-btn')
@@ -141,7 +145,7 @@ function makeActionRow(action) {
 }
 
 function makeInlineActionRow() {
-  const rec = newAction()
+  const rec = actionsDraft || (actionsDraft = newAction())
   const tr = el('tr', 'new-row', null)
   const descTd = el('td', 'action-cell', null)
   let discarded = false, committed = false
@@ -152,28 +156,30 @@ function makeInlineActionRow() {
     if (discarded) return
     if (v) {
       rec.description = v
-      if (!committed) { committed = true; actionsAdding = false; state.actions.unshift(rec) }
+      if (!committed) { committed = true; actionsAdding = false; actionsDraft = null; state.actions.unshift(rec) }
       if (!actionMatchesFilter(rec, actionsStatusFilter, today()) && !globalFilterSearch) actionsStatusFilter = 'all'
       persist()
-    } else if (tr.isConnected && !newCardInUse(tr)) { actionsAdding = false; renderActions() }
+    } else if (tr.isConnected && !newCardInUse(tr)) { actionsAdding = false; actionsDraft = null; renderActions() }
   }, { alwaysSave: true, ariaLabel: 'New action' })
   descTd.appendChild(descEl); tr.appendChild(descTd)
   const ownerTd = el('td', 'action-cell action-cell-nowrap', null)
-  ownerTd.appendChild(personSelectEl('', v => edit(() => { rec.owner = v }), 'picker-btn-inline'))
+  ownerTd.appendChild(personSelectEl(rec.owner, v => edit(() => { rec.owner = v }), 'picker-btn-inline'))
   tr.appendChild(ownerTd)
-  tr.appendChild(el('td', 'action-cell', null))
+  const engTd = el('td', 'action-cell', null)
+  engTd.appendChild(editable('span', 'picker-btn-inline', rec.engagement, 'Account-wide', v => edit(() => { rec.engagement = v }), { ariaLabel: 'Engagement' }))
+  tr.appendChild(engTd)
   const dueTd = el('td', 'action-cell action-cell-nowrap', null)
   const dueInput = el('input', 'overview-date-input', null)
-  dueInput.type = 'date'; dueInput.setAttribute('aria-label', 'Due date')
+  dueInput.type = 'date'; dueInput.value = rec.due_date; dueInput.setAttribute('aria-label', 'Due date')
   dueInput.addEventListener('change', () => edit(() => { rec.due_date = dueInput.value }))
   dueTd.appendChild(dueInput)
   tr.appendChild(dueTd)
   const statusTd = el('td', 'action-cell', null)
-  statusTd.appendChild(singleSelectEl([['Open', 'Open'], ['In Progress', 'In Progress'], ['Done', 'Done']], 'Open', v => edit(() => { rec.status = v; rec.closed_date = v === 'Done' ? today() : '' }), 'picker-btn-status ' + actionStatusBadgeClass('Open')))
+  statusTd.appendChild(singleSelectEl(ACTION_STATUSES, rec.status, v => edit(() => Object.assign(rec, statusFields(v))), 'picker-btn-status ' + actionStatusBadgeClass(rec.status)))
   tr.appendChild(statusTd)
   const delTd = el('td', 'action-cell action-cell-compact', null)
   delTd.appendChild(compactRemoveButton('Discard action changes', () => {
-    discarded = true; actionsAdding = false
+    discarded = true; actionsAdding = false; actionsDraft = null
     if (committed) deleteWithUndo('actions', rec, 'Action', renderActions)
     else renderActions()
   }, 'action-cell-delete-btn'))

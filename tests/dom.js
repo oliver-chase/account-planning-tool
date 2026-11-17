@@ -98,6 +98,12 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   w.eval("peopleView = 'cards'; peopleFilterPanelOpen = true; renderPeople()"); await until(() => d.querySelector('.people-filter-panel [data-fk="exec"]'))
   ev(d.querySelector('.people-filter-panel [data-fk="exec"]'), 'keydown', { key: 'Escape' })
   await checkSoon('Escape closes the Filters panel', () => !d.querySelector('.people-filter-panel'))
+  // A re-render while the new action row is open keeps what was chosen in it.
+  w.eval("state.actions = []; actionsDraft = null; actionsAdding = true; renderActions()"); await until(() => d.querySelector('tr.new-row input[type=date]'))
+  const draftDue = d.querySelector('tr.new-row input[type=date]'); draftDue.value = '2031-05-05'; draftDue.dispatchEvent(new w.Event('change'))
+  w.eval('renderActions()'); await until(() => d.querySelector('tr.new-row input[type=date]'))
+  check('a re-render keeps the due date chosen in the new action row', d.querySelector('tr.new-row input[type=date]').value === '2031-05-05')
+  w.eval("actionsAdding = false; actionsDraft = null; renderActions()")
   // 8d. a new action keeps the owner and due date chosen after the description
   w.eval("state.actions = []; actionsAdding = true; renderActions()"); await until(() => d.querySelector('tr.new-row .action-text'))
   const newDesc = d.querySelector('tr.new-row .action-text'); newDesc.textContent = 'Call the sponsor'; newDesc.dispatchEvent(new w.Event('blur')); await saved()
