@@ -164,7 +164,6 @@ function editable(tag, className, value, placeholder, onSave, opts) {
   node.addEventListener('blur', () => {
     // innerText keeps the line breaks typed with Enter; textContent drops them.
     const v = String(opts.multiline && node.innerText != null ? node.innerText : node.textContent).trim()
-    if (!v && opts.revertOnEmpty) { node.textContent = value || ''; return }
     // Clicking into a field and out again changes nothing. New-item cards opt out, because
     // an empty blur is how they decide to discard themselves.
     if (!opts.alwaysSave && v === (value || '').trim()) { saver.cancel(); return } // an earlier blur's queued save no longer applies

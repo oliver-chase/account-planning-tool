@@ -153,6 +153,10 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   check('Escape in a confirm dialog leaves the side panel open', !d.querySelector('.app-modal-overlay') && !!d.getElementById('org-person-panel'))
   ev(d.body, 'keydown', { key: 'Escape' })
   check('Escape closes the side panel once no dialog is open', !d.getElementById('org-person-panel'))
+  // A note's date is a native date input, as an action's due date is.
+  w.eval("state.notes = []; createNote()"); await until(() => d.querySelector('#notes-body-wrap input[aria-label="Note date"]'))
+  const noteDate = d.querySelector('#notes-body-wrap input[aria-label="Note date"]'); noteDate.value = '2026-01-15'; noteDate.dispatchEvent(new w.Event('change'))
+  check('a note date is a date input and saves', noteDate.type === 'date' && w.eval("state.notes[0].date") === '2026-01-15')
   check('the page has one h1 and a skip link to the account', d.querySelectorAll('h1').length === 1 && d.querySelector('a.skip-link[href="#account-content"]') !== null)
   // 9. empty lists say so
   w.eval("state.notes = []; state.actions = []; persist(); renderNotes(); renderActions()")

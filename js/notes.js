@@ -9,17 +9,6 @@ let notesFilterFrom = ''
 let notesFilterTo = ''
 const notesExpanded = new Set() // notes the user has open, kept across re-renders
 
-function isoToDisplay(iso) { const p = (iso || '').split('-'); return p.length === 3 ? p[1] + '/' + p[2] + '/' + p[0] : '' }
-function displayToIso(display) {
-  const m = display.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
-  if (!m) return null
-  const month = Number(m[1]), day = Number(m[2]), year = Number(m[3])
-  // The regex accepts 13/45/2026, and Date rolls invalid parts into the next month. Round-trip
-  // the parts through a real Date and compare, which also catches Feb 30 and Apr 31.
-  const d = new Date(year, month - 1, day)
-  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return null
-  return String(year) + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0')
-}
 function notePreview(note) { const line = (note.body || '').split('\n').find(s => s.trim()); return line ? (line.length > 120 ? line.slice(0, 120) + '…' : line) : '' }
 function noteToMarkdown(note) {
   let md = '# ' + (note.title || 'Note') + '\n\n*Date: ' + fmtDate(note.date) + '*  \n\n'
@@ -121,14 +110,11 @@ function makeNoteCard(note, teamNames) {
   card.appendChild(btns)
 
   const meta = el('div', 'note-meta', null)
-  const dateSpan = editable('span', 'note-date note-date-editable', isoToDisplay(note.date), '', v => {
-    const iso = displayToIso(v)
-    if (iso) { saveNote({ ...currentNote(note), date: iso }); renderNotes() }
-    else if (v.trim()) { showToast('Not a valid date. Kept ' + isoToDisplay(note.date)); renderNotes() }
-  }, { ariaLabel: 'Note date', revertOnEmpty: true })
-  dateSpan.title = 'Click to edit date (MM/DD/YYYY)'
-  dateSpan.addEventListener('click', e => e.stopPropagation())
-  meta.appendChild(dateSpan)
+  const dateInput = el('input', 'overview-date-input', null)
+  dateInput.type = 'date'; dateInput.value = note.date; dateInput.setAttribute('aria-label', 'Note date')
+  dateInput.addEventListener('change', () => { if (dateInput.value) saveNote({ ...currentNote(note), date: dateInput.value }); renderNotes() })
+  dateInput.addEventListener('click', e => e.stopPropagation())
+  meta.appendChild(dateInput)
   card.appendChild(meta)
 
   const titleEl = editable('div', 'note-title note-title-el', note.title, '', v => { saveNote({ ...currentNote(note), title: v }); renderNotes() }, { ariaLabel: 'Note title' })
@@ -139,7 +125,6 @@ function makeNoteCard(note, teamNames) {
   card.appendChild(previewEl)
 
   const bodyWrap = el('div', 'note-body', null)
-  bodyWrap.style.display = 'none'
   bodyWrap.addEventListener('click', e => e.stopPropagation())
   const attSection = el('div', 'bullet-section', null)
   attSection.appendChild(el('div', 'bullet-heading', 'Attendees'))
@@ -160,8 +145,6 @@ function makeNoteCard(note, teamNames) {
   function showExpanded() {
     card.classList.toggle('expanded', expanded)
     card.setAttribute('aria-label', (note.title || 'Note') + (expanded ? ', expanded' : ', collapsed'))
-    bodyWrap.style.display = expanded ? 'block' : 'none'
-    previewEl.style.display = expanded ? 'none' : ''
   }
   function toggleNote() {
     expanded = !expanded
