@@ -105,9 +105,9 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
 .overview-chart-card{display:flex;flex-direction:column;background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--spacing-12) var(--spacing-md);position:relative;overflow:visible;height:100%;box-sizing:border-box}
 .overview-row-gap-bottom{margin-bottom:var(--spacing-md)}
 .overview-row-gap-top{margin-top:var(--spacing-md)}
-.overview-label-top{margin-top:var(--spacing-sm)}
+.overview-label-top,.overview-link-btn-top{margin-top:var(--spacing-sm)}
 .overview-label-bottom{margin-bottom:var(--spacing-xs)}
-.overview-chip-row-top{margin-top:var(--spacing-xs)}
+.overview-chip-row-top,.overview-date-controls{margin-top:var(--spacing-xs)}
 .overview-cadence-summary-row{display:flex;align-items:center;gap:var(--spacing-sm);min-height:var(--cadence-row-min-h);cursor:pointer}
 .overview-cadence-summary-text{font-size:var(--font-size-sm);font-family:var(--font-family-base);flex:1;min-width:0;color:var(--color-text-primary)}
 .overview-cadence-summary-text-empty{color:var(--color-text-secondary);font-style:italic}
@@ -119,8 +119,6 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
 .overview-day-btn.is-selected{background:var(--color-brand-primary);color:var(--color-white)}
 .overview-clear-btn{background:none;border:none;cursor:pointer;font-size:var(--font-size-sm);color:var(--color-text-secondary);padding:0;line-height:1;font-family:var(--font-family-base)}
 .overview-empty-italic{font-size:var(--font-size-sm);color:var(--color-text-secondary);font-style:italic}
-.overview-date-controls{margin-top:var(--spacing-xs)}
-.overview-link-btn-top{margin-top:var(--spacing-sm)}
 .overview-date-input{font-size:var(--font-size-sm);font-family:var(--font-family-base);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:var(--spacing-7) var(--spacing-10);margin-top:var(--spacing-xs);background:var(--color-bg-card);color:var(--color-text-primary);outline:none}
 .overview-stat-date-empty{color:var(--color-text-secondary);font-style:italic}
 .overview-legend-row{display:flex;align-items:center;gap:var(--spacing-md);margin-bottom:var(--spacing-sm)}
