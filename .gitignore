@@ -1,7 +1,10 @@
 .DS_Store
 tests/banned-words.local.txt
 node_modules/
-.env
+.env*
+!.env.example
+.secrets/*
+!.secrets/README.md
 docs/backlog-config.json
 package-lock.json
 *.xlsx
