@@ -6,11 +6,15 @@
 // inline "add new" row. A native <select> cannot draw those.
 let openPopoverState = null // { el, cleanup } — only one popover open at a time app-wide
 
+// Focus inside the popover goes back to its trigger, so a pick that rebuilds the section finds the rebuilt trigger.
 function closeOpenPopover() {
   if (!openPopoverState) return
+  const { el: pop, anchor } = openPopoverState
+  const hadFocus = pop.contains(document.activeElement)
   openPopoverState.cleanup()
-  openPopoverState.el.remove()
   openPopoverState = null
+  pop.remove()
+  if (hadFocus && anchor.isConnected) anchor.focus()
 }
 
 // Every focusable row inside a popover goes through this, so Tab, Shift+Tab and the arrow keys
@@ -126,10 +130,10 @@ function multiPicker(allNames, selectedNames, onChange, placeholder) {
     trigger.addEventListener('click', () => {
       openPopover(trigger, (pop, close) => {
         const remaining = allNames.filter(n => !selectedNames.includes(n))
-        const { search, list } = popoverOptionsList(remaining, () => false, n => { onChange([...selectedNames, n]); close() })
+        const { search, list } = popoverOptionsList(remaining, () => false, n => { close(); onChange([...selectedNames, n]) })
         pop.appendChild(search)
         pop.appendChild(list)
-        pop.appendChild(popoverAddNewRow(name => { if (!selectedNames.includes(name)) onChange([...selectedNames, name]); close() }))
+        pop.appendChild(popoverAddNewRow(name => { close(); if (!selectedNames.includes(name)) onChange([...selectedNames, name]) }))
       })
     })
     wrap.appendChild(trigger)
@@ -169,12 +173,12 @@ function personSelectEl(value, onChange, className) {
         const clearRow = el('div', 'app-popover-item', 'Clear selection')
         clearRow.style.color = 'var(--color-text-secondary)'
         clearRow.style.fontStyle = 'italic'
-        const clear = () => { selected = ''; trigger.textContent = 'Select person…'; onChange(''); close() }
+        const clear = () => { selected = ''; trigger.textContent = 'Select person…'; close(); onChange('') }
         clearRow.addEventListener('click', clear)
         focusableRow(clearRow, clear)
         pop.appendChild(clearRow)
       }
-      const { search, list } = popoverOptionsList(names, n => n === selected, n => { selected = n; trigger.textContent = n; onChange(n); close() })
+      const { search, list } = popoverOptionsList(names, n => n === selected, n => { selected = n; trigger.textContent = n; close(); onChange(n) })
       pop.appendChild(search)
       pop.appendChild(list)
       pop.appendChild(popoverAddNewRow(name => {
@@ -185,8 +189,8 @@ function personSelectEl(value, onChange, className) {
         }
         selected = name
         trigger.textContent = name
-        onChange(name)
         close()
+        onChange(name)
       }))
     })
   })
@@ -211,8 +215,8 @@ function singleSelectEl(options, selected, onChange, className) {
           // state here, because an unsaved inline new-record row never re-renders on its own.
           selected = value
           trigger.textContent = label
-          onChange(value)
           close()
+          onChange(value)
         }
         item.addEventListener('click', pick)
         focusableRow(item, pick)
