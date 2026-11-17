@@ -227,7 +227,7 @@ function makePersonCard(person) {
 
   top.appendChild(info); card.appendChild(top)
 
-  const bodyWrap = el('div', 'person-card-body expanded', null)
+  const bodyWrap = el('div', 'person-card-body', null)
   const ownersBlock = el('div', 'person-owners-block', null)
   ;[['primary_owner', 'Primary:'], ['secondary_owner', 'Secondary:']].forEach(([key, label]) => {
     const row = el('div', 'card-meta-row card-meta-row--spaced', null)

@@ -44,7 +44,8 @@ const oldWb = starterWorkbook(false)
 oldWb.Sheets.Overview = XLSX.utils.aoa_to_sheet([['Field', 'Value'], ['Account Name', 'Acme'], ['Renewal date', 'June']])
 const bytes = XLSX.write(oldWb, { type: 'array', bookType: 'xlsx' })
 contentUpdateWouldRemove({ getFile: async () => ({ arrayBuffer: async () => bytes }) }, buildWorkbook())
-  .then(lost => assert.ok(lost.includes('the Overview row Renewal date'), 'a hand-added Overview row is named'))
+  .then(lost => assert.ok(lost.includes('the Overview row Renewal date') && !lost.includes('the Overview row Account Name'), 'only the hand-added Overview row is named'))
+  .catch(e => { console.error(e); process.exit(1) })
 
 // The blank workbook has the right sheets and headers, and importing it leaves a blank account.
 const blank = starterWorkbook(false)
