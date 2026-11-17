@@ -11,8 +11,7 @@ function setPlanField(field, value) {
   let plan = currentPlan()
   if (!plan && !value) return // clearing a field that has no plan yet creates nothing
   if (!plan) {
-    const year = String(new Date().getFullYear())
-    plan = { id: uid('plan'), year, objective: '', revenue_target: '', strategy: '', risks_summary: '', last_reviewed_at: '', next_review_at: '' }
+    plan = newPlan()
     state.plans.unshift(plan)
   }
   plan[field] = value

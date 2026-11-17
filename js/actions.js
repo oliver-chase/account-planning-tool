@@ -141,7 +141,7 @@ function makeActionRow(action) {
 }
 
 function makeInlineActionRow() {
-  const rec = { id: uid('act'), description: '', owner: '', engagement: '', status: 'Open', due_date: '', closed_date: '', created_date: today(), last_updated: today() }
+  const rec = newAction()
   const tr = el('tr', 'new-row', null)
   const descTd = el('td', 'action-cell', null)
   let discarded = false, committed = false

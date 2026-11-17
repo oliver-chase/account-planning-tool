@@ -12,7 +12,7 @@ function workbookBuffer(name) {
 }
 const fileOf = (name, buf) => ({ name, arrayBuffer: async () => buf })
 
-const store = { 'accountPlanningTool.state.v2': JSON.stringify({ account: { account_name: 'Old' } }) } // an older save with no plans or sections
+const store = { 'accountPlanningTool.state.v2': JSON.stringify({ account: { account_name: 'Old' }, stakeholders: [{ id: 'p1', name: 'Ann' }, 'junk'], actions: [{ description: 'Call' }], notes: [{ title: 'Kickoff' }], plans: [{ objective: 'Grow' }] }) } // an older save with no plans or sections
 const toasts = []
 let modalAnswer = 'confirm'
 const sandbox = {
@@ -29,6 +29,12 @@ const src = ['js/state.js', 'js/excel.js'].map(f => fs.readFileSync(path.join(ro
   // A saved state from an older build still renders: missing sections are filled in.
   assert.strictEqual(state.account.account_name, 'Old')
   assert.ok(Array.isArray(state.plans) && Array.isArray(state.stakeholders), 'missing sections are filled in')
+  // Records missing fields get the defaults, so a screen never reads undefined, and a stray entry is dropped.
+  assert.strictEqual(state.stakeholders.length, 1, 'an entry that is not a record is dropped')
+  assert.ok(state.stakeholders[0].sentiment === 'Unknown' && state.stakeholders[0].id === 'p1' && state.stakeholders[0].name === 'Ann', 'a person keeps its fields and gains the rest')
+  assert.ok(state.actions[0].status === 'Open' && state.actions[0].id && state.actions[0].description === 'Call', 'an action gains its status and id')
+  assert.ok(Array.isArray(state.notes[0].attendees) && state.notes[0].date && state.notes[0].title === 'Kickoff', 'a note gains its date and attendees')
+  assert.ok(state.plans[0].year && state.plans[0].objective === 'Grow' && state.plans[0].strategy === '', 'a plan gains its year and fields')
 
   // Importing account B must not leave Update Excel pointed at account A's file.
   fileHandle = { name: 'account-a.xlsx' }

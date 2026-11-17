@@ -41,7 +41,7 @@ function createNote() {
   const seen = new Set(); const allAttendees = []
   ;[...cadenceNames, ...teamRaw].forEach(n => { if (n && !seen.has(n.toLowerCase())) { seen.add(n.toLowerCase()); allAttendees.push(n) } })
   const title = (bg.meeting_title || '').trim() || 'Meeting'
-  state.notes.unshift({ id: uid('note'), date: today(), type: 'Meeting', title, attendees: allAttendees, body: '', transcript_link: '', created_date: today(), last_updated: today() })
+  state.notes.unshift({ ...newNote(), title, attendees: allAttendees })
   // Show the new note: clear whatever would hide it, open it and put the cursor in its body.
   notesSearch = ''; notesFilterFrom = ''; notesFilterTo = ''; notesPage = 0; notesSortDir = 'desc'
   notesExpanded.add(state.notes[0].id)

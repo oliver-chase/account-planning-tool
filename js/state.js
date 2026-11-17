@@ -7,6 +7,11 @@ function newPerson(name, title) {
   return { id: uid('p'), name: name || '', title: title || '', department: '', organization: 'Client', is_executive: 'false', sentiment: 'Unknown', worker_type: 'Client Employee', primary_owner: '', secondary_owner: '', reports_to: '', engagement: '', notes: '', created_date: today(), last_updated: today() }
 }
 
+// A new record of each kind, with every field its screen reads.
+function newAction() { return { id: uid('act'), description: '', owner: '', engagement: '', status: 'Open', due_date: '', closed_date: '', created_date: today(), last_updated: today() } }
+function newNote() { return { id: uid('note'), date: today(), type: 'Meeting', title: '', attendees: [], body: '', transcript_link: '', created_date: today(), last_updated: today() } }
+function newPlan() { return { id: uid('plan'), year: String(new Date().getFullYear()), objective: '', revenue_target: '', strategy: '', risks_summary: '', last_reviewed_at: '', next_review_at: '' } }
+
 function uid(prefix) { return prefix + '-' + Math.random().toString(36).slice(2, 10) }
 // Dates are kept as local calendar days (YYYY-MM-DD). toISOString() would give the UTC day,
 // which is already tomorrow in the evening west of UTC and still yesterday early east of it.
@@ -96,14 +101,15 @@ function breakReportingCycles(people) {
   return cut
 }
 
-// Fills in anything an older or partial saved state lacks, so a missing section never
-// blanks the page.
+// Fills in anything an older or partial saved state lacks, so a missing section or a missing
+// field never blanks the page. An entry that is not a record is dropped.
 function mergeStored(stored) {
   if (!stored || typeof stored !== 'object') return null
   const base = emptyState()
   const out = { ...base, ...stored }
   ;['account', 'background', 'meta'].forEach(k => { out[k] = { ...base[k], ...(stored[k] || {}) } })
-  ;['stakeholders', 'actions', 'notes', 'plans'].forEach(k => { out[k] = Array.isArray(stored[k]) ? stored[k] : [] })
+  const blank = { stakeholders: newPerson, actions: newAction, notes: newNote, plans: newPlan }
+  Object.keys(blank).forEach(k => { out[k] = (Array.isArray(stored[k]) ? stored[k] : []).filter(r => r && typeof r === 'object').map(r => ({ ...blank[k](), ...r })) })
   return out
 }
 
