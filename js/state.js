@@ -118,6 +118,7 @@ function fileStamp() { try { return localStorage.getItem(FILE_STAMP_KEY) || '' }
 let unsavedEdits = (() => { try { return localStorage.getItem(UNSYNCED_KEY) === '1' } catch (e) { return false } })()
 
 function writeLocalNow() {
+  persistTimer = null // a closing page must not write again after the timer has fired
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     localStorage.setItem(UNSYNCED_KEY, unsavedEdits ? '1' : '0')
