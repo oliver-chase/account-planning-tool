@@ -84,6 +84,11 @@ body.show-start .section,body.show-start .account-header-row{display:none}
   @media (max-width:720px),(pointer:coarse){
   .card-owner-btn,.card-action-link,.inline-action-button,.module-filter-chip,.app-view-toggle-btn,.module-filter-search,.module-filter-date,.notes-search,.overview-date-input,.overview-cadence-summary-row,.card-section-label--link{min-height:var(--touch-target);box-sizing:border-box;display:flex;align-items:center}
   .account-card-remove-btn,.note-copy-btn,.overview-day-btn,.picker-btn-inline,.org-unlink-btn,.app-chip-remove{min-width:var(--touch-target);min-height:var(--touch-target)}
+  /* An inline editable field and the status badge get the full tap height, with the text kept centred. */
+  [contenteditable]{min-height:var(--touch-target);box-sizing:border-box;padding-top:var(--spacing-10);padding-bottom:var(--spacing-10)}
+  span[contenteditable]{display:inline-block}
+  .picker-btn-status,#section-nav a{min-height:var(--touch-target);box-sizing:border-box}
+  #section-nav a{display:flex;align-items:center}
 }
 /* Delete buttons are always visible on touch devices, and on keyboard focus through the :focus-within rule below. */
   @media (hover:none){
