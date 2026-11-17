@@ -40,7 +40,7 @@ if (existsSync(join(ROOT, 'package.json'))) {
       if (typeof command !== 'string') continue
       for (const ref of command.match(/scripts\/[A-Za-z0-9._/-]+\.(?:mjs|cjs|js|sql|sh|py)(?![A-Za-z0-9])/g) ?? []) {
         if (!existsSync(join(ROOT, ref))) failures.push(`package.json references missing build/runtime script: ${ref}`)
-        else if (!isTracked(ref)) failures.push(`package.json references missing build/runtime script must be git-tracked: ${ref}`)
+        else if (!isTracked(ref)) failures.push(`package.json references a build/runtime script that is not git-tracked: ${ref}`)
       }
     }
   } catch {

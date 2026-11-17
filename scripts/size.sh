@@ -2,8 +2,8 @@
 # Size and remaining work for an audit target: a git repo, or a folder of skills.
 # Usage: size.sh [--total [--staged]] [target-dir]   (default: current directory)
 # --total prints only the total line count, one integer, with no backlog lookup. The size-ratchet
-# gate and `olivercode size` read it, so the repo has one counter. --staged counts each tracked
-# file as the index holds it, which is the tree a commit would record.
+# gate and `olivercode size` read it, so the repo has one counter. The gate passes --staged, which counts
+# each tracked file as the index holds it (the tree a commit would record); `olivercode size` and conform count the working tree.
 # Prints files, lines and bytes by kind (code, tests, docs, skills, config, other),
 # the ratios the audit report cites, and open backlog items when the repo names a backlog-config.json.
 set -euo pipefail
@@ -39,8 +39,15 @@ else
 fi
 
 # The line count of one tracked file: the working copy, or the index copy under --staged.
+# A binary file (a NUL in its first 8000 bytes, git's own test) holds no lines, as in the --total count below.
 count_lines() {
-  if [ "$staged" = 1 ]; then git show ":$1" | wc -l | tr -d ' '; else wc -l <"$1" | tr -d ' '; fi
+  if [ "$staged" = 1 ]; then
+    [ "$(git show ":$1" | head -c 8000 | tr -d '\000' | wc -c)" -lt "$(git show ":$1" | head -c 8000 | wc -c)" ] && { echo 0; return; }
+    git show ":$1" | wc -l | tr -d ' '
+  else
+    [ "$(head -c 8000 "$1" | tr -d '\000' | wc -c)" -lt "$(head -c 8000 "$1" | wc -c)" ] && { echo 0; return; }
+    wc -l <"$1" | tr -d ' '
+  fi
 }
 
 kind() {
@@ -72,7 +79,7 @@ for entry in entries:
     path = os.fsdecode(path)
     if path in managed:
         continue
-    # A symlink holds no lines of its own, and following it counted its target twice in the working tree.
+    # A symlink holds no lines of its own, so the target is counted once.
     # Under --staged the index copy counts, even when the working file was deleted after staging.
     if (staged and mode != b"120000") or (os.path.isfile(path) and not os.path.islink(path)):
         files.append((mode, sha.decode(), path))

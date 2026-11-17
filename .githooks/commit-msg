@@ -83,10 +83,15 @@ if [ -n "$(git diff --cached --name-only -- docs/SIZE-BASELINE.json)" ]; then
   }
   NEW_LINES="$(baseline_field lines "$(git show ":docs/SIZE-BASELINE.json" 2>/dev/null || true)")"
   OLD_JSON="$(git show "HEAD:docs/SIZE-BASELINE.json" 2>/dev/null || true)"
-  OLD_LINES="$(baseline_field lines "$OLD_JSON")"
   CAP_PCT="$(baseline_field raiseCapPercent "$OLD_JSON")"
+  # Raises add up: the cap is measured from the baseline at the last commit whose message carried a "Size: L" or
+  # "Size: XL" line, and from the first baseline commit when none did, so small raises cannot stack past it.
+  ANCHOR="$(git log -i -1 --format=%H -E --grep='^[[:space:]]*size:[[:space:]]*(L|XL)[[:space:]]*$' -- docs/SIZE-BASELINE.json 2>/dev/null || true)"
+  [ -n "$ANCHOR" ] || ANCHOR="$(git log --format=%H --diff-filter=A -- docs/SIZE-BASELINE.json 2>/dev/null | tail -1)"
+  ANCHOR_JSON="$(git show "$ANCHOR:docs/SIZE-BASELINE.json" 2>/dev/null || printf '%s' "$OLD_JSON")"
+  OLD_LINES="$(baseline_field lines "$ANCHOR_JSON")"
   # A baseline whose committed "lines" is null counts as 0, so the first real number is a raise.
-  if [ -z "$OLD_LINES" ] && [ -n "$OLD_JSON" ]; then OLD_LINES=0; fi
+  if [ -z "$OLD_LINES" ] && [ -n "$ANCHOR_JSON" ]; then OLD_LINES=0; fi
   if [ -n "$NEW_LINES" ] && [ -n "$OLD_LINES" ] && [ "$NEW_LINES" -gt "$OLD_LINES" ]; then
     CAP=$(( OLD_LINES * ${CAP_PCT:-2} / 100 ))
     RAISE=$(( NEW_LINES - OLD_LINES ))
@@ -105,7 +110,7 @@ fi
 BAD_COAUTHOR="$(printf '%s\n' "$MESSAGE" | grep -Ei '^[[:space:]]*co-authored-by:' \
   | grep -Ev '^Co-Authored-By: [^<>]+ <[^<>@ ]+@[^<> ]+>$' || true)"
 CLAUDE_MAIL="noreply@""anthropic.com"
-BAD_COAUTHOR="$BAD_COAUTHOR$(printf '%s\n' "$MESSAGE" | grep -E '^Co-Authored-By: Claude' | grep -vF "<$CLAUDE_MAIL>" || true)"
+BAD_COAUTHOR="$BAD_COAUTHOR$(printf '%s\n' "$MESSAGE" | grep -Ei '^Co-Authored-By: Claude' | grep -vF "<$CLAUDE_MAIL>" || true)"
 if [ -n "$BAD_COAUTHOR" ]; then
   echo "[commit-msg] BLOCKED: a co-author line is not in the standard form:"
   printf '%s\n' "$BAD_COAUTHOR" | sed 's/^/    /'
@@ -113,13 +118,31 @@ if [ -n "$BAD_COAUTHOR" ]; then
   exit 1
 fi
 
-# Revert and autosquash commits carry the message of work that already has a reference, and a real merge is
-# known by MERGE_HEAD, so a subject that only starts with "Merge" still passes every check.
-# The first commit of a repo has no story to name yet.
+# A revert or autosquash commit carries the message of work that already has a reference, so it is exempt
+# from the story check only when it names a commit that exists: a "fixup! X", "squash! X" or "amend! X" whose X is the subject of a
+# commit in history, and a Revert "X" whose X is one or whose body names a real commit. A merge that stages no code
+# is exempt too. A subject that only starts with "Merge" is known by MERGE_HEAD, and a repo's first commit has no story to name yet.
+names_a_commit() {
+  target="$SUBJECT"
+  while :; do
+    case "$target" in
+      "fixup! "*) target="${target#fixup! }" ;;
+      "squash! "*) target="${target#squash! }" ;;
+      "amend! "*) target="${target#amend! }" ;;
+      "Revert \""*) target="${target#Revert \"}"; target="${target%\"}"; break ;;
+      *) break ;;
+    esac
+  done
+  [ "$target" != "$SUBJECT" ] || return 1
+  git log --format=%s 2>/dev/null | grep -qxF -- "$target" && return 0
+  sha="$(printf '%s\n' "$MESSAGE" | sed -n 's/^This reverts commit \([0-9a-f]\{7,40\}\).*/\1/p' | head -1)"
+  [ -n "$sha" ] && git cat-file -e "$sha^{commit}" 2>/dev/null
+}
 case "$SUBJECT" in
-  "Revert "*|"fixup! "*|"squash! "*|"amend! "*) exit 0 ;;
+  "Revert "*|"fixup! "*|"squash! "*|"amend! "*) if names_a_commit; then EXEMPT_STORY=1; fi ;;
 esac
-if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1; then
+if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1 \
+    && [ -z "$(git diff --cached --name-only --no-renames | grep -E '\.(py|sh|js|mjs|ts|tsx)$' || true)" ]; then
   exit 0
 fi
 if ! git rev-parse -q --verify HEAD >/dev/null 2>&1; then
@@ -127,8 +150,8 @@ if ! git rev-parse -q --verify HEAD >/dev/null 2>&1; then
 fi
 
 # VOICE-1. A repo that ships docs/VOICE.md opts in to voice enforcement; every other repo skips it. A commit message follows docs/VOICE.md: no bullet that ends in a period and no contrast
-# framing ("rather than", "instead of", "not X but Y", ", not a ..."). Lines starting with # are dropped
-# by git before the hook sees the message, and a trailer such as Co-Authored-By is never a bullet.
+# framing ("rather than", "instead of", "not X but Y", ", not a ..."). With an editor git drops lines starting with #
+# before the hook sees the message, and with -m it keeps them, and a trailer such as Co-Authored-By is never a bullet.
 VOICE_BREAKS=""
 if [ -f "$(git rev-parse --show-toplevel)/docs/VOICE.md" ]; then
 VOICE_BREAKS="$(printf '%s\n' "$MESSAGE" | grep -nE '^[[:space:]]*[-*][[:space:]]+.*[^.]\.$|rather than|instead of|it is not about|[Ll]ess [^.]{1,40}, more |[Nn]ot [^.]{1,60} but |, not (a|an|the) ' || true)"
@@ -144,10 +167,10 @@ fi
 # "Story: #53" or "org/repo#53". A hex colour such as #123abc, "Fix 5#3", "&#39;" and "#0" do not count.
 TOKEN_END='([^[:alnum:]_]|$)'
 NUMBER='#0*[1-9][0-9]*'
-if ! printf '%s\n' "$MESSAGE" | grep -Eq "(^|[^[:alnum:]_/#&])${NUMBER}${TOKEN_END}|[[:alnum:]_.-]+/[[:alnum:]_.-]+${NUMBER}${TOKEN_END}"; then
+if [ -z "${EXEMPT_STORY:-}" ] && ! printf '%s\n' "$MESSAGE" | grep -Eq "(^|[^[:alnum:]_/#&])${NUMBER}${TOKEN_END}|[[:alnum:]_.-]+/[[:alnum:]_.-]+${NUMBER}${TOKEN_END}"; then
   echo "[commit-msg] BLOCKED: the commit message names no story."
   echo "  Add the story number, for example \"Fix the sync (#53)\" or a line \"Story: #53\"."
-  echo "  Merge, revert, fixup/squash commits and a repo's first commit are exempt."
+  echo "  A revert or fixup/squash commit that names an existing commit, a merge that stages no code and a repo's first commit are exempt."
   echo "  To turn the check off for a repo, the owner creates $HOOK_DIR/commit-msg.optout."
   exit 1
 fi
@@ -188,7 +211,6 @@ elif [ -r "$CONFIG_FILE" ]; then
     [ -n "$ref" ] || continue
     case "$ref" in */*) repo="${ref%%#*}" ;; *) repo="$HOME_REPO" ;; esac
     num="$(printf '%s' "${ref##*#}" | sed 's/^0*//')"
-    case "$repo" in */*) ;; *) continue ;; esac
     [ "$repo" != "/" ] || continue
     key="$repo#$num"
     if [ -r "$CACHE_FILE" ] && grep -qxF "$key" "$CACHE_FILE"; then continue; fi
