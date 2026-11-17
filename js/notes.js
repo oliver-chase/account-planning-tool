@@ -1,5 +1,5 @@
 'use strict';
-// Notes: one expandable card per call.
+// Notes: one expandable card for each saved note.
 
 const NOTES_PAGE_SIZE = 6
 let notesSearch = ''

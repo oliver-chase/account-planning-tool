@@ -51,7 +51,7 @@ function parseMoney(s) {
 // Higher seniority sorts first: chief, then SVP, VP, director, manager, everyone else.
 function titleRank(title) {
   const t = (title || '').toLowerCase()
-  if (/\b(evp|svp|executive vice president|(senior|sr\.?) vice president)\b/.test(t)) return 2
+  if (/\b(evp|svp|executive vice president|(senior|sr\.?) (vice president|vp))\b/.test(t)) return 2
   if (/\bassistant\b/.test(t)) return 6 // an assistant to an executive holds an assistant's role
   if (/\bvp\b|vice president/.test(t)) return 3
   if (/\b(ceo|cfo|cto|coo|cio|ciso|cmo|cro|president|founder|chief)\b|\bbusiness owner\b/.test(t)) return 1
@@ -88,7 +88,7 @@ let state = (() => {
   let raw = null
   try { raw = localStorage.getItem(STORAGE_KEY); return raw ? mergeStored(JSON.parse(raw)) : null } catch (e) {
     unreadableAutosave = raw
-    try { if (raw) { localStorage.setItem(STORAGE_KEY + '.corrupt', raw); unreadableAutosaveKept = true } } catch (e2) { /* storage is full or unavailable */ }
+    try { if (raw) { if (localStorage.getItem(STORAGE_KEY + '.corrupt') === null) localStorage.setItem(STORAGE_KEY + '.corrupt', raw); unreadableAutosaveKept = true } } catch (e2) { /* storage is full or unavailable */ }
     return null
   }
 })() || emptyState()

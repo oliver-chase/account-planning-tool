@@ -6,7 +6,8 @@
 .content-editable-cell{outline:none;border-radius:var(--radius-sm);cursor:text}
 .content-editable-cell:hover{background:var(--color-brand-accent-light)}
 .filter-radio-group--top-spaced{margin-top:var(--spacing-md)}
-.filter-radio-divider{font-size:var(--font-size-xs);font-weight:var(--font-weight-bold);letter-spacing:.04em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:var(--spacing-2xs)}
+.filter-radio-divider{font-size:var(--font-size-xs);font-weight:var(--font-weight-bold);letter-spacing:var(--letter-spacing-caps);text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:var(--spacing-2xs)}
+[hidden]{display:none !important}
 .app-sidebar-item[disabled]{opacity:.5;cursor:default}
 #file-actions-bar{display:flex;flex-direction:column;gap:var(--spacing-2xs)}
 #file-actions-bar button{background:none;border:none;font:inherit;text-align:left}
@@ -65,7 +66,7 @@ body.show-start .section,body.show-start .account-header-row{display:none}
 .person-more-fields{margin-top:var(--spacing-xs);display:flex;flex-direction:column;gap:var(--spacing-2xs)}
 [contenteditable]:focus-visible,.note-card:focus-visible,.module-data-table th[tabindex]:focus-visible,.notes-search:focus-visible,.module-filter-date:focus-visible,.overview-date-input:focus-visible,.overview-interval-input:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:1px}
 #sync-text{display:inline-block;max-width:240px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
-/* Phone layout: nothing may push the page wider than the screen. Checked at 390 px and wider. */
+/* Phone layout: nothing may push the page wider than the screen. Written for 390 px and wider. */
   @media (max-width:720px){
   .topbar-search{flex:1 1 0;min-width:0}
   .module-filter-search{flex:1 1 0;min-width:0;width:auto}

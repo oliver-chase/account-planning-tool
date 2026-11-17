@@ -50,7 +50,7 @@ function computeNextMeeting(bg, notes, nowISO) {
 let overviewCadenceOpen = null
 
 let overviewHistOpen = false // module-level, so a rebuild from a waiting save keeps the Add historical year form open
-// excel.js's importWorkbook() calls this after loading a different account, so the open panels do not carry over.
+// excel.js's importWorkbook() and app-shell.js call this after loading a different account, so the open panels do not carry over.
 function resetOverviewCadenceUI() { overviewCadenceOpen = null; overviewHistOpen = false }
 
 // Patches one year's revenue from the stored record, so an edit from an older render never undoes another.
@@ -297,7 +297,7 @@ function renderRevenueChart(bg, container, onSave) {
   const chartW = Math.max(W, ML + years.length * colW)
   const chartH = H - BP
   const yScale = v => chartH - Math.round((v / maxVal) * chartH)
-  const axisLabel = v => v >= 1000000 ? '$' + (v / 1000000).toFixed(v % 1000000 === 0 ? 0 : 1) + 'M' : v >= 1000 ? '$' + (v / 1000).toFixed(0) + 'k' : '$' + Math.round(v)
+  const axisLabel = v => v >= 999500 ? '$' + (v / 1000000).toFixed(v % 1000000 === 0 ? 0 : 1) + 'M' : v >= 1000 ? '$' + (v / 1000).toFixed(0) + 'k' : '$' + Math.round(v)
   const svg = svgEl('svg', { width: chartW, height: H })
   svg.setAttribute('class', 'overview-chart-svg')
   const ticks = 4

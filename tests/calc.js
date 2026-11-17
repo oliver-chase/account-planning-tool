@@ -61,10 +61,15 @@ assert.deepStrictEqual(JSON.parse(JSON.stringify(state.background.revenue['2026'
 assert.deepStrictEqual(getTeamNames({ account_director: 'Smith, John', account_manager: '', account_team: 'Ann; Bo' }), ['Smith John', 'Ann', 'Bo'])
 assert.deepStrictEqual(removeTeamMember({ account_director: 'Smith, John', account_manager: '', account_team: '' }, 'Smith John'), { account_director: '' })
 assert.strictEqual(titleRank('Executive Assistant to the CEO'), 6)
+assert.strictEqual(titleRank('Senior VP, Sales'), 2)
+assert.deepStrictEqual(removeTeamMember({ account_director: '', account_manager: '', account_team: 'Ann; Bo; Cy' }, 'Bo'), { account_team: 'Ann; Cy' })
 // A person cannot report to themselves, and saving a record that was removed marks nothing unsaved.
 function showToast() {}
 state.stakeholders = [{ id: 'x', reports_to: '' }]
 assert.strictEqual(reportsToCycle('x', 'x'), true)
+state.stakeholders = [{ id: 'a', reports_to: 'b' }, { id: 'b', reports_to: 'c' }, { id: 'c', reports_to: '' }]
+assert.strictEqual(reportsToCycle('a', 'c'), true, 'making c report to a would close the chain')
+assert.strictEqual(reportsToCycle('c', 'a'), false)
 const before = changeCount; saveRecord('actions', { id: 'gone' }); assert.strictEqual(changeCount, before)
 
 // An action's age counts calendar days, also across the day a clock change makes 23 or 25 hours long.

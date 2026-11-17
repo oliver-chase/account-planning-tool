@@ -19,7 +19,7 @@ assert.deepStrictEqual(hits, [], 'a screen writes a hex color; use a token from 
 const looseLook = /'font-(size|style)'|z-index:\s*\d{3,}/
 const loose = [...screens, ...fs.readdirSync(path.join(root, 'css')).map(f => 'css/' + f)].flatMap(f => read(f).split('\n').map((line, i) => looseLook.test(line) ? f + ':' + (i + 1) : null).filter(Boolean))
 assert.deepStrictEqual(loose, [], 'a script sets a font, or a style sheet writes a literal z-index; use a class or a --z- token: ' + loose.join(', '))
-const staticStyle = /\.style\.(cssText|display|cursor|position|opacity|whiteSpace|fontStyle|color|maxWidth)\b/
+const staticStyle = /\.style\.(cssText|display|cursor|position|opacity|whiteSpace|fontStyle|fontSize|zIndex|color|maxWidth)\b/
 const styled = screens.flatMap(f => read(f).split('\n').map((line, i) => staticStyle.test(line) ? f + ':' + (i + 1) : null).filter(Boolean))
 assert.deepStrictEqual(styled, [], 'a script sets a fixed style; move it to a class in css/: ' + styled.join(', '))
 

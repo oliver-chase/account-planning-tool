@@ -1,5 +1,5 @@
 'use strict';
-// Call summary: the last call's note, open actions by owner with due dates, and what was
+// Call summary: the plan, the last call's note, open actions by owner with due dates, and what was
 // finished this week. Shown as text to paste into an email, and as a page to download.
 
 function callSummaryData() {
@@ -8,14 +8,15 @@ function callSummaryData() {
   const note = [...state.notes].sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0] || null
   const groups = Object.create(null) // an owner can be named constructor
   state.actions.filter(a => a.status === 'Open' || a.status === 'In Progress').forEach(a => {
-    const owner = (a.owner || '').trim() || 'No owner'
+    const owner = (a.owner || '').trim() // '' keeps unowned actions apart from an owner who is named "No owner"
     ;(groups[owner] = groups[owner] || []).push({ text: a.description, due: a.due_date || '', overdue: isPastDue(a, t) })
   })
-  const owners = Object.keys(groups).filter(o => o !== 'No owner').sort((a, b) => a.localeCompare(b))
-  if (groups['No owner']) owners.push('No owner')
+  const owners = Object.keys(groups).filter(Boolean).sort((a, b) => a.localeCompare(b))
+  if (groups['']) owners.push('')
   owners.forEach(o => groups[o].sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999')))
   const done = state.actions.filter(a => a.status === 'Done' && a.closed_date && a.closed_date > weekAgo).map(a => a.description)
   const plan = currentPlan() || {}
+  // Last reviewed stays out: the call needs what is planned, and the next review date says when it is looked at again.
   const nextReview = PLAN_HEADER_DATE_FIELDS.find(f => f[0] === 'next_review_at')
   const planRows = [...PLAN_HEADER_TEXT_FIELDS, nextReview].map(([k, label]) => [label, k === nextReview[0] && plan[k] ? fmtDate(String(plan[k]).slice(0, 10)) : plan[k]]).filter(r => r[1])
   return { today: t, name: state.account.account_name || 'Account', note, owners, groups, done, planRows }
@@ -32,7 +33,7 @@ function callSummarySections(d) {
     sections.push({ title: 'Last call', lead: [fmtDate(n.date), n.title].filter(Boolean).join(' — '),
       meta: (n.attendees || []).length ? 'Attendees: ' + n.attendees.join(', ') : '', body: n.body || '' })
   }
-  sections.push({ title: 'Open actions', empty: !d.owners.length, groups: d.owners.map(o => [o, d.groups[o]]) })
+  sections.push({ title: 'Open actions', empty: !d.owners.length, groups: d.owners.map(o => [o || 'No owner', d.groups[o]]) })
   if (d.done.length) sections.push({ title: 'Finished this week', items: d.done })
   return sections
 }

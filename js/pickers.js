@@ -41,7 +41,7 @@ function openPopover(anchor, buildContent) {
   try {
     buildContent(pop, closeOpenPopover)
   } catch (e) {
-    pop.remove()
+    pop.remove(); anchor.setAttribute('aria-expanded', 'false')
     throw e
   }
   // The click that opened this popover has already fired its mousedown, so this listener only sees later
@@ -151,9 +151,10 @@ function openRosterModal(bg, onRemove) {
     bodyBuilder: body => {
       const names = getTeamNames(bg)
       const row = el('div', 'overview-chip-row', null)
-      if (!names.length) row.appendChild(el('span', 'overview-empty-italic', 'No team members yet.'))
+      const emptyNote = el('span', 'overview-empty-italic', 'No team members yet.')
+      if (!names.length) row.appendChild(emptyNote)
       names.forEach(n => {
-        const chip = appChip(n, () => { onRemove(n); chip.remove() })
+        const chip = appChip(n, () => { onRemove(n); chip.remove(); if (!row.children.length) row.appendChild(emptyNote) })
         row.appendChild(chip)
       })
       body.appendChild(row)

@@ -66,7 +66,7 @@ function filteredPeople() {
   if (peopleFilters.incomplete) people = people.filter(s => !s.department || !s.primary_owner || !s.secondary_owner)
   if (peopleFilters.ownerFilter) people = people.filter(s => s.primary_owner === peopleFilters.ownerFilter || s.secondary_owner === peopleFilters.ownerFilter)
   people.sort((a, b) => {
-    if (peopleSort === 'department') return (a.department || '').localeCompare(b.department || '')
+    if (peopleSort === 'department') return (a.department || '').localeCompare(b.department || '') || (a.name || '').localeCompare(b.name || '')
     if (peopleSort === 'seniority') return titleRank(a.title) - titleRank(b.title) || (a.name || '').localeCompare(b.name || '')
     return (a.name || '').localeCompare(b.name || '')
   })

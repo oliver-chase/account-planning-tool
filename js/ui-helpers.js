@@ -129,7 +129,7 @@ function renderKeepingFocus(rootId, body) {
   const after = document.getElementById(rootId)
   if (!after) return
   let n = key ? after.querySelector('[data-fk="' + key.replace(/(["\\])/g, '\\$1') + '"]') : index >= 0 ? after.querySelectorAll(FOCUSABLE)[index] : null
-  if (n && n.disabled) n = after.querySelector('[data-fk^="pg-"]:not(:disabled)') // a pager button that just disabled itself
+  if (n && n.disabled) n = ['Previous', 'Next', ''].map(k => after.querySelector('[data-fk^="pg-' + k + '"]:not(:disabled)')).find(Boolean) // a pager button that just disabled itself
   if (!n || !n.focus) return
   if (live !== null && n.isContentEditable && (n.innerText !== undefined ? n.innerText : n.textContent) !== live) {
     n.textContent = live
@@ -183,10 +183,8 @@ async function copyToClipboard(text) {
   try {
     const ta = document.createElement('textarea')
     ta.value = text; ta.setAttribute('readonly', 'true'); ta.className = 'clipboard-scratch'
-    document.body.appendChild(ta); ta.focus(); ta.select()
-    const ok = document.execCommand('copy')
-    document.body.removeChild(ta)
-    return ok
+    document.body.appendChild(ta)
+    try { ta.focus(); ta.select(); return document.execCommand('copy') } finally { ta.remove() }
   } catch (e) { return false }
 }
 

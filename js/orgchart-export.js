@@ -43,7 +43,7 @@ function downloadOrgChart() {
     host.appendChild(outer)
     drawOrgLines(outer, tree)
     chartHtml = outer.outerHTML
-  } finally { document.body.removeChild(host) }
+  } catch (e) { showToast('Could not build the org chart'); return } finally { document.body.removeChild(host) }
 
   const acctName = state.account.account_name || 'Account'
   const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + escHtml(acctName) + ' Org Chart</title><style>' + ORG_EXPORT_CSS +

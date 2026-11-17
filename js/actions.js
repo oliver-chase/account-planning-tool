@@ -92,7 +92,7 @@ function renderActionsBody() {
   const tbody = el('tbody', null, null)
 
   if (actionsAdding) tbody.appendChild(makeInlineActionRow())
-  if (!actions.length && !actionsAdding) { const tr = el('tr', null, null); const td = el('td', null, null); td.colSpan = 6; td.appendChild(emptyResultsBox(!state.actions.length ? 'No actions yet. Click Add action to start.' : actionsStatusFilter === 'open-progress' ? 'No open actions. Finished actions show under All statuses.' : 'No results')); tr.appendChild(td); tbody.appendChild(tr) }
+  if (!actions.length && !actionsAdding) { const tr = el('tr', null, null); const td = el('td', null, null); td.colSpan = 6; td.appendChild(emptyResultsBox(!state.actions.length ? 'No actions yet. Click Add action to start.' : globalFilterSearch ? 'No results' : actionsStatusFilter === 'open-progress' ? 'No open actions. Finished actions show under All statuses.' : 'No results')); tr.appendChild(td); tbody.appendChild(tr) }
   actions.forEach(a => tbody.appendChild(makeActionRow(a)))
   table.appendChild(tbody)
   tableWrap.appendChild(table)
