@@ -33,6 +33,7 @@ function savePerson(p) {
   const title = document.querySelector('#org-person-panel[data-person-id="' + p.id + '"] .person-detail-title')
   if (title) title.textContent = p.name || 'Person'
   saveRecord('stakeholders', p)
+  refreshPersonPanel(p.id)
 }
 function deletePerson(p) {
   state.stakeholders = state.stakeholders.filter(x => x.id !== p.id)
@@ -301,11 +302,14 @@ function makeInlinePersonCard() {
 }
 
 // ---- Person detail side panel ----
-// The side panel holds its own copy of the card, so More fields rebuilds it.
+// The side panel holds its own copy of the card, so a save or More fields rebuilds it and keeps the focus.
 function refreshPersonPanel(id) {
-  const content = document.querySelector('#org-person-panel .person-detail-content')
+  const panel = document.getElementById('org-person-panel')
   const p = personById(id)
-  if (content && p) { content.innerHTML = ''; content.appendChild(makePersonCard(p)) }
+  if (panel && p && panel.dataset.personId === id) renderKeepingFocus('org-person-panel', () => {
+    const content = panel.querySelector('.person-detail-content')
+    content.innerHTML = ''; content.appendChild(makePersonCard(p))
+  })
 }
 
 let personPanelOnKey = null

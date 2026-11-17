@@ -61,7 +61,8 @@ function openPopover(anchor, buildContent) {
   document.addEventListener('keydown', onKey)
   openPopoverState = { el: pop, anchor, cleanup: () => { document.removeEventListener('mousedown', onDocMouseDown); document.removeEventListener('keydown', onKey); anchor.setAttribute('aria-expanded', 'false') } }
   const search = pop.querySelector('.app-popover-search')
-  if (search) search.focus()
+  const first = search || pop.querySelector('.selected[tabindex]') || pop.querySelector('[tabindex]') // a list with no search box takes focus on its selected or first row
+  if (first) first.focus()
 }
 
 // "+ Add new…" turns into a text input in place: Enter submits, Escape or blur cancels.

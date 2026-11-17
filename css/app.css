@@ -94,7 +94,6 @@ label.card-meta-label{cursor:pointer}
 }
 @media (max-width:720px){
   .module-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:auto}
-  .module-data-table{font-size:var(--font-size-xs)}
   .module-data-table td{white-space:nowrap}
   .module-filter-search{flex-shrink:1}
   .module-filter-date{width:auto !important;flex:1 1 120px !important}

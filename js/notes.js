@@ -129,10 +129,12 @@ function makeNoteCard(note) {
   attSection.appendChild(el('div', 'bullet-heading', 'Attendees'))
   const attRow = el('div', null, null)
   function renderAttendees() {
+    const hadFocus = attRow.contains(document.activeElement)
     attRow.innerHTML = ''
     attRow.appendChild(multiPicker(() => allKnownNames(state.background), note.attendees || [], next => {
       saveNote({ ...currentNote(note), attendees: next }); note.attendees = next; renderAttendees()
     }, 'Add attendee'))
+    if (hadFocus) attRow.querySelector('.popover-trigger').focus()
   }
   renderAttendees()
   attSection.appendChild(attRow)

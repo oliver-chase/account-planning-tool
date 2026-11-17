@@ -3,7 +3,7 @@
 // saves it as a standalone HTML page.
 
 const ORG_EXPORT_CSS = `
-:root{--color-brand-primary:${BRAND.primary};--color-brand-accent:${BRAND.accent};--color-text-primary:#1a1a1a;
+:root{--color-brand-primary:${BRAND.primary};--color-text-primary:#1a1a1a;
 --color-text-secondary:#4a4a4e;--color-border:#e0e0e2;--color-bg-page:#f5f5f6;--color-bg-card:#fff;
 --font-family-base:${BRAND.fontFamily};--radius-lg:12px;--org-node-w:220px;
 --org-node-h-min:96px}

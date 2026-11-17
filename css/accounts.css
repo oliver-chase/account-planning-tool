@@ -161,8 +161,8 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
 .card-notes-popup{position:absolute;left:0;right:0;top:100%;min-height:var(--notes-popup-min-h)}
 .pagination-row{display:flex;align-items:center;justify-content:center;gap:var(--spacing-6);margin-top:var(--spacing-md)}
 .pagination-label{font-size:var(--font-size-sm);color:var(--color-text-secondary);margin:0 var(--spacing-sm)}
-.action-cell{padding:var(--spacing-12) var(--spacing-14);vertical-align:middle;line-height:var(--line-height-compact)}
-.action-cell-compact{width:40px;text-align:center;padding:var(--spacing-xs);vertical-align:middle}
+.action-cell{vertical-align:middle;line-height:var(--line-height-compact)}
+.action-cell-compact{width:40px;text-align:center;vertical-align:middle}
 .action-cell-delete-btn{display:inline-flex;align-items:center;justify-content:center;position:static}
 .sidebar-backdrop{display:none;position:fixed;inset:0;background:var(--color-modal-overlay);z-index:calc(var(--z-sidebar) - 1);opacity:0;transition:opacity var(--transition-base);pointer-events:none}
 
