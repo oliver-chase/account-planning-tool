@@ -19,7 +19,7 @@ function actionMatchesFilter(a, filter, t) {
   return a.status === filter
 }
 
-function dayAge(dateStr) { if (!dateStr) return 0; return Math.round((Date.now() - new Date(dateStr + 'T00:00:00').getTime()) / 86400000) }
+function dayAge(dateStr) { if (!dateStr) return 0; return Math.floor((Date.now() - new Date(dateStr + 'T00:00:00').getTime()) / 86400000) }
 function actionStatusBadgeClass(s) { if (s === 'Done') return 'app-badge-complete'; if (s === 'In Progress') return 'app-badge-progress'; return 'app-badge-open' }
 
 // Edits read the stored record, so two saves close together both keep their change.

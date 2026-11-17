@@ -23,6 +23,7 @@ assert.strictEqual(isBlankAccount(state), false)
 
 // The sample opens as a populated account with a chart, overdue and upcoming actions, and a note.
 markSynced() // nothing unsaved, so the sample loads without asking
+rememberFileStamp(12345)
 state = emptyState()
 loadSampleAccount()
 assert.strictEqual(state.account.account_name, 'Northwind Example')
@@ -36,6 +37,14 @@ assert.ok(state.actions.some(a => a.due_date < today()) && state.actions.some(a 
 assert.ok(state.notes.length >= 1)
 assert.strictEqual(state.plans[0].objective, 'Move from one pilot site to all four regions')
 assert.strictEqual(unsavedEdits, false)
+assert.strictEqual(fileStamp(), '', 'the sample drops the remembered Excel file stamp')
+
+// Update Excel names an Overview row added by hand, which the rewrite would drop.
+const oldWb = starterWorkbook(false)
+oldWb.Sheets.Overview = XLSX.utils.aoa_to_sheet([['Field', 'Value'], ['Account Name', 'Acme'], ['Renewal date', 'June']])
+const bytes = XLSX.write(oldWb, { type: 'array', bookType: 'xlsx' })
+contentUpdateWouldRemove({ getFile: async () => ({ arrayBuffer: async () => bytes }) }, buildWorkbook())
+  .then(lost => assert.ok(lost.includes('the Overview row Renewal date'), 'a hand-added Overview row is named'))
 
 // The blank workbook has the right sheets and headers, and importing it leaves a blank account.
 const blank = starterWorkbook(false)

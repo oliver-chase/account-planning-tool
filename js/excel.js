@@ -258,6 +258,10 @@ async function contentUpdateWouldRemove(handle, wb) {
       // A sheet this tool owns but left out holds nothing on screen, so its rows were deleted here on purpose.
       if (!wb.SheetNames.includes(name)) { if (!SHEET_BASES.includes(name) && rows[0] && rows[0].some((h, c) => hasData(c))) lost.push('the sheet ' + name); return }
       const keeps = (XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1 })[0] || []).map(String)
+      if (name === 'Overview') { // rows added by hand are not rewritten
+        const kept = (XLSX.utils.sheet_to_json(wb.Sheets.Overview, { header: 1 })).map(r => String(r[0]))
+        rows.slice(1).forEach(r => { if (r[0] && String(r[1] == null ? '' : r[1]).trim() && !kept.includes(String(r[0]))) lost.push('the Overview row ' + r[0]) })
+      }
       ;(rows[0] || []).forEach((h, c) => { if (h && !keeps.includes(String(h)) && hasData(c)) lost.push('the column ' + h + ' on ' + name) })
     })
     return lost
@@ -367,7 +371,7 @@ async function withHandleStore(mode, run) {
     const tx = db.transaction(HANDLE_STORE, mode)
     const req = run(tx.objectStore(HANDLE_STORE))
     tx.oncomplete = () => resolve(req.result)
-    tx.onerror = () => reject(tx.error)
+    tx.onerror = tx.onabort = () => reject(tx.error)
   })
 }
 

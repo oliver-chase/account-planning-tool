@@ -212,7 +212,7 @@ function buildOrgChartOuter(staticMode) {
       zone.appendChild(nodesWrap)
     }
     if (!staticMode) {
-        zone.addEventListener('dragover', e => { if (e.target.closest('.org-node-card')) return; e.preventDefault(); zone.classList.add('is-hover'); e.dataTransfer.dropEffect = 'move' })
+      zone.addEventListener('dragover', e => { if (e.target.closest('.org-node-card')) return; e.preventDefault(); zone.classList.add('is-hover'); e.dataTransfer.dropEffect = 'move' })
       zone.addEventListener('dragleave', e => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('is-hover') })
       zone.addEventListener('drop', e => {
         if (e.target.closest('.org-node-card')) return

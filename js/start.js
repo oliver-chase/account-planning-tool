@@ -59,7 +59,7 @@ function startNewAccount(name, personName, personTitle) {
 }
 
 function loadSampleAccount() {
-  const load = () => { importWorkbook(starterWorkbook(true), 'sample-account.xlsx'); fileHandle = null }
+  const load = () => { importWorkbook(starterWorkbook(true), 'sample-account.xlsx'); fileHandle = null; rememberFileStamp(''); forgetPersistedFileHandle() }
   if (!unsavedEdits) { load(); return }
   return confirmReplaceUnsavedEdits('The sample account').then(ok => { if (ok) load() })
 }

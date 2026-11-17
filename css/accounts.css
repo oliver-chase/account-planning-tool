@@ -33,19 +33,17 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
 .note-card{transition:border-color var(--transition-fast)}
 .person-card:hover{border-color:var(--border2);box-shadow:var(--shadow-card)}
 .note-card:hover{border-color:var(--border2)}
-.person-card[draggable="true"]{cursor:grab}
 .person-card-top{display:flex;align-items:flex-start;gap:var(--spacing-10)}
 .person-card-info{flex:1;min-width:0}
 .person-card .name,.note-title{font-weight:var(--font-weight-semibold);color:var(--color-text-primary);line-height:var(--line-height-tight);overflow-wrap:anywhere}
 .person-card .name{font-size:var(--font-size-base)}
 .note-title{font-size:var(--font-size-sm);margin-top:var(--spacing-xs)}
 .person-owners-block{display:flex;flex-direction:column;gap:0}
-.person-card-body{overflow:hidden;max-height:200px;margin-top:var(--spacing-md)}
+.person-card-body{margin-top:var(--spacing-md)}
 .person-card .card-meta-row{margin-top:0;margin-bottom:var(--spacing-2xs)}
 .person-owners-block .card-meta-row:last-child{margin-bottom:0}
 .card-owner-btn{display:inline-flex;align-items:center;border:none;background:var(--chip-bg);color:var(--color-brand-primary);font-size:var(--font-size-xs);font-weight:var(--font-weight-medium);padding:var(--chip-padding-y) var(--spacing-sm);border-radius:var(--radius-pill);line-height:var(--line-height-tight);cursor:pointer;text-align:left;font-family:var(--font-family-base)}
 .person-card-body .card-section-label{margin-top:var(--spacing-md)}
-.person-card-body.expanded{max-height:none}
 .account-card-remove-btn{position:absolute;bottom:var(--spacing-10);right:var(--spacing-10);width:var(--spacing-20);height:var(--spacing-20);border-radius:var(--radius-sm);background:none;color:var(--color-text-placeholder);font-size:var(--font-size-base);display:none;align-items:center;justify-content:center;cursor:pointer;border:none;font-family:var(--font-family-base);line-height:1}
 .account-card-remove-btn:hover{background:var(--color-sentiment-detractor-bg);color:var(--color-sentiment-detractor)}
 .account-card-remove-btn:focus-visible{outline:2px solid var(--color-border-focus);outline-offset:1px;display:flex}
@@ -82,8 +80,8 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
 .org-zone2-drop.is-hover{border-color:var(--color-brand-accent)}
 .org-dept-label{font-size:var(--font-size-xs);font-weight:700;color:var(--color-brand-primary);margin:var(--spacing-xs) 0 var(--spacing-2xs);letter-spacing:.05em;text-transform:uppercase}
 .org-node-header-row{display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-10) var(--spacing-12) var(--spacing-6) var(--spacing-12);min-width:0}
-.person-card.dragging,.org-node-card.dragging{opacity:.4;border-style:dashed}
-.person-card.drop-target,.org-node-card.drop-target{border-color:var(--color-brand-accent);box-shadow:0 0 0 2px var(--color-pink-overlay);background:var(--color-brand-accent-light)}
+.org-node-card.dragging{opacity:.4;border-style:dashed}
+.org-node-card.drop-target{border-color:var(--color-brand-accent);box-shadow:0 0 0 2px var(--color-pink-overlay);background:var(--color-brand-accent-light)}
 .app-view-toggle{border:none;gap:var(--spacing-xs)}
 .app-view-toggle-btn{font-family:var(--font-family-base);font-size:var(--font-size-sm);padding:var(--spacing-xs) var(--spacing-12);border:1px solid var(--color-border);border-radius:var(--radius-pill-lg);background:var(--color-bg-card);color:var(--color-text-secondary);cursor:pointer;font-weight:normal}
 .app-view-toggle-btn.active{background:var(--color-brand-primary);color:var(--color-white);border-color:var(--color-brand-primary);font-weight:normal}

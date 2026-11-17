@@ -154,6 +154,7 @@ function editable(tag, className, value, placeholder, onSave, opts) {
   const node = el(tag, className + (opts.multiline ? ' editable-multiline' : ''), null)
   node.setAttribute('contenteditable', 'true') // the attribute, so selectors and test DOMs see it too
   node.setAttribute('role', 'textbox')
+  if (opts.multiline) node.setAttribute('aria-multiline', 'true')
   // An empty field has no text to read, so fall back to its placeholder as the name.
   const accName = opts.ariaLabel || (placeholder || '').replace(/[….]+$/, '').replace(/^e\.g\. /, '')
   if (accName) node.setAttribute('aria-label', accName)

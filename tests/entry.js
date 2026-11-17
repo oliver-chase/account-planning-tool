@@ -1,7 +1,7 @@
 'use strict'
 // Editing fields keep line breaks and ignore an unchanged blur, labels are text, Delete offers one Undo,
-// and loops in the org chart are cut.
-// A clickable element made with makeActivatable opens on Enter and Space, and ignores keys pressed inside it.
+// loops in the org chart are cut, and a clickable element made with makeActivatable opens on Enter and Space
+// and ignores keys pressed inside it.
 // Run: node tests/entry.js
 const fs = require('fs'), path = require('path'), vm = require('vm'), assert = require('assert')
 const root = path.join(__dirname, '..')

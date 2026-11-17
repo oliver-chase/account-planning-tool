@@ -94,7 +94,7 @@ function renderPeopleBody() {
   const filterWrap = el('div', 'people-filter-wrapper', null)
   const filtersOn = peopleFilters.exec || peopleFilters.incomplete || !!peopleFilters.ownerFilter
   const filterBtn = buttonEl('module-filter-chip' + (filtersOn ? ' on' : ''), 'Filters', () => { peopleFilterPanelOpen = !peopleFilterPanelOpen; renderPeople() })
-  filterBtn.dataset.fk = 'filters'
+  filterBtn.dataset.fk = 'filters'; filterBtn.setAttribute('aria-expanded', String(peopleFilterPanelOpen))
   filterWrap.appendChild(filterBtn)
   if (peopleFilterPanelOpen) {
     const pop = el('div', 'app-popover people-filter-panel', null)
