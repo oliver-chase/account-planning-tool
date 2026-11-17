@@ -137,6 +137,16 @@ function queuedSaver(ms) {
   const queue = fn => { cancel(); run = () => { cancel(); fn() }; pendingEditSaves.add(run); timer = setTimeout(run, ms) }
   return { queue, cancel, pending: () => pendingEditSaves.has(run) }
 }
+// The columns of each sheet, shared by the export and the starter workbook. Import reads columns by name.
+// ReportsTo is the name people edit; ReportsToID tells two people with one name apart (see parseStateFromRows).
+const SHEET_HEADERS = {
+  People: ['ID', 'Name', 'Title', 'Department', 'Organization', 'IsExecutive', 'Sentiment', 'WorkerType', 'PrimaryOwner', 'SecondaryOwner', 'ReportsTo', 'ReportsToID', 'Engagement', 'Notes'],
+  Actions: ['ID', 'Description', 'Owner', 'Engagement', 'Status', 'DueDate', 'ClosedDate', 'CreatedDate'],
+  Notes: ['ID', 'Date', 'Type', 'Title', 'Attendees', 'Body', 'TranscriptLink', 'CreatedDate'],
+  Plans: ['ID', 'Year', 'Objective', 'RevenueTarget', 'Strategy', 'RisksSummary', 'LastReviewedAt', 'NextReviewAt'],
+}
+// One sheet row from an object keyed by column name.
+const sheetRow = (sheet, values) => SHEET_HEADERS[sheet].map(h => values[h] || '')
 // Stamps a record, puts it back in state[listKey] by id and saves.
 function saveRecord(listKey, rec) {
   rec.last_updated = today()

@@ -6,7 +6,7 @@ Audit findings that were reviewed and not changed, each with its reason.
 |---|---|
 | `export.js` and `filterbar.js` merged into `app-shell.js` | Each has one job and one test or caller. Merging moves code without removing any. |
 | One grey token for the SVG icons | The search, sort and popover icons are data URIs that cannot read a custom property, and the greys differ slightly by design. |
-| Undo for deleting notes and people | The owner decided that notes and people ask for confirmation instead of offering Undo, and the confirmation starts on Cancel. Notes and people carry linked data that an Undo would have to restore. |
+| Undo for deleting notes and people | The owner decided that notes and people are removed only after a confirmation that starts on Cancel, with no Undo. Notes and people carry linked data that an Undo would have to restore. |
 | Moving a card with the keyboard has a visible hint and a picked outline, no Move button | The hint line and outline cover the path; a button per card adds visual noise. |
 | Reviewing `ORG_EXPORT_CSS` against `accounts.css` | A standalone page needs its own CSS, and the export test checks the output exists and is static. |
 | Note cards carry the group role, with no button role or `aria-expanded` | A card holds editable fields, so a button role would nest interactive controls inside a button. The group's accessible name says collapsed or expanded instead. |
