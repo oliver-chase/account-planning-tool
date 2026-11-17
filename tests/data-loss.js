@@ -100,6 +100,13 @@ const src = ['js/state.js', 'js/excel.js'].map(f => fs.readFileSync(path.join(ro
   fileHandle = { createWritable: async () => ({ write: async () => {}, close: async () => {} }) }
   await updateExcel()
   assert.ok(ranFirst, 'a waiting save runs before the workbook is built')
+  // A field's second edit replaces its first waiting save, and a flush runs only the newer one, once.
+  const saves = [], saver = queuedSaver(10000)
+  saver.queue(() => saves.push('first')); saver.queue(() => saves.push('second'))
+  assert.strictEqual(pendingEditSaves.size, 1, 'one waiting save per field')
+  flushPendingSaves(); flushPendingSaves()
+  assert.deepStrictEqual(saves, ['second'])
+  assert.strictEqual(saver.pending(), false)
   // A save still waiting from the previous account lands before a new file replaces the state,
   // so it is asked about and never written into the account that opens next.
   markSynced()

@@ -153,19 +153,15 @@ function editable(tag, className, value, placeholder, onSave, opts) {
   if (accName) node.setAttribute('aria-label', accName)
   if (placeholder) { node.setAttribute('data-placeholder', placeholder); node.setAttribute('aria-placeholder', placeholder) }
   node.textContent = value || ''
-  let timer = null, pending = null
+  const saver = queuedSaver(300)
   node.addEventListener('blur', () => {
     // innerText keeps the line breaks typed with Enter; textContent drops them.
     const v = String(opts.multiline && node.innerText != null ? node.innerText : node.textContent).trim()
     if (!v && opts.revertOnEmpty) { node.textContent = value || ''; return }
     // Clicking into a field and out again changes nothing. New-item cards opt out, because
     // an empty blur is how they decide to discard themselves.
-    if (!opts.alwaysSave && v === (value || '').trim()) { clearTimeout(timer); pendingEditSaves.delete(pending); return } // an earlier blur's queued save no longer applies
-    clearTimeout(timer)
-    pendingEditSaves.delete(pending)
-    pending = () => { clearTimeout(timer); pendingEditSaves.delete(pending); onSave(v) }
-    pendingEditSaves.add(pending)
-    timer = setTimeout(pending, 300)
+    if (!opts.alwaysSave && v === (value || '').trim()) { saver.cancel(); return } // an earlier blur's queued save no longer applies
+    saver.queue(() => onSave(v))
   })
   node.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !opts.multiline) { e.preventDefault(); node.blur() }

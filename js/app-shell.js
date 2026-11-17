@@ -35,14 +35,9 @@ function wireAccountHeader() {
   const companyEl = document.getElementById('account-client-company')
   // Header fields save after a short pause, and Update Excel and closing the page run a waiting save first.
   const headerSaver = field => {
-    let timer = null, run = null
-    const save = v => {
-      clearTimeout(timer); pendingEditSaves.delete(run)
-      run = () => { clearTimeout(timer); pendingEditSaves.delete(run); state.account[field] = v; state.account.last_updated = today(); persist(); renderAccountHeader() }
-      pendingEditSaves.add(run)
-      timer = setTimeout(run, 300)
-    }
-    save.pending = () => pendingEditSaves.has(run)
+    const saver = queuedSaver(300)
+    const save = v => saver.queue(() => { state.account[field] = v; state.account.last_updated = today(); persist(); renderAccountHeader() })
+    save.pending = saver.pending
     return save
   }
   // The account name cannot be emptied; the company can.

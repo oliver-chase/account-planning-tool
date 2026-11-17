@@ -108,14 +108,9 @@ function renderOverviewBody() {
       intInput.type = 'number'; intInput.setAttribute('aria-label', 'Meeting interval'); intInput.min = 1; intInput.value = b.meeting_interval || '1'
       // The save waits a moment so a click on the next control lands before the section rebuilds. Update Excel
       // and closing the page run a waiting save first. Enter saves at once and keeps focus in the box.
-      let intTimer = null, intRun = null
+      const intSaver = queuedSaver(250)
       const commitInterval = () => saveBg({ meeting_interval: String(Math.max(1, parseInt(intInput.value || '1') || 1)) })
-      intInput.addEventListener('blur', () => {
-        clearTimeout(intTimer); pendingEditSaves.delete(intRun)
-        intRun = () => { clearTimeout(intTimer); pendingEditSaves.delete(intRun); commitInterval() }
-        pendingEditSaves.add(intRun)
-        intTimer = setTimeout(intRun, 250)
-      })
+      intInput.addEventListener('blur', () => intSaver.queue(commitInterval))
       intInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); commitInterval() } })
       everyRow.appendChild(intInput)
       everyRow.appendChild(el('span', 'overview-cadence-inline-text', b.meeting_frequency === 'weekly' ? 'week(s)' : b.meeting_frequency === 'monthly' ? 'month(s)' : 'quarter(s)'))

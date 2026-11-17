@@ -125,10 +125,17 @@ function writeLocalNow() {
   } catch (e) { setSyncState('error', 'Local save failed') }
 }
 
-// Saves queued by editable() and the header fields that have not run yet, so Update Excel and closing
+// Saves queued through queuedSaver() that have not run yet, so Update Excel and closing
 // the page can run them first.
 const pendingEditSaves = new Set()
 function flushPendingSaves() { [...pendingEditSaves].forEach(run => run()) }
+// One field's waiting save: queue(fn) replaces the save still waiting and runs fn after ms, unless a flush runs it first.
+function queuedSaver(ms) {
+  let timer = null, run = null
+  const cancel = () => { clearTimeout(timer); pendingEditSaves.delete(run) }
+  const queue = fn => { cancel(); run = () => { cancel(); fn() }; pendingEditSaves.add(run); timer = setTimeout(run, ms) }
+  return { queue, cancel, pending: () => pendingEditSaves.has(run) }
+}
 let persistTimer = null
 let changeCount = 0 // counts persist() calls so a save can tell whether anything changed while it ran
 function persist() {
