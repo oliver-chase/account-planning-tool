@@ -15,6 +15,10 @@ for (const f of screens) read(f).split('\n').forEach((line, i) => { if (hex.test
 assert.deepStrictEqual(hits, [], 'a screen writes a hex color; use a token from css/tokens.css:\n' + hits.join('\n'))
 
 // Fixed looks live in the styles. A script sets a style only for a value it computes: a position, a size, a transform or a data color.
+// Fonts, sizes and the z-index scale also live in the styles.
+const looseLook = /'font-(size|style)'|z-index:\s*\d{3,}/
+const loose = [...screens, ...fs.readdirSync(path.join(root, 'css')).map(f => 'css/' + f)].flatMap(f => read(f).split('\n').map((line, i) => looseLook.test(line) ? f + ':' + (i + 1) : null).filter(Boolean))
+assert.deepStrictEqual(loose, [], 'a script sets a font, or a style sheet writes a literal z-index; use a class or a --z- token: ' + loose.join(', '))
 const staticStyle = /\.style\.(cssText|display|cursor|position|opacity|whiteSpace|fontStyle|color|maxWidth)\b/
 const styled = screens.flatMap(f => read(f).split('\n').map((line, i) => staticStyle.test(line) ? f + ':' + (i + 1) : null).filter(Boolean))
 assert.deepStrictEqual(styled, [], 'a script sets a fixed style; move it to a class in css/: ' + styled.join(', '))
@@ -22,7 +26,8 @@ assert.deepStrictEqual(styled, [], 'a script sets a fixed style; move it to a cl
 // Every var(--name) in the styles and scripts has a definition.
 const all = [...fs.readdirSync(path.join(__dirname, '..', 'css')).map(f => 'css/' + f), ...fs.readdirSync(path.join(__dirname, '..', 'js')).filter(f => !/xlsx/.test(f)).map(f => 'js/' + f), 'index.html']
 const text = all.map(read).join('\n')
-const defined = new Set([...text.matchAll(/(--[a-z0-9-]+)\s*:/g)].map(m => m[1]))
+const cssText = all.filter(f => f.endsWith('.css')).map(read).join('\n') // a token counts only when a style sheet defines it
+const defined = new Set([...cssText.matchAll(/(--[a-z0-9-]+)\s*:/g)].map(m => m[1]))
 const undef = [...new Set([...text.matchAll(/var\((--[a-z0-9-]+)/g)].map(m => m[1]))].filter(n => !defined.has(n))
 assert.deepStrictEqual(undef, [], 'a var() has no definition: ' + undef.join(', '))
 

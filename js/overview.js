@@ -17,15 +17,15 @@ function getSummaryText(bg) {
   return ''
 }
 
-// The next meeting is the cadence stepped forward from the last logged call, never earlier
-// than today, so an old last note still projects a future date.
+// The next meeting is the cadence stepped forward from the latest dated note (every note records a call), never
+// earlier than today, so an old last note still projects a future date.
 function computeNextMeeting(bg, notes, nowISO) {
   const freq = bg.meeting_frequency || ''
   if (!freq) return null
   const now = nowISO || today()
   const n = Math.max(1, parseInt(bg.meeting_interval || '1') || 1)
   const sorted = notes.filter(x => x.date).sort((a, b) => b.date.localeCompare(a.date))
-  // No meeting note logged yet (a brand-new account) -- anchor off today.
+  // No dated note yet (a brand-new account) -- anchor off today.
   const anchor = (sorted.length ? sorted[0].date : null) || now
   if (freq === 'weekly') {
     const step = 7 * n
@@ -280,13 +280,13 @@ function renderRevenueChart(bg, container, onSave) {
   container.setAttribute('role', 'img')
   container.setAttribute('aria-label', 'Revenue by year. ' + years.map(y => { const r = bg.revenue[y] || {}; return y + ': projected ' + (r.projected || 'none') + ', closed ' + (r.closed || 'none') }).join('. '))
   const W = container.clientWidth || 600
-  const yearLabel = (x, year, H) => svgEl('text', { x, y: H - 8, 'text-anchor': 'middle', 'font-size': 10, fill: 'var(--color-text-secondary)' }, String(year))
+  const yearLabel = (x, year, H) => svgEl('text', { x, y: H - 8, 'text-anchor': 'middle', class: 'overview-chart-year' }, String(year))
   if (!maxVal) {
     const H = 90, ML = 8, colW = Math.floor((W - ML) / Math.max(years.length, 1))
     const svg = svgEl('svg', { width: W, height: H })
     svg.setAttribute('class', 'overview-chart-svg')
     years.forEach((y, i) => svg.appendChild(yearLabel(ML + i * colW + colW / 2, y, H)))
-    svg.appendChild(svgEl('text', { x: W / 2, y: (H - 28) / 2 + 10, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--color-text-secondary)', 'font-style': 'italic' },
+    svg.appendChild(svgEl('text', { x: W / 2, y: (H - 28) / 2 + 10, 'text-anchor': 'middle', class: 'overview-chart-hint' },
       'No revenue yet. Use Add historical year to enter it.'))
     container.appendChild(svg); return
   }
@@ -304,7 +304,7 @@ function renderRevenueChart(bg, container, onSave) {
   for (let i = 0; i <= ticks; i++) {
     const v = (maxVal / ticks) * i, y = yScale(v) + 10
     svg.appendChild(svgEl('line', { x1: ML - 4, y1: y, x2: chartW, y2: y, stroke: 'var(--color-border)', 'stroke-width': 1 }))
-    svg.appendChild(svgEl('text', { x: ML - 6, y: y + 4, 'text-anchor': 'end', 'font-size': 9, fill: 'var(--color-text-secondary)' }, axisLabel(v)))
+    svg.appendChild(svgEl('text', { x: ML - 6, y: y + 4, 'text-anchor': 'end', class: 'overview-chart-axis' }, axisLabel(v)))
   }
   const tooltip = el('div', 'overview-chart-tooltip', null)
   container.appendChild(tooltip)

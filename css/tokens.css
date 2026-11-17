@@ -78,6 +78,7 @@
   --shadow-card:0 2px 8px rgba(0,0,0,.06);
   --shadow-popover:0 4px 12px rgba(0,0,0,.12);
   --shadow-modal:0 4px 20px rgba(0,0,0,.15);
+  --z-raised:10;
   --z-sidebar:50;
   --z-topbar:calc(var(--z-sidebar) - 10);
   --z-modal-backdrop:999;
@@ -111,7 +112,7 @@
   --rev-legend-size:10px;
   --interval-input-w:50px;
   --rev-input-w:110px;
-  --border2:#d4d4d7;
+  --color-border-hover:#d4d4d7;
   --shadow-sm:0 1px 2px rgba(0,0,0,.05);
   --module-main-pad-top:calc(var(--topbar-h) + var(--spacing-md) + var(--spacing-20));
   --module-main-pad-x:var(--spacing-lg);

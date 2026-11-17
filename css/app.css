@@ -49,7 +49,6 @@ label.card-meta-label{cursor:pointer}
 .app-modal-message{white-space:pre-wrap}
 .clipboard-scratch{position:fixed;opacity:0}
 .org-export-host{position:fixed;left:-99999px;top:0;width:1200px}
-.app-popover-item.active{background:var(--color-bg-hover)}
 .app-popover-float{position:fixed}
 .app-popover-clear{color:var(--color-text-secondary);font-style:italic}
 .app-popover-empty{padding:var(--spacing-xs) var(--spacing-sm);font-size:var(--font-size-xs);color:var(--color-text-secondary);font-style:italic}

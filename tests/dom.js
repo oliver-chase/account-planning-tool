@@ -49,7 +49,7 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   const inputs = [...d.querySelectorAll('.overview-hist-input')]
   check('historical year form is prefilled with the stored figures', inputs.length === 2 && inputs[0].value === '$500K' && inputs[1].value === '$300K')
   // 4. cadence summary opens from the keyboard
-  w.eval("state.background.meeting_frequency='weekly'; persist(); renderOverview()")
+  w.eval("state.background.meeting_frequency='weekly'; state.background.meeting_day=''; persist(); renderOverview()")
   const cadenceRow = () => [...d.querySelectorAll('[role="button"][aria-expanded]')].find(b => /weekly/i.test(b.textContent)); const row = cadenceRow(); assert.ok(row, 'the cadence summary is a button named by its text'); const exp0 = row.getAttribute('aria-expanded')
   row.focus(); ev(row, 'keydown', { key: 'Enter' })
   await checkSoon('cadence summary toggles with Enter', () => cadenceRow().getAttribute('aria-expanded') !== exp0)
