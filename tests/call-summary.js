@@ -23,6 +23,7 @@ state.actions = [
 state.plans = [{ id: 'p', name: 'FY27', objective: 'Win the renewal', strategy: '', revenue_target: '$1M', risks_summary: 'Budget freeze', next_review_at: '2026-12-01' }]
 const s = buildCallSummary()
 assert.ok(s.text.startsWith('Acme <Co> — call summary'), 'title first')
+assert.ok(s.text.includes('\\nPlan\\nObjective: Win the renewal'), 'the text prints the Plan heading the page prints')
 assert.ok(/Objective: Win the renewal/.test(s.text) && s.text.includes('Revenue target: $1M') && /Risks and watch items: Budget freeze/.test(s.text), 'the plan fields are in the text')
 assert.ok(!/Strategy:/.test(s.text), 'an empty plan field is left out')
 assert.ok(s.html.includes('<h2>Plan</h2>') && s.html.includes('Win the renewal'), 'and in the page')

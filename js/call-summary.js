@@ -43,7 +43,7 @@ function buildCallSummary() {
   const lines = [d.name + ' — call summary, ' + fmtDate(d.today)]
   sections.forEach(s => {
     lines.push('')
-    if (s.lead) lines.push(s.title + ': ' + s.lead); else if (!s.rows) lines.push(s.title)
+    if (s.lead) lines.push(s.title + ': ' + s.lead); else lines.push(s.title)
     ;(s.rows || []).forEach(r => lines.push(r[0] + ': ' + r[1]))
     if (s.meta) lines.push(s.meta)
     if (s.body) lines.push('', s.body)
