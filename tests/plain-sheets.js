@@ -62,7 +62,7 @@ const pw = XLSX.utils.book_new()
 XLSX.utils.book_append_sheet(pw, XLSX.utils.aoa_to_sheet([['Field', 'Value'], ['Account Name', 'Acme']]), 'Overview')
 XLSX.utils.book_append_sheet(pw, XLSX.utils.aoa_to_sheet(planRows), 'Plans')
 importWorkbook(pw, 'old.xlsx')
-const planBack = XLSX.utils.sheet_to_json(buildWorkbook().Sheets.Plans, { header: 1, defval: '' })
+const planBack = XLSX.utils.sheet_to_json(buildWorkbook().Sheets.Plans, { header: 1, defval: '', raw: false }) // raw: false reads each cell as Excel shows it, a date cell as yyyy-mm-dd
 assert.strictEqual(JSON.stringify(planBack.map(r => r.map(String))), JSON.stringify(planRows), 'Plans comes back unchanged')
 
 console.log('plain-sheets: ok')

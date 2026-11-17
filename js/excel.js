@@ -224,12 +224,37 @@ function sheetHasContent(base, aoa) {
   return aoa.slice(1).some(row => row.some(c => String(c == null ? '' : c).trim() !== ''))
 }
 
+// The columns that hold a calendar day. Excel sorts, filters and calculates on them only when each cell is a date.
+const DATE_COLUMNS = { Actions: ['DueDate', 'ClosedDate', 'CreatedDate'], Notes: ['Date', 'CreatedDate'], Plans: ['LastReviewedAt', 'NextReviewAt'] }
+
+// Turns a plain yyyy-mm-dd cell into an Excel date: the day's serial number with a yyyy-mm-dd format.
+// The serial comes from the written day alone, so no time zone moves it.
+function makeDateCell(cell) {
+  const m = cell && cell.t === 's' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(cell.v)
+  if (!m) return
+  cell.t = 'n'; cell.v = Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000 + 25569; cell.z = 'yyyy-mm-dd'; delete cell.w
+}
+
+function formatDateCells(ws, base, aoa) {
+  if (base === 'Overview') {
+    aoa.forEach((row, r) => { if (row[0] === 'Next Meeting Override') makeDateCell(ws[XLSX.utils.encode_cell({ r, c: 1 })]) })
+    return
+  }
+  ;(DATE_COLUMNS[base] || []).forEach(h => {
+    const c = aoa[0].indexOf(h)
+    if (c >= 0) for (let r = 1; r < aoa.length; r++) makeDateCell(ws[XLSX.utils.encode_cell({ r, c })])
+  })
+}
+
 function buildWorkbook() {
   const wb = XLSX.utils.book_new()
   const aoas = buildAoasFromState()
   // One plainly named sheet per type, and none for a type with nothing in it.
   SHEET_BASES.forEach(base => {
-    if (aoas[base] && sheetHasContent(base, aoas[base])) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoas[base]), base)
+    if (!aoas[base] || !sheetHasContent(base, aoas[base])) return
+    const ws = XLSX.utils.aoa_to_sheet(aoas[base])
+    formatDateCells(ws, base, aoas[base])
+    XLSX.utils.book_append_sheet(wb, ws, base)
   })
   return wb
 }
