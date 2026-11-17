@@ -55,6 +55,17 @@ state = emptyState()
 importWorkbook(blank, 'account-template.xlsx')
 assert.strictEqual(state.stakeholders.length, 0)
 assert.strictEqual(state.account.account_name, '')
+
+// A new account leaves Account Tier unset and hints at its first person and action until both exist.
+state = emptyState()
+assert.strictEqual(state.background.account_tier, '', 'the tier is not chosen for the person')
+assert.deepStrictEqual(firstStepsMissing(state), [], 'a blank account shows the start screen, not the hint')
+startNewAccount('Acme', '', '')
+assert.deepStrictEqual(firstStepsMissing(state), ['Add the first person under People.', 'Add the first action under Actions.'])
+state.stakeholders.push(newPerson('Ada', 'CEO'))
+assert.deepStrictEqual(firstStepsMissing(state), ['Add the first action under Actions.'])
+state.actions.push(newAction())
+assert.deepStrictEqual(firstStepsMissing(state), [], 'the hint goes away once a person and an action exist')
 console.log('start: ok')
 `
 vm.runInNewContext(src, sandbox)

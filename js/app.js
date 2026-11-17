@@ -12,6 +12,7 @@ const SECTIONS = [
 function renderAll() {
   renderHelpBanner()
   renderStartScreen()
+  renderFirstSteps()
   renderAccountHeader()
   renderOverview()
   renderPeople()

@@ -68,7 +68,7 @@ function emptyState() {
       account_director: '', account_manager: '', account_team: '',
       meeting_title: '', meeting_frequency: '', meeting_day: '', meeting_interval: '1',
       meeting_attendees: '', next_meeting_override: '',
-      account_tier: 'Growth', strategic_context: '',
+      account_tier: '', strategic_context: '',
       revenue: {}, last_updated: today(),
     },
     stakeholders: [],
@@ -130,6 +130,7 @@ function writeLocalNow() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     localStorage.setItem(UNSYNCED_KEY, unsavedEdits ? '1' : '0')
     setSyncState('ok', 'Saved in this browser at ' + new Date().toLocaleTimeString())
+    if (typeof renderFirstSteps === 'function') renderFirstSteps() // the hint follows the first person and action
   } catch (e) { setSyncState('error', 'Local save failed') }
 }
 

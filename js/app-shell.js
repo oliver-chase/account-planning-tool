@@ -4,7 +4,7 @@
 // the remembered-file reconnect bootstrap. Loaded last in index.html, after app.js, which
 // defines SECTIONS and renderAll().
 
-const TIER_OPTS = [['Growth', 'Growth'], ['Strategic', 'Strategic'], ['Maintenance', 'Maintenance'], ['At-Risk', 'At-Risk']]
+const TIER_OPTS = [['', 'Not set'], ['Growth', 'Growth'], ['Strategic', 'Strategic'], ['Maintenance', 'Maintenance'], ['At-Risk', 'At-Risk']]
 
 function renderNav() {
   const sideNav = document.getElementById('section-nav')
@@ -25,7 +25,7 @@ function renderAccountHeader() {
   const tierSlot = document.getElementById('account-tier-slot')
   if (!tierSlot) return
   tierSlot.innerHTML = ''
-  tierSlot.appendChild(singleSelectEl(TIER_OPTS, state.background.account_tier || 'Growth', v => {
+  tierSlot.appendChild(singleSelectEl(TIER_OPTS, state.background.account_tier || '', v => {
     state.background.account_tier = v; state.background.last_updated = today(); persist()
   }, 'card-owner-btn popover-trigger'))
 }

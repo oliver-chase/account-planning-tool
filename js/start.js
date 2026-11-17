@@ -58,6 +58,29 @@ function startNewAccount(name, personName, personTitle) {
   return true
 }
 
+// What a named account still lacks to be useful on a call: its first person and its first action.
+function firstStepsMissing(s) {
+  if (!s.account.account_name) return []
+  const missing = []
+  if (!s.stakeholders.length) missing.push('Add the first person under People.')
+  if (!s.actions.length) missing.push('Add the first action under Actions.')
+  return missing
+}
+
+// A short hint under the heading of a new account. It goes away once a person and an action exist.
+function renderFirstSteps() {
+  const slot = document.getElementById('first-steps-slot')
+  if (!slot) return
+  slot.innerHTML = ''
+  const missing = firstStepsMissing(state)
+  if (!missing.length) return
+  const card = el('div', 'app-card first-steps-card', null)
+  card.setAttribute('role', 'status')
+  card.appendChild(el('div', 'app-card-label', 'Next steps'))
+  card.appendChild(el('p', 'fontSmall textSecondary', missing.join(' ') + ' Set Account Tier when you know it.'))
+  slot.appendChild(card)
+}
+
 function loadSampleAccount() {
   const load = () => { importWorkbook(starterWorkbook(true), 'sample-account.xlsx'); fileHandle = null; rememberFileStamp(''); forgetPersistedFileHandle() }
   if (!unsavedEdits) { load(); return }
