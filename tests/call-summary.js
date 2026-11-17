@@ -15,11 +15,11 @@ state.notes = [
 ]
 state.actions = [
   { id: 'a1', description: 'Send proposal', owner: 'Ada', status: 'In Progress', due_date: iso(5) },
-  { id: 'a2', description: 'Book review', owner: 'Ada', status: 'Open', due_date: iso(-3) },
+  { id: 'a2', description: 'Wrap-up review', owner: 'Ada', status: 'Open', due_date: iso(-3) },
   { id: 'a3', description: 'Loose end', owner: '', status: 'Open', due_date: '' },
   { id: 'a4', description: 'Shipped deck', owner: 'Bo', status: 'Done', closed_date: iso(-1), due_date: '' },
-  { id: 'a6', description: 'Lower case owner', owner: 'amy', status: 'Open', due_date: '' },
   { id: 'a7', description: 'Late alphabet', owner: 'Zed', status: 'Open', due_date: '' },
+  { id: 'a6', description: 'Lower case owner', owner: 'amy', status: 'Open', due_date: '' },
   { id: 'a5', description: 'Long ago', owner: 'Bo', status: 'Done', closed_date: iso(-40), due_date: '' },
 ]
 state.plans = [{ id: 'p', name: 'FY27', objective: 'Win the renewal', strategy: '', revenue_target: '$1M', risks_summary: 'Budget freeze', next_review_at: '2026-12-01' }]
@@ -33,8 +33,8 @@ assert.ok(s.text.includes('Quarterly check-in') && !s.text.includes('Ignore me')
 assert.ok(s.text.includes('Attendees: Ada, Bo') && s.text.includes('Bo needs the checklist.'))
 const text = s.text
 const at = s => { const i = text.indexOf(s); assert.ok(i >= 0, s.trim() + ' is in the text'); return i }
-assert.ok(at('Book review') < at('Send proposal'), 'earliest due date first within an owner')
-assert.ok(/Book review \\(overdue, was due/.test(text) && /Send proposal \\(due/.test(text))
+assert.ok(at('Wrap-up review') < at('Send proposal'), 'earliest due date first within an owner')
+assert.ok(/Wrap-up review \\(overdue, was due/.test(text) && /Send proposal \\(due/.test(text))
 assert.ok(at('\\nAda\\n') < at('\\nNo owner\\n') && at('Loose end') > at('\\nNo owner\\n'), 'unowned actions come last')
 assert.ok(at('\\namy\\n') < at('\\nZed\\n'), 'owners sort by name, ignoring case')
 assert.ok(text.includes('Shipped deck') && !text.includes('Long ago'), 'finished this week only')

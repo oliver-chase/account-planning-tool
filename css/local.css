@@ -52,7 +52,6 @@ body.show-start .section,body.show-start .account-header-row{display:none}
 @media (max-width:720px){
   .start-options{grid-template-columns:1fr}
 }
-.start-form[hidden]{display:none}
 .export-menu-item{display:flex;flex-direction:column;gap:var(--spacing-2xs);width:100%;margin-bottom:var(--spacing-sm);padding:var(--spacing-md);text-align:left;background:var(--color-bg-page);border:1px solid var(--color-border);border-radius:var(--radius-lg);font:inherit;cursor:pointer;min-height:var(--touch-target)}
 .call-summary-text{width:100%;box-sizing:border-box;font:inherit;font-size:var(--font-size-sm);padding:var(--spacing-sm);border:1px solid var(--color-border);border-radius:var(--radius-sm);resize:vertical}
 .call-summary-actions{display:flex;gap:var(--spacing-sm);margin-top:var(--spacing-md)}

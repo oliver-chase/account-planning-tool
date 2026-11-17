@@ -176,7 +176,7 @@ body{font-family:var(--font-family-base);background:var(--color-bg-page);color:v
   .main{padding-left:var(--module-main-pad-x);padding-right:var(--module-main-pad-x);padding-bottom:var(--accounts-mobile-main-pad-bottom)}
   .overview-stats{flex-direction:column}
   .account-header-actions{flex-direction:column;width:100%;gap:var(--spacing-sm)}
-  .account-card-remove-btn{min-width:var(--day-btn-size);min-height:var(--day-btn-size);width:auto;height:auto;padding:var(--spacing-xs)}
+  .account-card-remove-btn{width:auto;height:auto;padding:var(--spacing-xs)}
   .overview-stat{min-width:140px!important;flex:1 1 140px!important}
   .app-section-header{flex-wrap:wrap!important;gap:var(--spacing-6)!important}
   .people-grid{grid-template-columns:1fr!important}

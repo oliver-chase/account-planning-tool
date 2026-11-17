@@ -252,6 +252,7 @@ function historicalYearForm(bg, onSave, onCancel) {
       const existing = bg.revenue[selectedYear] || {}
       projInput.value = existing.projected || ''; closedInput.value = existing.closed || ''
       renderYearSel()
+      yearSelSlot.querySelector('button').focus() // the rebuilt dropdown takes the focus the old one had
     }, 'card-owner-btn popover-trigger'))
   }
   const first = bg.revenue[selectedYear] || {}

@@ -175,7 +175,9 @@ function makeInlineActionRow() {
   dueTd.appendChild(dueInput)
   tr.appendChild(dueTd)
   const statusTd = el('td', 'action-cell', null)
-  statusTd.appendChild(singleSelectEl(ACTION_STATUSES, rec.status, v => edit(() => Object.assign(rec, statusFields(v))), 'picker-btn-status ' + actionStatusBadgeClass(rec.status)))
+  let statusBtn // the row is not rebuilt, so the badge colour follows the pick here
+  statusBtn = singleSelectEl(ACTION_STATUSES, rec.status, v => { edit(() => Object.assign(rec, statusFields(v))); statusBtn.className = 'picker-btn-status ' + actionStatusBadgeClass(v) }, 'picker-btn-status ' + actionStatusBadgeClass(rec.status))
+  statusTd.appendChild(statusBtn)
   tr.appendChild(statusTd)
   const delTd = el('td', 'action-cell action-cell-compact', null)
   delTd.appendChild(compactRemoveButton('Discard action changes', () => {

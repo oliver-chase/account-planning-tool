@@ -88,7 +88,7 @@ let state = (() => {
   let raw = null
   try { raw = localStorage.getItem(STORAGE_KEY); return raw ? mergeStored(JSON.parse(raw)) : null } catch (e) {
     unreadableAutosave = raw
-    try { if (raw) { if (localStorage.getItem(STORAGE_KEY + '.corrupt') === null) localStorage.setItem(STORAGE_KEY + '.corrupt', raw); unreadableAutosaveKept = true } } catch (e2) { /* storage is full or unavailable */ }
+    try { if (raw) { localStorage.setItem(STORAGE_KEY + '.corrupt' + (localStorage.getItem(STORAGE_KEY + '.corrupt') === null ? '' : '.' + Date.now()), raw); unreadableAutosaveKept = true } } catch (e2) { /* storage is full or unavailable */ }
     return null
   }
 })() || emptyState()

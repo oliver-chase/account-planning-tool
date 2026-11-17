@@ -95,10 +95,10 @@ label.card-meta-label{cursor:pointer}
 @media (max-width:720px){
   .module-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:auto}
   .module-data-table{font-size:var(--font-size-xs)}
-  .module-data-table th,.module-data-table td{padding:var(--spacing-6) var(--spacing-10);white-space:nowrap}
+  .module-data-table td{white-space:nowrap}
   .module-filter-search{flex-shrink:1}
   .module-filter-date{width:auto !important;flex:1 1 120px !important}
-  .module-filter-reset{min-height:var(--touch-target);padding-top:var(--spacing-10);padding-bottom:var(--spacing-10)}
+  .module-filter-reset{min-height:var(--touch-target)}
 }
 .module-section-actions{display:flex;gap:var(--spacing-6);align-items:center;flex-wrap:wrap}
 .module-section-actions-scroll{flex-wrap:nowrap;overflow-x:auto}
