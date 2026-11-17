@@ -20,9 +20,9 @@
 /* Popover triggers are buttons with the same pill and chevron. */
 button.popover-trigger{font:inherit;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:calc(var(--spacing-sm) + 14px);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M5 6L0 0h10z' fill='%23797979'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right var(--spacing-xs) center}
 /* Director and Manager pickers fill the card column. Scoped to a direct child so the Account Team picker keeps its compact size. */
-.overview-card-col > button.popover-trigger{width:100%}
+.overview-card-col > button.popover-trigger{width:100%;max-width:none}
 /* Person card rows: the picker fills the room left in its row. Scoped to a direct child so multi-pickers keep their compact size. */
-.card-meta-row > button.popover-trigger{flex:1 1 auto;min-width:0}
+.card-meta-row > button.popover-trigger{max-width:none;flex:1 1 auto;min-width:0}
 .app-popover-search{width:100%;box-sizing:border-box}
 /* Plain block list: a flex container blockifies its <li> children per
    spec, which drops their list-item marker (the bullet) entirely. */
