@@ -27,7 +27,6 @@
 .app-badge-complete{background:var(--color-status-complete-bg);color:var(--color-status-complete)}
 .app-badge-open{background:var(--color-status-open-bg);color:var(--color-status-open)}
 .app-badge-progress{background:var(--color-status-pursuing-bg);color:var(--color-status-pursuing)}
-.sort-select{font-family:var(--font-family-base);font-size:var(--font-size-sm);border:1px solid var(--color-border);border-radius:var(--radius-pill-lg)}
 .app-section-header{display:flex;flex-direction:column;align-items:stretch;gap:var(--spacing-xs);margin-bottom:var(--spacing-sm)}
 .app-section-title{font-family:var(--font-family-base);font-size:var(--font-size-lg);font-weight:var(--font-weight-bold);color:var(--color-text-primary);margin:0}
 .section-count-footer{font-size:var(--font-size-xs);color:var(--color-text-secondary);margin-top:var(--spacing-sm)}

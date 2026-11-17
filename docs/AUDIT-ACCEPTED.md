@@ -9,7 +9,6 @@ Audit findings that were reviewed and not changed, each with its reason.
 | `singleSelectEl` and `popoverOptionsList` share list rendering | The two lists differ in search, selected state and keyboard order. Merging them saves about 8 lines and changes a shared picker used by every dropdown. |
 | One save helper, one cycle check and one confirm-delete helper across People, Notes and Actions | The three save paths differ in what they stamp and re-render, and the cycle checks sit in different call contexts. People already share one delete helper, and merging the rest saves about 30 lines for a wider refactor. |
 | `export.js` and `filterbar.js` merged into `app-shell.js` | Each has one job and one test or caller. Merging moves code without removing any. |
-| `.card-meta-row--spaced`, the filter label rules and `.sort-select` written in more than one stylesheet | The copies have different specificity and the later one wins on purpose. A computed-style comparison is needed before any merge, for about 8 lines. |
 | One grey token for the SVG icons | The search, sort and popover icons are data URIs that cannot read a custom property, and the greys differ slightly by design. |
 | Undo for deleting notes and people | Deleting asks for confirmation and starts on Cancel, and notes and people carry linked data. |
 | Moving a card with the keyboard has a visible hint and a picked outline, no Move button | The hint line and outline cover the path; a button per card adds visual noise. |

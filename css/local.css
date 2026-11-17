@@ -5,11 +5,7 @@
 #section-nav a.active{border-left-color:var(--color-brand-accent);background:var(--color-nav-active-bg);color:var(--color-white);font-weight:var(--font-weight-bold)}
 .content-editable-cell{outline:none;border-radius:var(--radius-sm);cursor:text}
 .content-editable-cell:hover{background:var(--color-brand-accent-light)}
-/* Filter groups stack their labels in a column so the filter panel stays narrow with many owners. */
-.filter-radio-group{display:flex;flex-direction:column;gap:var(--spacing-6)}
 .filter-radio-group--top-spaced{margin-top:var(--spacing-md)}
-.filter-radio-group label{display:flex;align-items:center;gap:var(--spacing-6);font-size:var(--font-size-sm);color:var(--color-text-primary);cursor:pointer;user-select:none}
-.filter-radio-group input[type="radio"]{cursor:pointer;accent-color:var(--color-brand-accent)}
 .filter-radio-divider{font-size:var(--font-size-xs);font-weight:var(--font-weight-bold);letter-spacing:.04em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:var(--spacing-2xs)}
 .app-sidebar-item[disabled]{opacity:.5;cursor:default}
 #file-actions-bar{display:flex;flex-direction:column;gap:var(--spacing-2xs)}
@@ -20,8 +16,6 @@
 .org-node-card--internal{border-color:var(--color-worker-internal);border-width:2px}
 .org-node-card--contractor{border-color:var(--color-worker-contractor);border-width:2px}
 .account-header-tier-group{display:flex;flex-direction:column;align-items:flex-end;gap:var(--spacing-2xs)}
-/* Matches the specificity of .person-card .card-meta-row so the spaced variant takes effect. */
-.person-card .card-meta-row--spaced{margin-top:var(--spacing-md)}
 /* Popover triggers are buttons with the same pill and chevron. */
 button.popover-trigger{font:inherit;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:calc(var(--spacing-sm) + 14px);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M5 6L0 0h10z' fill='%23797979'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right var(--spacing-xs) center}
 /* Director and Manager pickers fill the card column. Scoped to a direct child so the Account Team picker keeps its compact size. */
