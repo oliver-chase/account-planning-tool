@@ -434,9 +434,7 @@ else
     echo "  docs/SIZE-BASELINE.json is part of this commit, so its baseline of $SIZE_BASE lines is trusted."
     SIZE_HEAD_BASE="$(size_field_of lines "$SIZE_HEAD_JSON")"
     if [ -n "$SIZE_HEAD_BASE" ] && [ "$SIZE_BASE" -gt "$SIZE_HEAD_BASE" ]; then
-      SIZE_CAP_PCT="$(size_field_of raiseCapPercent "$SIZE_HEAD_JSON")"
-      SIZE_CAP=$(( SIZE_HEAD_BASE * ${SIZE_CAP_PCT:-2} / 100 ))
-      echo "  This commit raises the baseline by $(( SIZE_BASE - SIZE_HEAD_BASE )) lines (cap $SIZE_CAP without an L or XL story)."
+      echo "  This commit raises the baseline by $(( SIZE_BASE - SIZE_HEAD_BASE )) lines; the commit-msg hook holds the cap and the Size line it needs."
       # A raised baseline is the counted total, never a hand-picked figure.
       if [ "$SIZE_BASE" -ne "$SIZE_TOTAL" ]; then
         echo "  BLOCKED: the raised baseline is $SIZE_BASE, but the staged tree counts $SIZE_TOTAL lines."
@@ -452,9 +450,9 @@ else
       | awk -F'\t' '$1 != "-" && $1 - $2 > 0 { print $1 - $2 "\t" $3 }' | sort -rn | sed -n 1,3p \
       | while IFS="$(printf '\t')" read -r grown path; do echo "    +$grown  $path"; done
     if [ -f scripts/size_baseline.py ]; then
-      echo "  Remove lines, or run python3 scripts/size_baseline.py --write, stage docs/SIZE-BASELINE.json and put the story number in the message. The script counts the files, so a merge of two branches reruns it and gets one number. A raise over the cap also needs a \"Size: L\" or \"Size: XL\" line."
+      echo "  Remove lines, or run python3 scripts/size_baseline.py --write, stage docs/SIZE-BASELINE.json and put the story number in the message. The script counts the files, so a merge of two branches reruns it and gets one number. The commit-msg hook says when a raise needs a Size line."
     else
-      echo "  Remove lines, or raise \"lines\" in docs/SIZE-BASELINE.json in this commit with the story number in the message. A raise over the cap also needs a \"Size: L\" or \"Size: XL\" line."
+      echo "  Remove lines, or raise \"lines\" in docs/SIZE-BASELINE.json in this commit with the story number in the message. The commit-msg hook says when a raise needs a Size line."
     fi
     exit 1
   fi

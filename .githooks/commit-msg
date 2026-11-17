@@ -118,6 +118,13 @@ if [ -n "$BAD_COAUTHOR" ]; then
   exit 1
 fi
 
+# One definition of a test path and of a file that is not code, shared by the merge exemption and TEST-WITH-CODE-1.
+# Code is every staged file except documentation and data: anything under docs/, markup, styles, images, data and
+# config formats, and the plain repo files such as LICENSE. A language the hook has never heard of counts as code.
+TEST_PATH='(^|/)tests?/|(^|/)test_[^/]*$|_test\.[^/]*$|\.test\.[^/]*$|^scripts/(live-check|check-)[^/]*$'
+NON_CODE='(^|/)docs/|\.(md|txt|json|jsonl|csv|tsv|ya?ml|toml|html?|css|svg|png|jpe?g|gif|ico|webp|pdf|lock|xml|ini|cfg|conf|example|sample)$|(^|/)(LICENSE|CODEOWNERS|\.gitignore|\.gitattributes|\.mailmap)$'
+staged_code() { git diff --cached --name-only --no-renames "$@" | grep -vE "$NON_CODE" || true; }
+
 # A revert or autosquash commit carries the message of work that already has a reference, so it is exempt
 # from the story check only when it names a commit that exists: a "fixup! X", "squash! X" or "amend! X" whose X is the subject of a
 # commit in history, and a Revert "X" whose X is one or whose body names a real commit. A merge that stages no code
@@ -142,7 +149,7 @@ case "$SUBJECT" in
   "Revert "*|"fixup! "*|"squash! "*|"amend! "*) if names_a_commit; then EXEMPT_STORY=1; fi ;;
 esac
 if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1 \
-    && [ -z "$(git diff --cached --name-only --no-renames | grep -E '\.(py|sh|js|mjs|ts|tsx)$' || true)" ]; then
+    && [ -z "$(staged_code)" ]; then
   exit 0
 fi
 if ! git rev-parse -q --verify HEAD >/dev/null 2>&1; then
@@ -167,7 +174,8 @@ fi
 # "Story: #53" or "org/repo#53". A hex colour such as #123abc, "Fix 5#3", "&#39;" and "#0" do not count.
 TOKEN_END='([^[:alnum:]_]|$)'
 NUMBER='#0*[1-9][0-9]*'
-if [ -z "${EXEMPT_STORY:-}" ] && ! printf '%s\n' "$MESSAGE" | grep -Eq "(^|[^[:alnum:]_/#&])${NUMBER}${TOKEN_END}|[[:alnum:]_.-]+/[[:alnum:]_.-]+${NUMBER}${TOKEN_END}"; then
+STORY_REF="(^|[^[:alnum:]_/#&])${NUMBER}${TOKEN_END}|[[:alnum:]_.-]+/[[:alnum:]_.-]+${NUMBER}${TOKEN_END}"
+if [ -z "${EXEMPT_STORY:-}" ] && ! printf '%s\n' "$MESSAGE" | grep -Eq "$STORY_REF"; then
   echo "[commit-msg] BLOCKED: the commit message names no story."
   echo "  Add the story number, for example \"Fix the sync (#53)\" or a line \"Story: #53\"."
   echo "  A revert or fixup/squash commit that names an existing commit, a merge that stages no code and a repo's first commit are exempt."
@@ -176,12 +184,11 @@ if [ -z "${EXEMPT_STORY:-}" ] && ! printf '%s\n' "$MESSAGE" | grep -Eq "(^|[^[:a
 fi
 
 # TEST-WITH-CODE-1. A commit that adds or changes code also changes a test, or says why not on a
-# line "No test: <reason>". Code is a .py, .sh, .js, .mjs, .ts or .tsx file outside a test path; a
+# line "No test: <reason>". Code is a staged file outside a test path that NON_CODE does not name; a
 # test is anything under tests/ or named test_*, *_test.* or *.test.*, and a check script directly under
 # scripts/ named check-* or live-check*, which is itself the test it runs. An .html page is markup and
 # does not count: script worth a test belongs in a .js file, which does.
-TEST_PATH='(^|/)tests?/|(^|/)test_[^/]*$|_test\.[^/]*$|\.test\.[^/]*$|^scripts/(live-check|check-)[^/]*$'
-CODE_CHANGED="$(git diff --cached --name-only --no-renames --diff-filter=AM | grep -E '\.(py|sh|js|mjs|ts|tsx)$' | grep -vE "$TEST_PATH" || true)"
+CODE_CHANGED="$(staged_code --diff-filter=AM | grep -vE "$TEST_PATH" || true)"
 TEST_CHANGED="$(git diff --cached --name-only --no-renames --diff-filter=AMD | grep -E "$TEST_PATH" || true)"
 if [ -n "$CODE_CHANGED" ] && [ -z "$TEST_CHANGED" ] \
     && ! printf '%s\n' "$MESSAGE" | grep -Eiq '^[[:space:]]*no test:[[:space:]]*[^[:space:]]'; then
@@ -204,7 +211,7 @@ elif [ -r "$CONFIG_FILE" ]; then
   config_value() { sed -n 's/.*"'"$1"'"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$CONFIG_FILE" | head -1; }
   HOME_REPO="$(config_value repoOwner)/$(config_value repoName)"
   CACHE_FILE="$(git rev-parse --git-dir)/story-exists-cache"
-  REFS="$(printf '%s\n' "$MESSAGE" | { grep -Eo "(^|[^[:alnum:]_/#&])${NUMBER}${TOKEN_END}|[[:alnum:]_.-]+/[[:alnum:]_.-]+${NUMBER}${TOKEN_END}" || true; } \
+  REFS="$(printf '%s\n' "$MESSAGE" | { grep -Eo "$STORY_REF" || true; } \
     | sed -E 's/^[^[:alnum:]#]+//; s/[^0-9]+$//' | sort -u)"
   MISSING=""
   while IFS= read -r ref; do
