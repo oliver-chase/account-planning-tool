@@ -55,7 +55,7 @@ assert.strictEqual(state.actions[0].description + '|' + state.actions[0].owner, 
 // 2. A label is text, never markup.
 const btn = inlineActionButton('<img src=x onerror=alert(1)>', () => {})
 assert.strictEqual(btn.innerHTML, undefined, 'no innerHTML is written')
-assert.strictEqual(btn.children[0].textContent, '<img src=x onerror=alert(1)>')
+assert.ok(btn.children.some(c => c.textContent === '<img src=x onerror=alert(1)>'), 'the label stays text')
 
 // 3. Delete with Undo puts the item back where it was, once.
 state.actions = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
@@ -64,8 +64,8 @@ deleteWithUndo('actions', { id: 'b' }, 'Action', () => rendered++)
 assert.strictEqual(state.actions.map(a => a.id).join(), 'a,c')
 assert.strictEqual(rendered, 1)
 const toast = toastBox.children[toastBox.children.length - 1]
-const undoBtn = toast.children[1]
-assert.strictEqual(undoBtn.textContent, 'Undo')
+const undoBtn = toast.children.find(c => c.textContent === 'Undo')
+assert.ok(undoBtn, 'the toast offers Undo')
 undoBtn.listeners.click(); undoBtn.listeners.click()
 assert.strictEqual(state.actions.map(a => a.id).join(), 'a,b,c', 'restored in place, not duplicated')
 

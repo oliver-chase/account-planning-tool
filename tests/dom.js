@@ -49,9 +49,9 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   check('historical year form is prefilled with the stored figures', inputs.length === 2 && inputs[0].value === '$500K' && inputs[1].value === '$300K')
   // 4. cadence summary opens from the keyboard
   w.eval("state.background.meeting_frequency='weekly'; persist(); renderOverview()")
-  const row = d.querySelector('.overview-cadence-summary-row'); const exp0 = row.getAttribute('aria-expanded')
+  const cadenceRow = () => [...d.querySelectorAll('[role="button"][aria-expanded]')].find(b => /weekly/i.test(b.textContent)); const row = cadenceRow(); assert.ok(row, 'the cadence summary is a button named by its text'); const exp0 = row.getAttribute('aria-expanded')
   row.focus(); ev(row, 'keydown', { key: 'Enter' })
-  await checkSoon('cadence summary toggles with Enter', () => d.querySelector('.overview-cadence-summary-row').getAttribute('aria-expanded') !== exp0)
+  await checkSoon('cadence summary toggles with Enter', () => cadenceRow().getAttribute('aria-expanded') !== exp0)
   // 5. org chart view: Enter on remove button does not open the panel
   location_hash(w, 'people'); await until(() => d.querySelector('.app-view-toggle-btn'))
   const orgBtn = [...d.querySelectorAll('.app-view-toggle-btn')].find(b => /org/i.test(b.textContent)); assert.ok(orgBtn, 'org view toggle'); orgBtn.click(); await until(() => d.querySelector('.org-node-card .org-unlink-btn'))
@@ -87,7 +87,7 @@ const saved = () => until(() => w.eval('pendingEditSaves.size === 0'))
   const chip = d.querySelector('[data-fk="day-Wed"]'); chip.focus(); chip.click()
   await checkSoon('a weekday chip keeps focus after the overview rebuilds', () => d.activeElement !== chip && d.activeElement && d.activeElement.dataset && d.activeElement.dataset.fk === 'day-Wed')
   // Escape in the add-new box keeps focus on the add-new row.
-  w.eval("document.body.appendChild(popoverAddNewRow(() => {}))"); const addRow = [...d.querySelectorAll('.app-popover-add-new')].pop(); addRow.click(); await until(() => addRow.querySelector('input')); ev(addRow.querySelector('input'), 'keydown', { key: 'Escape' })
+  const addRow = w.eval("document.body.appendChild(popoverAddNewRow(() => {}))"); addRow.click(); await until(() => addRow.querySelector('input')); ev(addRow.querySelector('input'), 'keydown', { key: 'Escape' })
   check('Escape in the add-new box keeps focus on its row', d.activeElement === addRow); addRow.remove()
   // 8c2. a dropdown pick that rebuilds its section leaves focus on the rebuilt dropdown
   w.eval("renderNotes()")
