@@ -33,7 +33,7 @@ assert.deepStrictEqual(undef, [], 'a var() has no definition: ' + undef.join(', 
 
 // On a phone, an inline editable field, a status badge and a section link keep the 44 px touch height.
 const touchBlock = read('css/local.css').split('/* Touch targets')[1].split('/* Delete buttons')[0]
-for (const sel of ['[contenteditable]{min-height:var(--touch-target)', '.picker-btn-status,#section-nav a{min-height:var(--touch-target)'])
+for (const sel of ['[contenteditable]{min-height:var(--touch-target)', '.picker-btn-status,#section-nav a{min-height:var(--touch-target)', '.start-field input{min-height:var(--touch-target)'])
   assert.ok(touchBlock.includes(sel), 'the touch block lost a rule: ' + sel)
 
 console.log('design-rules: ok')

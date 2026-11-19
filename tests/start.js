@@ -66,6 +66,15 @@ state.stakeholders.push(newPerson('Ada', 'CEO'))
 assert.deepStrictEqual(firstStepsMissing(state), ['Add the first action under Actions.'])
 state.actions.push(newAction())
 assert.deepStrictEqual(firstStepsMissing(state), [], 'the hint goes away once a person and an action exist')
+assert.ok(/Set Account Tier/.test(firstStepsText(state)), 'an unset tier is named')
+state.background.account_tier = 'Growth'
+assert.ok(!/Account Tier/.test(firstStepsText(state)), 'a chosen tier is not asked for again')
+// The sample and blank workbooks write dates as Excel date cells, as Update Excel does.
+const sample = starterWorkbook(true)
+const planNext = sample.Sheets.Plans['H2']
+assert.strictEqual(planNext.t, 'n', 'a sample date is an Excel date, not text')
+assert.strictEqual(planNext.z, 'yyyy-mm-dd')
+assert.strictEqual(sample.Sheets.Actions['F2'].t, 'n')
 console.log('start: ok')
 `
 vm.runInNewContext(src, sandbox)

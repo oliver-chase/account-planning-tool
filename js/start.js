@@ -36,7 +36,11 @@ function starterAoas(withSample) {
 function starterWorkbook(withSample) {
   const wb = XLSX.utils.book_new()
   const aoas = starterAoas(withSample)
-  Object.keys(aoas).forEach(name => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoas[name]), name))
+  Object.keys(aoas).forEach(name => {
+    const ws = XLSX.utils.aoa_to_sheet(aoas[name])
+    formatDateCells(ws, name, aoas[name]) // the sample's dates are Excel dates, like the ones Update Excel writes
+    XLSX.utils.book_append_sheet(wb, ws, name)
+  })
   return wb
 }
 
@@ -67,6 +71,11 @@ function firstStepsMissing(s) {
   return missing
 }
 
+// The hint's sentence: what is missing, and the tier while it is still unset.
+function firstStepsText(s) {
+  return firstStepsMissing(s).concat(s.background.account_tier ? [] : ['Set Account Tier when you know it.']).join(' ')
+}
+
 // A short hint under the heading of a new account. It goes away once a person and an action exist.
 function renderFirstSteps() {
   const slot = document.getElementById('first-steps-slot')
@@ -77,7 +86,7 @@ function renderFirstSteps() {
   const card = el('div', 'app-card first-steps-card', null)
   card.setAttribute('role', 'status')
   card.appendChild(el('div', 'app-card-label', 'Next steps'))
-  card.appendChild(el('p', 'fontSmall textSecondary', missing.join(' ') + ' Set Account Tier when you know it.'))
+  card.appendChild(el('p', 'fontSmall textSecondary', firstStepsText(state)))
   slot.appendChild(card)
 }
 

@@ -88,6 +88,7 @@ body.show-start .section,body.show-start .account-header-row{display:none}
   [contenteditable]{min-height:var(--touch-target);box-sizing:border-box;padding-top:var(--spacing-10);padding-bottom:var(--spacing-10)}
   span[contenteditable]{display:inline-block}
   .picker-btn-status,#section-nav a{min-height:var(--touch-target);box-sizing:border-box}
+  .start-field input{min-height:var(--touch-target);box-sizing:border-box}
   #section-nav a{display:flex;align-items:center}
 }
 /* Delete buttons are always visible on touch devices, and on keyboard focus through the :focus-within rule below. */
