@@ -3,13 +3,16 @@
 # Generated from a shared hook source, and `olivercode sync-hooks` replaces a hand edit made here.
 # The secret patterns below are the same list the pre-commit secrets gate uses.
 # Gate 1 refuses a history rewrite of an existing remote ref. Gate 2 scans every commit
-# the push sends for secrets, including a secret added and removed inside the range.
+# the push sends for secrets, including a secret added and removed inside the range. Gate 3 refuses a
+# push to main or master whose tree has no passing full validation on record (olivercode validated).
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
 ZERO_SHA="0000000000000000000000000000000000000000"
+# The launcher: OLIVERCODE_LAUNCHER, else `olivercode` on PATH, else the path a passing validation recorded.
+LAUNCHER="${OLIVERCODE_LAUNCHER:-$(command -v olivercode 2>/dev/null || cat "${OLIVERCODE_HOME:-$HOME/.olivercode}/launcher" 2>/dev/null || true)}"
 REMOTE="${1:-}"   # git passes the remote's name, or the URL when the push names one
 PUSH_INPUT="$(cat)"
 VIOLATIONS=0
@@ -64,7 +67,7 @@ secret_filter() {
   done
 }
 
-echo "[pre-push] Gate 1/2: force-push / history-rewrite check..."
+echo "[pre-push] Gate 1/3: force-push / history-rewrite check..."
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ -z "$local_ref" ] && continue
   [ "$local_sha" = "$ZERO_SHA" ] && continue    # deleting a ref -- nothing to check
@@ -84,7 +87,7 @@ if [ $VIOLATIONS -gt 0 ]; then
 fi
 echo "  Gate 1 passed."
 
-echo "[pre-push] Gate 2/2: Secret scan on every commit being pushed..."
+echo "[pre-push] Gate 2/3: Secret scan on every commit being pushed..."
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ -z "$local_ref" ] && continue
   [ "$local_sha" = "$ZERO_SHA" ] && continue
@@ -112,5 +115,21 @@ if [ $VIOLATIONS -gt 0 ]; then
   exit 1
 fi
 echo "  Gate 2 passed."
+echo "[pre-push] Gate 3/3: passing validation on record for a push to main..."
+if [ ! -x "$LAUNCHER" ]; then
+  echo "  Gate 3 skipped (no olivercode launcher found; a passing validate.sh run records one)."
+else
+  while read -r local_ref local_sha remote_ref remote_sha; do
+    [ -z "$local_ref" ] && continue
+    [ "$local_sha" = "$ZERO_SHA" ] && continue
+    case "$remote_ref" in refs/heads/main|refs/heads/master) ;; *) continue ;; esac
+    "$LAUNCHER" validated check "$local_sha" || VIOLATIONS=$((VIOLATIONS + 1))
+  done <<< "$PUSH_INPUT"
+  if [ $VIOLATIONS -gt 0 ]; then
+    echo "PUSH BLOCKED: no passing full validation on record for the tree pushed to main."
+    exit 1
+  fi
+  echo "  Gate 3 passed."
+fi
 echo "[pre-push] All gates passed."
 exit 0

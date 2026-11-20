@@ -38,6 +38,15 @@ staged_content() {
     git -C "$REPO_ROOT" show ":$1" 2>/dev/null || cat -- "$1"
   fi
 }
+# TEXT_FILES is STAGED_FILES minus every binary file, so a gate that reads content never runs sed or grep
+# over a PNG, a font or a PDF. One `git grep -I` over the index lists the text files with git's own test
+# (a NUL in the first 8000 bytes, or a binary attribute), and the staged list is cut to those. A gate that
+# reads only names or sizes keeps using STAGED_FILES, so a staged binary still counts there.
+TEXT_FILES=""
+if [ -n "$STAGED_FILES" ]; then
+  TEXT_FILES=$(git -C "$REPO_ROOT" -c core.quotepath=off grep --cached -I --name-only -e '' 2>/dev/null \
+    | grep -Fxf - <(printf '%s\n' "$STAGED_FILES") || true)
+fi
 # gate_list FILE KEY prints each string in the JSON array KEY of the staged FILE.
 gate_list() {
   git show ":$1" 2>/dev/null | tr '\n' ' ' \
@@ -151,13 +160,13 @@ secret_filter() {
 # per-pattern loop below. A file matches the union exactly when it matches at least one pattern, so the
 # verdict is unchanged. grep -c reads to the end, so a large file never closes the pipe early.
 SECRET_CANDIDATES=""
-if [ -n "$STAGED_FILES" ]; then
+if [ -n "$TEXT_FILES" ]; then
   SECRET_GREP_ARGS=()
   for pattern in "${SECRET_PATTERNS[@]}"; do SECRET_GREP_ARGS+=(-e "$pattern"); done
   while IFS= read -r file; do
     count=$(staged_content "$file" 2>/dev/null | grep -cE "${SECRET_GREP_ARGS[@]}" || true)
     if [ "${count:-0}" -gt 0 ]; then SECRET_CANDIDATES="${SECRET_CANDIDATES}${file}"$'\n'; fi
-  done <<< "$STAGED_FILES"
+  done <<< "$TEXT_FILES"
 fi
 if [ -n "$SECRET_CANDIDATES" ]; then
   secret_tmp=$(mktemp)
@@ -212,7 +221,7 @@ fi
 # A repo whose posted copy legitimately holds emojis lists those files under "exempt" in
 # docs/EMOJI-GATE.json, each with a line in "reasons". With no file the gate scans every staged file.
 EMOJI_EXEMPT="$(gate_list docs/EMOJI-GATE.json exempt)"
-if [ -n "$STAGED_FILES" ]; then
+if [ -n "$TEXT_FILES" ]; then
   while IFS= read -r file; do
     matches_glob "$file" "$EMOJI_EXEMPT" && continue
     # perl -CSD dies on the first malformed byte, which let an emoji later in the file through. The file is
@@ -225,7 +234,7 @@ if [ -n "$STAGED_FILES" ]; then
       echo "  Zero emojis allowed — plain text only."
       exit 1
     fi
-  done <<< "$STAGED_FILES"
+  done <<< "$TEXT_FILES"
 fi
 
 echo "  Gate 2 passed."
@@ -245,7 +254,7 @@ PII_PATTERNS=(
 )
 
 for pattern in "${PII_PATTERNS[@]}"; do
-  if [ -n "$STAGED_FILES" ]; then
+  if [ -n "$TEXT_FILES" ]; then
     while IFS= read -r file; do
       case "$file" in
         *.env.example|*/mocks/*|*.mock.*|*_mock.*|tests/*|*/tests/*|*.test.*|*_test.*|*__tests__*|.gitignore|docs/PII-GATE.json|.githooks/*) continue ;;
@@ -265,7 +274,7 @@ for pattern in "${PII_PATTERNS[@]}"; do
         echo "  BLOCKED: $file contains PII matching pattern: $pattern"
         VIOLATIONS=$((VIOLATIONS + 1))
       fi
-    done <<< "$STAGED_FILES"
+    done <<< "$TEXT_FILES"
   fi
 done
 
@@ -345,7 +354,7 @@ GATE_NAME="Skill citations"
 echo "[pre-commit] Gate 5/8: Skill citations..."
 CITATION_FAILED=0
 CITED_NUMS=""
-if [ -n "$STAGED_FILES" ]; then
+if [ -n "$TEXT_FILES" ]; then
   while IFS= read -r file; do
     case "$file" in
       */SKILL.md|SKILL.md|*/CLAUDE.md|CLAUDE.md|*/references/*.md) ;;
@@ -354,7 +363,7 @@ if [ -n "$STAGED_FILES" ]; then
     hits=$(staged_content "$file" 2>/dev/null | grep -ohE '(^|[^A-Za-z0-9&/#])#0*[1-9][0-9]{0,4}([^A-Za-z0-9_-]|$)' | grep -oE '[0-9]+' | sed 's/^0*//' || true)
     [ -n "$hits" ] && CITED_NUMS="$CITED_NUMS
 $hits"
-  done <<< "$STAGED_FILES"
+  done <<< "$TEXT_FILES"
 fi
 CITED_NUMS=$(printf '%s\n' "$CITED_NUMS" | grep -E '^[0-9]+$' | sort -un || true)
 if [ -n "$CITED_NUMS" ] && command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
@@ -553,7 +562,7 @@ for number, line in enumerate(sys.stdin, 1):
       done <<< "$id_found"
       ID_HITS=$((ID_HITS + 1))
     fi
-  done <<< "$STAGED_FILES"
+  done <<< "$TEXT_FILES"
   if [ "$ID_HITS" -gt 0 ]; then
     echo "  BLOCKED: $ID_HITS file(s) contain an identifier derived from git authors, the remote owner or config."
     echo "  Replace it with a placeholder such as my-shop, or list the file under \"localData\" in docs/IDENTIFIER-GATE.json with a reason."
@@ -597,7 +606,35 @@ fi
 
 # ─── Repo-local gates ─────────────────────────────────────────────────────────
 GATE_NAME="Repo-local gates"
-# GATE-LOCAL-1. A repo adds its own blocking checks in .githooks/pre-commit.local. The file is not part
+# GATE-LOCAL-1. A repo adds its own blocking checks in two ways, and sync-hooks never overwrites either.
+# docs/SUITE-CHECKS.json lists each check as {"name", "files": [globs], "command"}; a check runs on the
+# staged files that match its globs, with those files as its arguments, and a non-zero exit blocks the commit
+# (SUITE-CHECKS-1). The unit tests read the same file, so the commit gate and the tests run one list.
+if [ -f "$REPO_ROOT/docs/SUITE-CHECKS.json" ] && command -v python3 >/dev/null 2>&1; then
+  echo "[pre-commit] Suite checks..."
+  STAGED_FILES="$STAGED_FILES" python3 -c '
+import fnmatch, json, os, shlex, subprocess, sys
+root = sys.argv[1]
+try:
+    checks = json.load(open(os.path.join(root, "docs", "SUITE-CHECKS.json")))["checks"]
+except (OSError, ValueError, KeyError) as exc:
+    print("  BLOCKED: docs/SUITE-CHECKS.json cannot be read (%s)." % type(exc).__name__)
+    sys.exit(1)
+staged = [f for f in os.environ.get("STAGED_FILES", "").splitlines() if f]
+failed = 0
+for check in checks:
+    hit = [f for f in staged if any(fnmatch.fnmatch(f, g) for g in check.get("files", []))]
+    if not hit:
+        continue
+    done = subprocess.run(check["command"] + " " + " ".join(shlex.quote(f) for f in hit), shell=True, cwd=root, capture_output=True, text=True)
+    if done.returncode:
+        failed += 1
+        print("  BLOCKED: suite check %s failed on %d staged file(s)." % (check.get("name", check["command"]), len(hit)))
+        print("\n".join("  " + l for l in (done.stdout + done.stderr).strip().splitlines()[-20:]))
+sys.exit(1 if failed else 0)
+' "$REPO_ROOT" || exit 1
+fi
+# A repo's own executable .githooks/pre-commit.local. The file is not part
 # of this template, so sync-hooks never overwrites it. It gets the staged file list on
 # stdin and blocks the commit by exiting non-zero.
 if [ -x "$HOOK_DIR/pre-commit.local" ]; then
