@@ -72,6 +72,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   [ -z "$local_ref" ] && continue
   [ "$local_sha" = "$ZERO_SHA" ] && continue    # deleting a ref -- nothing to check
   [ "$remote_sha" = "$ZERO_SHA" ] && continue   # new ref -- nothing to rewrite
+  git cat-file -e "$remote_sha^{commit}" 2>/dev/null || continue   # a remote commit this clone lacks: git reports the non-fast-forward itself, and gate 2 still scans
   if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
     if [ "${ALLOW_FORCE_PUSH:-}" != "1" ]; then
       echo "  BLOCKED: $remote_ref would be force-pushed (history rewrite) -- $remote_sha is not an ancestor of $local_sha."
