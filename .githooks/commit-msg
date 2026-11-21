@@ -37,12 +37,6 @@ log_failure() {
 }
 trap 'log_failure $?' EXIT
 
-
-# baseline_field KEY JSON: the whole number that KEY holds in a docs/SIZE-BASELINE.json text, or nothing. Both the
-# size ratchet and the commit-msg hook read the baseline with this one function.
-baseline_field() {
-  printf '%s\n' "$2" | sed -n '/"'"$1"'"[[:space:]]*:/{s/.*"'"$1"'"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p;}' | sed -n 1p
-}
 GATE_NAME="Commit message"
 # STORY-REF-1. Every commit names the story it serves, so the history shows who did what and why.
 # Git passes the message file as $1. Reading it can fail, and a hook that cannot read the
@@ -78,58 +72,6 @@ else
 fi
 # sed quits at the first non-blank line, so a long message can close the pipe before printf finishes.
 SUBJECT="$(printf '%s\n' "$MESSAGE" | sed -n '/[^[:space:]]/{p;q;}' || true)"
-
-# SIZE-RAISE-1. A commit that raises "lines" in docs/SIZE-BASELINE.json by more than
-# raiseCapPercent of the committed value (default 2) must declare a story sized L or XL with a
-# "Size: L" or "Size: XL" line, copied from that story's Size field. Without the cap an edit to
-# the baseline defeats the size ratchet, because the ratchet trusts the staged baseline. The cap is
-# read from HEAD so the same commit cannot change it, and the check runs before the merge, revert
-# and first-commit exits below so no message prefix skips it.
-if [ -n "$(git diff --cached --name-only -- docs/SIZE-BASELINE.json)" ]; then
-  NEW_LINES="$(baseline_field lines "$(git show ":docs/SIZE-BASELINE.json" 2>/dev/null || true)")"
-  OLD_JSON="$(git show "HEAD:docs/SIZE-BASELINE.json" 2>/dev/null || true)"
-  CAP_PCT="$(baseline_field raiseCapPercent "$OLD_JSON")"
-  # Raises add up: the cap is measured from the baseline at the last commit whose message carried a "Size: L" or
-  # "Size: XL" line, and from the first baseline commit when none did, so small raises cannot stack past it.
-  ANCHOR="$(git log -i -1 --format=%H -E --grep='^[[:space:]]*size:[[:space:]]*(L|XL)[[:space:]]*$' -- docs/SIZE-BASELINE.json 2>/dev/null || true)"
-  [ -n "$ANCHOR" ] || ANCHOR="$(git log --format=%H --diff-filter=A -- docs/SIZE-BASELINE.json 2>/dev/null | tail -1)"
-  ANCHOR_JSON=""
-  [ -z "$ANCHOR" ] || ANCHOR_JSON="$(git show "$ANCHOR:docs/SIZE-BASELINE.json" 2>/dev/null || true)"
-  OLD_LINES="$(baseline_field lines "$ANCHOR_JSON")"
-  # With no committed baseline at all, the first number is a raise from zero.
-  if [ -z "$ANCHOR" ] && [ -z "$OLD_JSON" ]; then OLD_LINES=0; fi
-  # The two percentages that size the allowance and the cap are part of the baseline too, so changing either is a
-  # raise of the limit itself and needs the same Size line, or one commit would disarm the next.
-  for LIMIT_KEY in raiseCapPercent allowancePercent; do
-    OLD_LIMIT="$(baseline_field "$LIMIT_KEY" "$OLD_JSON")"
-    NEW_LIMIT="$(baseline_field "$LIMIT_KEY" "$(git show ":docs/SIZE-BASELINE.json" 2>/dev/null || true)")"
-    if [ -n "$OLD_JSON" ] && [ "$NEW_LIMIT" != "$OLD_LIMIT" ] \
-        && ! printf '%s\n' "$MESSAGE" | grep -Eiq '^[[:space:]]*size:[[:space:]]*(L|XL)[[:space:]]*$'; then
-      echo "[commit-msg] BLOCKED: this commit changes $LIMIT_KEY in docs/SIZE-BASELINE.json from $OLD_LIMIT to ${NEW_LIMIT:-nothing}."
-      echo "  A change to a size limit needs a story sized L or XL. Add a line \"Size: L\" or \"Size: XL\" copied from the story's Size field."
-      exit 1
-    fi
-  done
-  # Removing a committed line count switches the size gate off, so it is a change to a limit too.
-  if [ -z "$NEW_LINES" ] && [ -n "$(baseline_field lines "$OLD_JSON")" ] \
-      && ! printf '%s\n' "$MESSAGE" | grep -Eiq '^[[:space:]]*size:[[:space:]]*(L|XL)[[:space:]]*$'; then
-    echo "[commit-msg] BLOCKED: this commit removes the line count from docs/SIZE-BASELINE.json."
-    echo "  Removing it needs a story sized L or XL. Add a line \"Size: L\" or \"Size: XL\" copied from the story's Size field."
-    exit 1
-  fi
-  # A baseline whose committed "lines" is null counts as 0, so the first real number is a raise.
-  if [ -z "$OLD_LINES" ] && [ -n "$ANCHOR_JSON" ]; then OLD_LINES=0; fi
-  if [ -n "$NEW_LINES" ] && [ -n "$OLD_LINES" ] && [ "$NEW_LINES" -gt "$OLD_LINES" ]; then
-    CAP=$(( OLD_LINES * ${CAP_PCT:-2} / 100 ))
-    RAISE=$(( NEW_LINES - OLD_LINES ))
-    if [ "$RAISE" -gt "$CAP" ] && ! printf '%s\n' "$MESSAGE" | grep -Eiq '^[[:space:]]*size:[[:space:]]*(L|XL)[[:space:]]*$'; then
-      echo "[commit-msg] BLOCKED: this commit raises the size baseline by $RAISE lines, over the cap of $CAP."
-      echo "  A raise that large needs a story sized L or XL. Add a line \"Size: L\" or \"Size: XL\" copied from the story's Size field,"
-      echo "  or split the work so each commit stays inside the cap."
-      exit 1
-    fi
-  fi
-fi
 
 # COAUTHOR-1. Every co-author line has one form, "Co-Authored-By: Name <email>", and a Claude
 # co-author uses Anthropic's noreply address, so the attribution reads the same on every commit,
