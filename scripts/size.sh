@@ -4,6 +4,7 @@
 # --total prints only the total line count, one integer, with no backlog lookup, and equals the report's
 # TOTAL row. --staged counts each tracked file as the index holds it; without it the working tree counts.
 # A nested git repo inside a plain folder that sits in a repo is left out, like a submodule.
+# A top-level data/ folder is left out, since account data a sync writes is not the repo's own size.
 # Prints files, lines and bytes by kind (code, tests, docs, skills, config, other),
 # the ratios the audit report cites, and open backlog items when the repo names a backlog-config.json.
 set -euo pipefail
@@ -69,7 +70,8 @@ if not any(names):
         names = [os.path.relpath(os.path.join(d, f)) for d, ds, fs in os.walk(".") if ".git" not in d.split(os.sep) and "__pycache__" not in d.split(os.sep) for f in fs if f not in (".DS_Store", ".git")]
 # An unmerged file lists once per index stage, and counts once.
 for n in dict.fromkeys(names):
-    if n and n not in skip and prefix + n not in managed:
+    # The top-level data/ folder holds what syncs write, so it is left out of the count.
+    if n and n not in skip and prefix + n not in managed and not (prefix + n).startswith("data/"):
         sys.stdout.buffer.write(n.encode("utf-8", "surrogateescape") + b"\0")
 '
 }
@@ -123,7 +125,7 @@ for entry in entries:
     meta, _, path = entry.partition(b"\t")
     mode, sha, stage = meta.split()
     path = os.fsdecode(path)
-    if prefix + path in managed:
+    if prefix + path in managed or (prefix + path).startswith("data/"):
         continue
     if stage != b"0":
         # An unmerged path has no stage-0 entry and counts once, from its working copy.
