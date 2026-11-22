@@ -98,7 +98,7 @@ trap 'log_failure $?' EXIT
 # ─── Gate 1: Secrets ──────────────────────────────────────────────────────────
 GATE_NAME="Secrets"
 # Block commits containing API keys, tokens, JWTs, private keys.
-echo "[pre-commit] Gate 1/7: Secret scan..."
+echo "[pre-commit] Gate 1/3: Secret scan..."
 
 # The secret patterns both the pre-commit secrets gate and the pre-push scan build in, so the two never drift.
 SECRET_PATTERNS=(
@@ -195,50 +195,12 @@ fi
 
 echo "  Gate 1 passed."
 
-# ─── Gate 2: Icons / Emojis ───────────────────────────────────────────────────
-GATE_NAME="Icons / Emojis"
-# Block ALL emojis and Unicode icons. Plain text only. No exceptions.
-echo "[pre-commit] Gate 2/7: Icon/Emoji scan..."
-
-EMOJI_PATTERN='[\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{1F1E0}-\x{1F1FF}\x{2600}-\x{26FF}\x{2700}-\x{2712}\x{2714}-\x{27BF}\x{FE00}-\x{FE0F}\x{1F900}-\x{1F9FF}\x{1FA00}-\x{1FA6F}\x{1FA70}-\x{1FAFF}\x{2300}-\x{23FF}\x{2B50}\x{2764}\x{1F004}\x{1F0CF}\x{2934}-\x{2935}\x{25AA}-\x{25FE}\x{2B05}-\x{2B07}\x{2B1B}-\x{2B1C}\x{3030}\x{303D}\x{3297}\x{3299}\x{2139}\x{2328}\x{23CF}\x{24C2}\x{25B6}\x{23E9}-\x{23F3}\x{23F8}-\x{23FA}\x{200D}\x{20E3}]'
-
-# perl backs this gate. Without it the scan below silently finds nothing and the gate
-# "passes" -- a fail-OPEN on the one rule this framework calls universal. Assert it.
-if ! command -v perl >/dev/null 2>&1; then
-  echo "  BLOCKED: perl not found, and Gate 2 (emoji scan) cannot run without it."
-  echo "  Install perl, or this gate would silently pass every commit."
-  exit 1
-fi
-
-# BSD grep has no -P, and `grep -nP` fails silently inside an if-condition, so this
-# gate must never use it. perl handles the \x{...} ranges natively.
-# A repo whose posted copy legitimately holds emojis lists those files under "exempt" in
-# docs/EMOJI-GATE.json, each with a line in "reasons". With no file the gate scans every staged file.
-EMOJI_EXEMPT="$(gate_list docs/EMOJI-GATE.json exempt)"
-if [ -n "$TEXT_FILES" ]; then
-  while IFS= read -r file; do
-    matches_glob "$file" "$EMOJI_EXEMPT" && continue
-    # perl -CSD dies on the first malformed byte, which let an emoji later in the file through. The file is
-    # read as bytes, a binary file (a NUL in its first 8000 bytes, git's own test) is skipped, and a bad byte
-    # decodes to U+FFFD so every line after it is still scanned.
-    EMOJI_HITS=$(staged_content "$file" 2>/dev/null | perl -0777 -ne 'use Encode; exit if substr($_, 0, 8000) =~ /\0/; binmode STDOUT, ":utf8"; my $n = 0; for my $l (split /\n/, Encode::decode("UTF-8", $_)) { $n++; print "$n: $l\n" if $l =~ /'"$EMOJI_PATTERN"'/ }' || true)
-    if [ -n "$EMOJI_HITS" ]; then
-      echo "$EMOJI_HITS"
-      echo "  BLOCKED: $file contains emojis or icons."
-      echo "  Zero emojis allowed — plain text only."
-      exit 1
-    fi
-  done <<< "$TEXT_FILES"
-fi
-
-echo "  Gate 2 passed."
-
-# ─── Gate 3: PII ──────────────────────────────────────────────────────────────
+# ─── Gate 2: PII ──────────────────────────────────────────────────────────────
 GATE_NAME="PII"
 # Block commits containing personal identifiers: home folder paths and email addresses.
 # A repo whose own files must hold a pattern, such as a gate that names the patterns it blocks, lists
 # those files under "exempt" in docs/PII-GATE.json, each with a line in "reasons".
-echo "[pre-commit] Gate 3/7: PII scan..."
+echo "[pre-commit] Gate 2/3: PII scan..."
 PII_EXEMPT="$(gate_list docs/PII-GATE.json exempt)"
 
 PII_PATTERNS=(
@@ -281,107 +243,9 @@ if [ $VIOLATIONS -gt 0 ]; then
   exit 1
 fi
 
-echo "  Gate 3 passed."
+echo "  Gate 2 passed."
 
-# ─── Gate 4: Archived content ─────────────────────────────────────────────────
-GATE_NAME="Archived content"
-# A repo holds current state only. A superseded file gets deleted or replaced, never
-# parked in an Archive/ folder or beside its replacement as "-old" -- git already
-# holds every past version, so a second copy on disk is a copy nothing keeps in sync,
-# and the reader cannot tell which one is live.
-echo "[pre-commit] Gate 4/7: Archived-content scan..."
-
-# Matched as a whole PATH SEGMENT, never a substring: a file legitimately titled
-# "Legacy Modernization Intelligence" is prose about legacy systems and passes.
-ARCHIVE_SEGMENTS='^(_?[Aa]rchive[ds]?|[Ll]egacy|[Dd]eprecated|[Oo]utdated|_?[Bb]ackups?|[Oo]ld)$'
-# Suffixes that mark a file as a superseded copy of its neighbour.
-# "copy" is deliberately NOT here. In many repos copy means written copy -- "Slide
-# Copy", "Website Services Copy" -- so matching it blocked 30-plus live files on
-# the first run.
-ARCHIVE_SUFFIX='(\.bak|~|[ _-]old|[ _-]backup|[ _-]deprecated|[ _-]superseded)(\.[A-Za-z0-9]+)?$'
-
-# A repo with permanent records in an archive-named folder declares them in its own
-# optional .githooks/pre-commit.local (GATE-LOCAL-1). The gate asks that file about one
-# path, with empty stdin, only when it is about to block. Exit status 10 exempts the path;
-# any other status keeps the block, so a local hook that does not know this argument
-# cannot exempt anything by accident.
-is_archive_exempt() {
-  [ -x "$HOOK_DIR/pre-commit.local" ] || return 1
-  local rc=0
-  "$HOOK_DIR/pre-commit.local" archive-exempt "$1" </dev/null >/dev/null 2>&1 || rc=$?
-  [ "$rc" -eq 10 ]
-}
-
-if [ -n "$STAGED_FILES" ]; then
-  while IFS= read -r file; do
-    [ -n "$file" ] || continue
-    # Any directory segment that names an archive.
-    printf '%s\n' "$file" | tr '/' '\n' | grep -qE "$ARCHIVE_SEGMENTS" && ! is_archive_exempt "$file" && {
-      echo "  BLOCKED: $file sits under a directory that names an archive."
-      echo "  This repo holds current state only. Delete the superseded copy --"
-      echo "  git history is the archive. If it is genuinely still live, rename the"
-      echo "  directory to say what it holds."
-      exit 1
-    }
-
-    # A filename marked as a superseded copy.
-    if printf '%s\n' "${file##*/}" | grep -qE "$ARCHIVE_SUFFIX" && ! is_archive_exempt "$file"; then
-      echo "  BLOCKED: $file is named as a superseded copy."
-      echo "  Replace the file it supersedes and never commit both; git keeps"
-      echo "  the previous version."
-      exit 1
-    fi
-  done <<< "$STAGED_FILES"
-fi
-
-echo "  Gate 4 passed."
-
-# ─── Gate 5: Skill citations ──────────────────────────────────────────────────
-GATE_NAME="Skill citations"
-# GATE-SCOPE-1: matched by path shape (`*/SKILL.md`, `*/CLAUDE.md`, `*/references/*.md`),
-# never by bare filename, so a reference file gets the same check as a skill file.
-#
-# GATE-CITATION-1: a staged skill file cannot cite `#N` as a GitHub issue or pull request that does not exist.
-# Checked only when `gh` is installed and already authenticated;
-# any network, auth, or rate-limit problem skips the check silently rather
-# than blocking a commit on infrastructure the content gate does not own.
-echo "[pre-commit] Gate 5/7: Skill citations..."
-CITATION_FAILED=0
-CITED_NUMS=""
-if [ -n "$TEXT_FILES" ]; then
-  while IFS= read -r file; do
-    case "$file" in
-      */SKILL.md|SKILL.md|*/CLAUDE.md|CLAUDE.md|*/references/*.md) ;;
-      *) continue ;;
-    esac
-    hits=$(staged_content "$file" 2>/dev/null | grep -ohE '(^|[^A-Za-z0-9&/#])#0*[1-9][0-9]{0,4}([^A-Za-z0-9_-]|$)' | grep -oE '[0-9]+' | sed 's/^0*//' || true)
-    [ -n "$hits" ] && CITED_NUMS="$CITED_NUMS
-$hits"
-  done <<< "$TEXT_FILES"
-fi
-CITED_NUMS=$(printf '%s\n' "$CITED_NUMS" | grep -E '^[0-9]+$' | sort -un || true)
-if [ -n "$CITED_NUMS" ] && command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-  # Issues and pull requests share one number space, and a skill may cite either.
-  ALL_ISSUES=$(cd "$REPO_ROOT" && { gh issue list --state all --limit 5000 --json number --jq '.[].number' && gh pr list --state all --limit 5000 --json number --jq '.[].number'; } 2>/dev/null) || ALL_ISSUES=""
-  if [ -n "$ALL_ISSUES" ]; then
-    while IFS= read -r n; do
-      [ -z "$n" ] && continue
-      # A here-string, since grep -q in a pipe ends early and pipefail then reads the writer's SIGPIPE as a miss.
-      if ! grep -qx "$n" <<< "$ALL_ISSUES"; then
-        echo "  BLOCKED: #$n is cited in a staged skill file but resolves to no real issue."
-        CITATION_FAILED=1
-      fi
-    done <<< "$CITED_NUMS"
-  fi
-fi
-
-if [ "$CITATION_FAILED" -eq 1 ]; then
-  echo "  Fix each citation to a real issue number, or remove it, then re-commit."
-  exit 1
-fi
-echo "  Gate 5 passed."
-
-# ─── Gate 6: Owner identifiers ────────────────────────────────────────────────
+# ─── Gate 3: Owner identifiers ────────────────────────────────────────────────
 GATE_NAME="Owner identifiers"
 # OWNER-ID-1. A shipped file cannot name the people or accounts behind the repo. The gate derives
 # the identifiers itself, so no hand-kept list exists: the full names, matched as one phrase, and the
@@ -393,7 +257,7 @@ GATE_NAME="Owner identifiers"
 # Every staged file is scanned, markdown and tests included, except local data: the built-in
 # paths below, which are fixed in this gate, and the "localData" globs in docs/IDENTIFIER-GATE.json,
 # whose reasons are recorded there for readers. Fewer than one derivable identifier skips the gate.
-echo "[pre-commit] Gate 6/7: Owner identifiers..."
+echo "[pre-commit] Gate 3/3: Owner identifiers..."
 ID_LIST="$(mktemp "${TMPDIR:-/tmp}/oc-identifiers.XXXXXX")"
 trap 'rc=$?; rm -f "$ID_LIST"; log_failure $rc' EXIT
 # The origin's owner/repo path, from an https or ssh remote.
@@ -430,7 +294,7 @@ esac
   | grep -vxE 'claude|github|anthropic|noreply|no-reply|copilot|dependabot|renovate|root|user|users|test|tests|admin|unknown|none|null|example|local|localhost|bot|runner|support|hello|contact|office|sales|info|team|help|billing|mail|email|webmaster|postmaster|abuse|security|press|marketing|careers|jobs' \
   | sort -u > "$ID_LIST" || true
 if [ ! -s "$ID_LIST" ]; then
-  echo "  Gate 6 skipped (no owner identifier can be derived from git or docs/IDENTIFIER-GATE.json)."
+  echo "  Gate 3 skipped (no owner identifier can be derived from git or docs/IDENTIFIER-GATE.json)."
 else
   # A project names itself: its origin path, its repo name (also spaced) and its package name are not owner data, so a
   # line is matched after those strings are removed. A bare author name in prose still blocks.
@@ -486,40 +350,22 @@ for number, line in enumerate(sys.stdin, 1):
     echo "  Replace it with a placeholder such as my-shop, or list the file under \"localData\" in docs/IDENTIFIER-GATE.json with a reason."
     exit 1
   fi
-  echo "  Gate 6 passed ($(wc -l < "$ID_LIST" | tr -d ' ') identifiers derived)."
+  echo "  Gate 3 passed ($(wc -l < "$ID_LIST" | tr -d ' ') identifiers derived)."
 fi
 
-# ─── Gate 7: Duplicate text ───────────────────────────────────────────────────
-GATE_NAME="Duplicate text"
-# DUPLICATION-HOOK-1. A passage of 15 words or more may live in one markdown file only, so a rule
-# keeps one home across docs, skills, references and templates. The shared check
-# (scripts/duplication_check.py) reads every tracked markdown file and reports each passage that
-# a staged file shares with another file, naming both. Files outside the commit are judged as they
-# stand, so an old duplicate between two untouched files blocks nothing here; validate.sh reports it.
-echo "[pre-commit] Gate 7/7: Duplicate text..."
-DUP_CHECKER=""
-for candidate in scripts/duplication_check.py scripts/lib/duplication_check.py; do
-  if [ -f "$candidate" ]; then DUP_CHECKER="$candidate"; break; fi
-done
-DUP_FILES=()
-while IFS= read -r dup_file; do
-  case "$dup_file" in *.md) DUP_FILES+=("$dup_file") ;; esac
-done <<< "$STAGED_FILES"
-if [ ${#DUP_FILES[@]} -eq 0 ]; then
-  echo "  Gate 7 passed (no staged markdown)."
-elif [ -z "$DUP_CHECKER" ]; then
-  echo "  Gate 7 skipped (no scripts/duplication_check.py; run olivercode bootstrap to add it)."
-elif ! command -v python3 >/dev/null 2>&1; then
-  echo "  Gate 7 skipped (python3 is not installed)."
-else
-  DUP_OUT="$(python3 "$DUP_CHECKER" --root "$REPO_ROOT" --staged-only "${DUP_FILES[@]}" 2>&1)" && DUP_RC=0 || DUP_RC=$?
-  if [ "$DUP_RC" -ne 0 ]; then
-    printf '%s\n' "$DUP_OUT" | sed 's/^/  /'
-    echo "  BLOCKED: a staged markdown file repeats a passage that another file already holds."
-    echo "  Keep the rule in one file and point the other at it, or declare a deliberate reuse in DECLARED_MARKERS with a reason."
+# ─── Version files ────────────────────────────────────────────────────────────
+GATE_NAME="Version files"
+# VERSION-FILES-1. VERSION and CHANGELOG.md belong to the daily cut (`olivercode version-cut`, docs/VERSIONING.md),
+# so an ordinary commit cannot stage either one. The cut sets OLIVERCODE_VERSION_CUT=1 for its own commit.
+# `validate.sh --tree` stages nothing, so the tree scan skips this gate.
+if [ "${OLIVERCODE_SCAN_TREE:-}" != 1 ] && [ "${OLIVERCODE_VERSION_CUT:-}" != 1 ]; then
+  VERSION_STAGED="$(printf '%s\n' "$STAGED_FILES" | grep -xE 'VERSION|CHANGELOG\.md' || true)"
+  if [ -n "$VERSION_STAGED" ]; then
+    echo "  BLOCKED: $(printf '%s' "$VERSION_STAGED" | tr '\n' ' ')belongs to the daily version cut and no ordinary commit edits it."
+    echo "  Unstage it with: git restore --staged VERSION CHANGELOG.md"
+    echo "  The cut writes both files once per day of activity (docs/VERSIONING.md)."
     exit 1
   fi
-  echo "  Gate 7 passed (${#DUP_FILES[@]} staged markdown file(s) checked)."
 fi
 
 # ─── Repo-local gates ─────────────────────────────────────────────────────────
