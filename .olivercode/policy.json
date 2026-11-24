@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "commands": {
+    "allow": [],
+    "deny": [
+      "(curl|wget)\\s+.*\\|\\s*(ba|z)?sh",
+      "git\\s+-c\\s+core\\.hooksPath=(?!(\\./)?\\.githooks\\b)",
+      "git\\s+config\\s+(\\S+\\s+)*--unset(-all)?\\s+core\\.hooksPath",
+      "git\\s+config\\s+(\\S+\\s+)*core\\.hooksPath\\s+(?!(\\./)?\\.githooks\\b)[^\\s;&|]"
+    ]
+  },
+  "installs": {
+    "deny": []
+  },
+  "paths": {
+    "allow": [
+      "**"
+    ],
+    "deny": [
+      ".git/**",
+      ".env",
+      ".env.*",
+      ".secrets/**",
+      ".githooks/**",
+      ".olivercode/**"
+    ]
+  },
+  "triggers": {
+    "gateFailures": 3,
+    "deleteFiles": 10,
+    "push": true
+  }
+}
