@@ -47,9 +47,10 @@ if [ -n "$STAGED_FILES" ]; then
   TEXT_FILES=$(git -C "$REPO_ROOT" -c core.quotepath=off grep --cached -I --name-only -e '' 2>/dev/null \
     | grep -Fxf - <(printf '%s\n' "$STAGED_FILES") || true)
 fi
-# gate_list FILE KEY prints each string in the JSON array KEY of the staged FILE.
+# gate_list FILE KEY prints each string in the JSON array KEY of FILE as HEAD holds it.
 gate_list() {
-  git show ":$1" 2>/dev/null | tr '\n' ' ' \
+  # It reads the config from HEAD, because a commit that edits the config would otherwise exempt itself.
+  git show "HEAD:$1" 2>/dev/null | tr '\n' ' ' \
     | sed -n 's/.*"'"$2"'"[[:space:]]*:[[:space:]]*\[\([^]]*\)\].*/\1/p' \
     | grep -o '"[^"]*"' | sed 's/^"//; s/"$//' || true
 }
@@ -106,6 +107,8 @@ SECRET_PATTERNS=(
   'sk-[A-Za-z0-9]{20,}'                        # OpenAI/Anthropic-style keys
   'gh[pousr]_[A-Za-z0-9]{36}'                  # GitHub classic, OAuth, user, server and refresh tokens
   'github_pat_[A-Za-z0-9_]{22,}'               # GitHub fine-grained tokens
+  'sk-(proj|svcacct|admin)-[A-Za-z0-9_-]{20,}'   # OpenAI project, service-account and admin keys (hyphens and underscores, which the sk- rule above misses)
+  '[a-z][a-z0-9+.-]*://[^/[:space:]:@]+:[^/[:space:]@]{3,}@[^[:space:]]+'  # A password inside a connection URL, after the user name and before the host
   'sk-ant-[a-z0-9]+-[A-Za-z0-9_-]{20,}'        # Anthropic keys (hyphens, so the sk- rule above misses them)
   'glpat-[A-Za-z0-9_-]{20,}'                   # GitLab tokens
   'hf_[A-Za-z0-9]{30,}'                        # Hugging Face tokens
@@ -129,13 +132,16 @@ SECRET_PATTERNS=(
 # Exempt: a line marked "secret-scan: allow", and a hit
 # whose every matched value is a placeholder (EXAMPLE, placeholder, your_key, a run of x).
 SECRET_PLACEHOLDER='EXAMPLE|[Ee]xample|[Pp]laceholder|PLACEHOLDER|[Yy]our[_-]?([Aa]pi[_-]?)?([Kk]ey|[Tt]oken|[Ss]ecret)|YOUR_|(^|[^A-Za-z0-9])[xX]{8,}([^A-Za-z0-9]|$)'
-# A generic `key`-style hit whose value is a lowercase hyphenated slug (wedding-invite-wildflower-5x7) is a name, not a
+# A generic `key`-style hit whose value is a lowercase hyphenated slug (my-asset-name-5x7) is a name, not a
 # credential: real secrets carry mixed case or no hyphens, and every vendor shape above is matched by its own pattern.
 secret_not_slug() {
   local m v
   while IFS= read -r m; do
     v=$(printf '%s' "$m" | sed -E "s/^[A-Za-z_]+[\"' :=]+//")
-    case "$pattern" in '(TOKEN|SECRET'*) [[ "$v" =~ ^[a-z0-9]+(-[a-z0-9]+)+$ ]] && continue ;; esac
+    # A UUID (8-4-4-4-12 hex) and a value after a password name are credentials, never slugs.
+    case "$pattern" in '(TOKEN|SECRET'*)
+      [[ "$v" =~ ^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$ ]] || [[ "$m" =~ ^[Pp][Aa][Ss][Ss] ]] ||
+        { [[ "$v" =~ ^[a-z0-9]+(-[a-z0-9]+)+$ ]] && continue; } ;; esac
     printf '%s\n' "$m"
   done
 }
@@ -203,6 +209,16 @@ GATE_NAME="PII"
 echo "[pre-commit] Gate 2/3: PII scan..."
 PII_EXEMPT="$(gate_list docs/PII-GATE.json exempt)"
 
+# A test or mock file is scanned like any other, except that obvious placeholders may stay: example addresses,
+# the SSH form of a GitHub remote and a handful of fake home folders. A real path or address in a fixture blocks.
+strip_fixture_placeholders() {
+  case "$1" in
+    tests/*|*/tests/*|*.test.*|*_test.*|*__tests__*|*/mocks/*|*.mock.*|*_mock.*)
+      sed -E 's#[A-Za-z0-9._%+-]+@(example\.(com|org|net|invalid|test)|anthropic\.com)#X#g; s#git@github\.com#X#g; s#/(Users|home)/(example|someone|me|x)([/"'"'"' ]|$)#X\3#g' ;;
+    *) cat ;;
+  esac
+}
+
 PII_PATTERNS=(
   '(^|[^[:alnum:]._/-])/Users/[A-Za-z0-9._-]+([/"'\'' ]|$)'                   # macOS home directory paths, with or without a trailing slash
   '(^|[^[:alnum:]._/-])/home/[A-Za-z0-9._-]+([/"'\'' ]|$)'                    # Linux home directory paths
@@ -213,7 +229,7 @@ for pattern in "${PII_PATTERNS[@]}"; do
   if [ -n "$TEXT_FILES" ]; then
     while IFS= read -r file; do
       case "$file" in
-        *.env.example|*/mocks/*|*.mock.*|*_mock.*|tests/*|*/tests/*|*.test.*|*_test.*|*__tests__*|.gitignore|docs/PII-GATE.json|.githooks/*) continue ;;
+        *.env.example|.gitignore|docs/PII-GATE.json|.githooks/*) continue ;;
       esac
       matches_glob "$file" "$PII_EXEMPT" && continue
       # Strip known non-PII strings before matching. `git@github.com` is the SSH form npm
@@ -225,7 +241,7 @@ for pattern in "${PII_PATTERNS[@]}"; do
       # so a separator after the repo name ends the strip. The `#<sha>` fragment is left in
       # place, since a tag name after it could hide an address. The left boundary stops a
       # longer word such as `notgit@github.com` from anchoring the exemption.
-      if hits=$(staged_content "$file" 2>/dev/null | sed -E 's#(^|[^A-Za-z0-9._%+-])git\+ssh://git@github\.com/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+#\1#g; s#(^|[^A-Za-z0-9._%+-])git@github\.com:[A-Za-z0-9._-]+/[A-Za-z0-9._-]+#\1#g' | grep -nE -e "$pattern"); then
+      if hits=$(staged_content "$file" 2>/dev/null | sed -E 's#(^|[^A-Za-z0-9._%+-])git\+ssh://git@github\.com/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+#\1#g; s#(^|[^A-Za-z0-9._%+-])git@github\.com:[A-Za-z0-9._-]+/[A-Za-z0-9._-]+#\1#g' | strip_fixture_placeholders "$file" | grep -nE -e "$pattern"); then
         echo "$hits"
         echo "  BLOCKED: $file contains PII matching pattern: $pattern"
         VIOLATIONS=$((VIOLATIONS + 1))
@@ -267,8 +283,20 @@ case "$ID_ORIGIN" in
   *:*) ID_ORIGIN="${ID_ORIGIN#*:}" ;;
   *) ID_ORIGIN="" ;;
 esac
+# An org-owned repo shares its org name on purpose, so the org is allowed and only the committer's own identity is checked.
+ID_ORG=0
+if [ -n "$ID_ORIGIN" ] && command -v gh >/dev/null 2>&1; then
+  [ "$(gh api "users/${ID_ORIGIN%%/*}" --jq .type 2>/dev/null || true)" = "Organization" ] && ID_ORG=1
+fi
+id_authors() {
+  if [ "$ID_ORG" = 1 ]; then
+    printf '%s\t%s\n' "$(git config user.name 2>/dev/null || true)" "$(git config user.email 2>/dev/null || true)"
+  else
+    git log --format='%an%x09%ae' 2>/dev/null
+  fi
+}
 {
-  git log --format='%an%x09%ae' 2>/dev/null | sort -u | while IFS="$(printf '\t')" read -r id_name id_mail; do
+  id_authors | sort -u | while IFS="$(printf '\t')" read -r id_name id_mail; do
     id_name_lc="$(printf '%s' "$id_name" | tr 'A-Z' 'a-z')"
     id_mail_lc="$(printf '%s' "$id_mail" | tr 'A-Z' 'a-z')"
     case "$id_name_lc$id_mail_lc" in *"[bot]"*|*"-bot@"*) continue ;; esac
@@ -283,7 +311,7 @@ esac
       *@*) printf '%s\n' "${id_mail_lc%@*}" | sed 's/+.*//' ;;
     esac
   done
-  printf '%s\n' "${ID_ORIGIN%%/*}" | tr 'A-Z' 'a-z'
+  [ "$ID_ORG" = 1 ] || printf '%s\n' "${ID_ORIGIN%%/*}" | tr 'A-Z' 'a-z'
   gate_list docs/IDENTIFIER-GATE.json configGlobs | while IFS= read -r id_glob; do
     git ls-files | while IFS= read -r id_cfg; do
       case "$id_cfg" in $id_glob) git show ":$id_cfg" 2>/dev/null ;; esac
@@ -309,7 +337,7 @@ else
     # A repo named like its owner would strip the owner's own name from every line, so only its path is removed.
     if [ "${id_self_path##*/}" != "${id_self_path%%/*}" ]; then
       printf '%s\n' "${id_self_path##*/}"
-      # Prose writes the repo name with spaces ("account planning tool" for account-planning-tool).
+      # Prose writes the repo name with spaces ("my repo name" for my-repo-name).
       printf '%s\n' "${id_self_path##*/}" | tr '_-' '  '
     fi
     git show ":package.json" 2>/dev/null | python3 -c 'import json,sys

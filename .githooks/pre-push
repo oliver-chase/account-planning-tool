@@ -3,7 +3,7 @@
 # Generated from a shared hook source, and `olivercode sync-hooks` replaces a hand edit made here.
 # The secret patterns below are the same list the pre-commit secrets gate uses.
 # Gate 0 refuses a push to any branch but the default. Gate 1 refuses a history rewrite of an existing remote ref. Gate 2 scans every commit
-# the push sends for secrets, including a secret added and removed inside the range. Gate 3 refuses a
+# the push sends for secrets, including a secret added and removed inside the range. Gate 3 refuses a commit whose subject starts with WIP. Gate 4 refuses a
 # push to the default branch (or main or master) whose tree has no passing full validation on record (olivercode validated).
 set -euo pipefail
 
@@ -33,6 +33,8 @@ SECRET_PATTERNS=(
   'sk-[A-Za-z0-9]{20,}'                        # OpenAI/Anthropic-style keys
   'gh[pousr]_[A-Za-z0-9]{36}'                  # GitHub classic, OAuth, user, server and refresh tokens
   'github_pat_[A-Za-z0-9_]{22,}'               # GitHub fine-grained tokens
+  'sk-(proj|svcacct|admin)-[A-Za-z0-9_-]{20,}'   # OpenAI project, service-account and admin keys (hyphens and underscores, which the sk- rule above misses)
+  '[a-z][a-z0-9+.-]*://[^/[:space:]:@]+:[^/[:space:]@]{3,}@[^[:space:]]+'  # A password inside a connection URL, after the user name and before the host
   'sk-ant-[a-z0-9]+-[A-Za-z0-9_-]{20,}'        # Anthropic keys (hyphens, so the sk- rule above misses them)
   'glpat-[A-Za-z0-9_-]{20,}'                   # GitLab tokens
   'hf_[A-Za-z0-9]{30,}'                        # Hugging Face tokens
@@ -56,13 +58,16 @@ SECRET_PATTERNS=(
 # Exempt: a line marked "secret-scan: allow", and a hit
 # whose every matched value is a placeholder (EXAMPLE, placeholder, your_key, a run of x).
 SECRET_PLACEHOLDER='EXAMPLE|[Ee]xample|[Pp]laceholder|PLACEHOLDER|[Yy]our[_-]?([Aa]pi[_-]?)?([Kk]ey|[Tt]oken|[Ss]ecret)|YOUR_|(^|[^A-Za-z0-9])[xX]{8,}([^A-Za-z0-9]|$)'
-# A generic `key`-style hit whose value is a lowercase hyphenated slug (wedding-invite-wildflower-5x7) is a name, not a
+# A generic `key`-style hit whose value is a lowercase hyphenated slug (my-asset-name-5x7) is a name, not a
 # credential: real secrets carry mixed case or no hyphens, and every vendor shape above is matched by its own pattern.
 secret_not_slug() {
   local m v
   while IFS= read -r m; do
     v=$(printf '%s' "$m" | sed -E "s/^[A-Za-z_]+[\"' :=]+//")
-    case "$pattern" in '(TOKEN|SECRET'*) [[ "$v" =~ ^[a-z0-9]+(-[a-z0-9]+)+$ ]] && continue ;; esac
+    # A UUID (8-4-4-4-12 hex) and a value after a password name are credentials, never slugs.
+    case "$pattern" in '(TOKEN|SECRET'*)
+      [[ "$v" =~ ^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$ ]] || [[ "$m" =~ ^[Pp][Aa][Ss][Ss] ]] ||
+        { [[ "$v" =~ ^[a-z0-9]+(-[a-z0-9]+)+$ ]] && continue; } ;; esac
     printf '%s\n' "$m"
   done
 }
@@ -78,7 +83,7 @@ secret_filter() {
 }
 
 DEFAULT_BRANCH="$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||' || true)"
-echo "[pre-push] Gate 0: only the default branch is pushed..."
+echo "[pre-push] Gate 0/4: only the default branch is pushed..."
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ -z "$local_ref" ] && continue
   [ "$local_sha" = "$ZERO_SHA" ] && continue    # deleting a ref is the clean-up this gate wants
@@ -98,7 +103,7 @@ if [ $VIOLATIONS -gt 0 ]; then
   exit 1
 fi
 
-echo "[pre-push] Gate 1/3: force-push / history-rewrite check..."
+echo "[pre-push] Gate 1/4: force-push / history-rewrite check..."
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ -z "$local_ref" ] && continue
   [ "$local_sha" = "$ZERO_SHA" ] && continue    # deleting a ref -- nothing to check
@@ -119,7 +124,7 @@ if [ $VIOLATIONS -gt 0 ]; then
 fi
 echo "  Gate 1 passed."
 
-echo "[pre-push] Gate 2/3: Secret scan on every commit being pushed..."
+echo "[pre-push] Gate 2/4: Secret scan on every commit being pushed..."
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ -z "$local_ref" ] && continue
   [ "$local_sha" = "$ZERO_SHA" ] && continue
@@ -147,7 +152,27 @@ if [ $VIOLATIONS -gt 0 ]; then
   exit 1
 fi
 echo "  Gate 2 passed."
-echo "[pre-push] Gate 3/3: passing validation on record for a push to the default branch..."
+echo "[pre-push] Gate 3/4: no commit whose subject starts with WIP..."
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "$local_ref" ] && continue
+  [ "$local_sha" = "$ZERO_SHA" ] && continue
+  if [ "$remote_sha" != "$ZERO_SHA" ] && git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+    SUBJECTS="$(git log --format='%h %s' "$remote_sha..$local_sha" -- 2>/dev/null || true)"
+  else
+    SUBJECTS="$(git log --format='%h %s' "$local_sha" --not --remotes="$REMOTE" -- 2>/dev/null || true)"
+  fi
+  HIT="$(printf '%s\n' "$SUBJECTS" | grep -E '^[0-9a-f]+ [Ww][Ii][Pp]([^A-Za-z0-9]|$)' || true)"
+  if [ -n "$HIT" ]; then
+    printf '%s\n' "$HIT" | sed -n '1,3p' | sed 's/^/  BLOCKED: WIP commit /'
+    VIOLATIONS=$((VIOLATIONS + 1))
+  fi
+done <<< "$PUSH_INPUT"
+if [ $VIOLATIONS -gt 0 ]; then
+  echo "PUSH BLOCKED: $VIOLATIONS push(es) hold a commit whose subject starts with WIP. Validate the work and reword the commit, or save it with olivercode wip."
+  exit 1
+fi
+echo "  Gate 3 passed."
+echo "[pre-push] Gate 4/4: passing validation on record for a push to the default branch..."
 GATE3_REFS=0
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ -z "$local_ref" ] && continue
@@ -155,9 +180,9 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   case "$remote_ref" in refs/heads/main|refs/heads/master|"refs/heads/${DEFAULT_BRANCH:-main}") GATE3_REFS=$((GATE3_REFS + 1)) ;; esac
 done <<< "$PUSH_INPUT"
 if [ "$GATE3_REFS" -eq 0 ]; then
-  echo "  Gate 3 not needed (no push to the default branch)."
+  echo "  Gate 4 not needed (no push to the default branch)."
 elif [ ! -x "$LAUNCHER" ]; then
-  echo "  BLOCKED: no olivercode launcher resolves, so Gate 3 cannot check for a passing validation."
+  echo "  BLOCKED: no olivercode launcher resolves, so Gate 4 cannot check for a passing validation."
   echo "  Fix: ln -sf <path to your olivercode checkout>/scripts/olivercode /usr/local/bin/olivercode"
   echo "  or: export OLIVERCODE_LAUNCHER=<path to your olivercode checkout>/scripts/olivercode"
   echo "PUSH BLOCKED: the launcher is missing."
@@ -173,7 +198,7 @@ else
     echo "PUSH BLOCKED: no passing full validation on record for the tree pushed to the default branch."
     exit 1
   fi
-  echo "  Gate 3 passed."
+  echo "  Gate 4 passed."
 fi
 echo "[pre-push] All gates passed."
 exit 0

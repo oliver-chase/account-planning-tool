@@ -52,7 +52,7 @@ fi
 OPTOUT_REL="$(cd "$HOOK_DIR" && pwd -P)"
 OPTOUT_REL="${OPTOUT_REL#"$(git rev-parse --show-toplevel 2>/dev/null)"/}/commit-msg.optout"
 if git cat-file -e "HEAD:$OPTOUT_REL" 2>/dev/null; then
-  echo "[commit-msg] Every commit-msg check is off (story, voice, test and size cap): $OPTOUT_REL is committed."
+  echo "[commit-msg] Every commit-msg check is off (story, voice and test): $OPTOUT_REL is committed."
   exit 0
 fi
 
@@ -70,6 +70,18 @@ if grep -qF "$COMMENT_CHAR Please enter the commit message" "$MSG_FILE"; then
 else
   MESSAGE="$(cat "$MSG_FILE")"
 fi
+# Every blocking finding is printed and counted, and the hook refuses once at the end, so one run lists all of them. A voice finding is a
+# warning and never counts. `olivercode commit-check` sets OLIVERCODE_COMMIT_CHECK to run these checks on a draft: it changes nothing and queues nothing (#881).
+BLOCK_COUNT=0
+block() { BLOCK_COUNT=$((BLOCK_COUNT + 1)); }
+# An early exit for a merge or a first commit still refuses when a check above it already blocked.
+exempt_exit() {
+  if [ "$BLOCK_COUNT" -gt 0 ]; then
+    echo "[commit-msg] $BLOCK_COUNT blocking finding$([ "$BLOCK_COUNT" -eq 1 ] || echo s). Fix all of them, then commit again."
+    exit 1
+  fi
+  exit 0
+}
 # REPO-NAME-1. The framework's own commits never name the owner's other repos. The names come from the local
 # registry through scripts/lib/repo_name_guard.py, which only the framework's checkout holds, so every other repo skips this check.
 GUARD_TOP="$(git rev-parse --show-toplevel 2>/dev/null || true)"
@@ -81,7 +93,7 @@ if [ -n "$GUARD_TOP" ] && [ -f "$GUARD_TOP/scripts/lib/repo_name_guard.py" ] && 
   rm -f "$GUARD_FILE"
   if [ "$GUARD_RC" -ne 0 ]; then
     echo "[commit-msg] BLOCKED: the message names another repo. Write \"another repo\" instead."
-    exit 1
+    block
   fi
 fi
 # sed quits at the first non-blank line, so a long message can close the pipe before printf finishes.
@@ -98,7 +110,7 @@ if [ -n "$BAD_COAUTHOR" ]; then
   echo "[commit-msg] BLOCKED: a co-author line is not in the standard form:"
   printf '%s\n' "$BAD_COAUTHOR" | sed 's/^/    /'
   echo "  Write it as \"Co-Authored-By: Name <email>\"; a Claude co-author uses <$CLAUDE_MAIL>."
-  exit 1
+  block
 fi
 
 # One definition of a test path and of a file that is not code, shared by the merge exemption and TEST-WITH-CODE-1.
@@ -133,10 +145,10 @@ case "$SUBJECT" in
 esac
 if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1 \
     && [ -z "$(staged_code)" ]; then
-  exit 0
+  exempt_exit
 fi
 if ! git rev-parse -q --verify HEAD >/dev/null 2>&1; then
-  exit 0
+  exempt_exit
 fi
 
 # VOICE-1. A repo that ships docs/VOICE.md opts in to voice enforcement; every other repo skips it. A commit message follows docs/VOICE.md: no bullet that ends in a period and no contrast
@@ -147,10 +159,9 @@ if [ -f "$(git rev-parse --show-toplevel)/docs/VOICE.md" ]; then
 VOICE_BREAKS="$(printf '%s\n' "$MESSAGE" | grep -nE '^[[:space:]]*[-*][[:space:]]+.*[^.]\.$|rather than|instead of|it is not about|[Ll]ess [^.]{1,40}, more |[Nn]ot [^.]{1,60} but |, not (a|an|the) ' || true)"
 fi
 if [ -n "$VOICE_BREAKS" ]; then
-  echo "[commit-msg] BLOCKED: the message breaks the voice rules (docs/VOICE.md):"
+  echo "[commit-msg] WARNING: the message may break the voice rules (docs/VOICE.md). This never blocks the commit:"
   printf '%s\n' "$VOICE_BREAKS" | sed -n '1,5s/^/    /p'
   echo "  End bullets without a period and state the plain fact without contrast framing."
-  exit 1
 fi
 
 # A reference is a standalone # and a positive number that ends the token: "(#53)", "#53 fix",
@@ -163,7 +174,7 @@ if [ -z "${EXEMPT_STORY:-}" ] && ! printf '%s\n' "$MESSAGE" | grep -Eq "$STORY_R
   echo "  Add the story number, for example \"Fix the sync (#53)\" or a line \"Story: #53\"."
   echo "  A revert or fixup/squash commit that names an existing commit, a merge that stages no code and a repo's first commit are exempt."
   echo "  To turn the check off for a repo, the owner commits $OPTOUT_REL."
-  exit 1
+  block
 fi
 
 # TEST-WITH-CODE-1. A commit that adds or changes code also changes a test, or says why not on a
@@ -178,7 +189,7 @@ if [ -n "$CODE_CHANGED" ] && [ -z "$TEST_CHANGED" ] \
   echo "[commit-msg] BLOCKED: this commit changes code and no test:"
   printf '%s\n' "$CODE_CHANGED" | sed -n '1,5s/^/    /p'
   echo "  Add or update a test in the same commit, or add a line \"No test: <reason>\" to the message."
-  exit 1
+  block
 fi
 
 # STORY-EXISTS-1. A number must name a story that exists, so the hook asks GitHub about each reference: a plain #N is looked up in the repo
@@ -234,34 +245,18 @@ EOF_REFS
   if [ -n "$MISSING" ]; then
     echo "[commit-msg] BLOCKED: no such story:$MISSING"
     echo "  Cite a story that exists in this repo, or write owner/repo#N for a story in another repo."
-    exit 1
+    block
   fi
 fi
 
-# CLOSES-CARD-1. A commit that says "closes #N" or "resolves #N" ("Fix #N" stays a plain reference) queues Status Complete for that card through
-# batch_project.py, so closing an issue never leaves a stale card (the 12 issues closed by hand with a card still open).
-# A message with a bare "(#N)" queues nothing. When the queue cannot take the request the commit is refused with the fix.
-CLOSES="$(printf '%s\n' "$MESSAGE" | grep -Eio '(^|[^[:alnum:]_])(close[sd]?|resolve[sd]?):?[[:space:]]+#0*[1-9][0-9]*([^[:alnum:]_]|$)' \
-  | grep -Eo '#0*[1-9][0-9]*' | sed 's/^#0*//' | sort -un || true)"
-if [ -n "$CLOSES" ]; then
-  CARD_LAUNCHER="${OLIVERCODE_LAUNCHER:-$(command -v olivercode 2>/dev/null || cat "${OLIVERCODE_HOME:-$HOME/.olivercode}/launcher" 2>/dev/null || true)}"
-  CARD_BATCH=""
-  if [ -n "$CARD_LAUNCHER" ]; then
-    CARD_BATCH="$(cd "$(dirname "$(readlink -f "$CARD_LAUNCHER" 2>/dev/null || echo "$CARD_LAUNCHER")")/.." 2>/dev/null && pwd)/skills/backlog/scripts/batch_project.py"
-  fi
-  CARD_CONFIG="$(git rev-parse --show-toplevel 2>/dev/null || true)/docs/backlog-config.json"
-  if [ ! -r "$CARD_CONFIG" ] || [ ! -f "$CARD_BATCH" ]; then
-    echo "[commit-msg] BLOCKED: the message closes #$(printf '%s' "$CLOSES" | tr '\n' ' ' | sed 's/ *$//;s/ / #/g'), and the card cannot be queued: ${CARD_CONFIG} or the backlog scripts are missing."
-    echo "  Run \`olivercode backlog-setup --apply\` to write the config, or drop the closing keyword and write \"(#N)\"."
-    exit 1
-  fi
-  CARD_JSON="$(printf '%s\n' "$CLOSES" | awk 'BEGIN{printf "{\"issues\":["} {printf "%s{\"number\":%s,\"fields\":{\"status\":\"Complete\"}}", (NR>1?",":""), $1} END{print "]}"}')"
-  CARD_OK=1
-  CARD_OUT="$(printf '%s\n' "$CARD_JSON" | python3 "$CARD_BATCH" --config "$CARD_CONFIG" --input - 2>&1)" || CARD_OK=0
-  if [ "$CARD_OK" -eq 0 ] && ! printf '%s' "$CARD_OUT" | grep -q 'stays queued'; then
-    echo "[commit-msg] BLOCKED: the Status Complete request for the closed card could not be queued: $(printf '%s' "$CARD_OUT" | tail -1)"
-    echo "  Run \`olivercode backlog-setup --apply\` to repair the config, then commit again."
-    exit 1
-  fi
+# A card reads Complete only after its work lands. A commit that says "closes #N" moves no card here, and STORY-EXISTS-1 above still
+# checks that N names a story. GitHub closes the issue once the commit reaches the default branch, which is after the push, and
+# `olivercode board sync` (scripts/lib/cmd_boardsweep.py) then moves the card of a closed issue to Status Complete (#1045).
+if [ "$BLOCK_COUNT" -gt 0 ]; then
+  echo "[commit-msg] $BLOCK_COUNT blocking finding$([ "$BLOCK_COUNT" -eq 1 ] || echo s). Fix all of them, then commit again."
+  exit 1
+fi
+if [ -n "${OLIVERCODE_COMMIT_CHECK:-}" ]; then
+  echo "[commit-check] no blocking findings."
 fi
 exit 0
